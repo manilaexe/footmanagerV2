@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-FootManagerApplication<footmanager>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "it.footmanager.FootManagerApplication",
+            "projectName": "footmanager",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
