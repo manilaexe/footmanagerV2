@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FootManager - Messaggi</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+    <link href="/html/css/styleall.css" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="icon">⚽</div>
+            <span>FootManager</span>
+        </div>
+        <nav class="nav-section">
+            <div class="nav-label">Principale</div>
+            <a class="nav-item" href="/html/dashboard.html"><span class="ico">🏠</span> Dashboard</a>
+            <a class="nav-item" href="/html/rosa.html"><span class="ico">👥</span> Rosa</a>
+            <a class="nav-item" href="/html/calendario.html"><span class="ico">📅</span> Calendario</a>
+            <a class="nav-item" href="/html/statistiche.html"><span class="ico">📊</span> Statistiche</a>
+            <a class="nav-item active" href="/html/messaggi.html"><span class="ico">💬</span> Messaggi</a>
+        </nav>
+        <nav class="nav-section">
+            <div class="nav-label">Impostazioni</div>
+            <a class="nav-item" href="#"><span class="ico">⚙️</span> Impostazioni</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="avatar">MC</div>
+                <div class="user-info">
+                    <strong>Marco Conti</strong>
+                    <small>Allenatore</small>
+                </div>
+                <button class="btn-logout" onclick="window.location.href='../login.html'">Esci</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+        <div class="topbar">
+            <h1>Messaggi</h1>
+            <div class="topbar-right">
+                <button class="btn-primary" onclick="openModal('modal-messaggio')">+ Nuovo Messaggio</button>
+            </div>
+        </div>
+
+        <div class="content">
+
+            <!-- KPI -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Messaggi inviati</div>
+                    <div class="stat-value">87</div>
+                    <div class="stat-sub">Stagione corrente</div>
+                </div>
+                <div class="stat-card info">
+                    <div class="stat-label">Da leggere</div>
+                    <div class="stat-value">5</div>
+                    <div class="stat-sub">3 giocatori</div>
+                </div>
+                <div class="stat-card warn">
+                    <div class="stat-label">Ultimo invio</div>
+                    <div class="stat-value" style="font-size:1.3rem;">Oggi</div>
+                    <div class="stat-sub">08:30</div>
+                </div>
+            </div>
+
+            <!-- LISTA + COMPOSIZIONE -->
+            <div class="grid-2">
+
+                <!-- LISTA -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Messaggi inviati</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="msg-list">
+                            <div class="msg-item">
+                                <div class="msg-header">
+                                    <span class="msg-to">→ Tutta la squadra</span>
+                                    <span class="msg-time">Oggi 08:30</span>
+                                </div>
+                                <div class="msg-text">Domani allenamento anticipato alle 8:45. Portate il materiale completo.</div>
+                                <div class="msg-status letto">✔✔ Letto da 18/23</div>
+                            </div>
+
+                            <div class="msg-item">
+                                <div class="msg-header">
+                                    <span class="msg-to">→ L. Rossi</span>
+                                    <span class="msg-time">Ieri 16:00</span>
+                                </div>
+                                <div class="msg-text">Ottima prestazione sabato. Continua così.</div>
+                                <div class="msg-status letto">✔✔ Letto</div>
+                            </div>
+                            <div class="msg-item">
+                                <div class="msg-header">
+                                    <span class="msg-to">→ Difensori</span>
+                                    <span class="msg-time">23 Mag</span>
+                                </div>
+                                <div class="msg-text">Ripassate il modulo 4-3-3 in vista della prossima partita.</div>
+                                <div class="msg-status inviato">✔ Inviato - 2 non hanno ancora letto</div>
+                            </div>
+                            <div class="msg-item">
+                                <div class="msg-header">
+                                    <span class="msg-to">→ Staff Tecnico</span>
+                                    <span class="msg-time">20 Mag</span>
+                                </div>
+                                <div class="msg-text">Riunione programmata per venerdì alle 18:00.</div>
+                                <div class="msg-status letto">✔✔ Tutti hanno letto</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COMPOSIZIONE -->
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Nuovo Messaggio</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="compose-box">
+                            <label>Destinatario</label>
+                            <select id="destinatario">
+                                <option>Tutta la squadra</option>
+                                <option>Attaccanti</option>
+                                <option>Centrocampisti</option>
+                                <option>Difensori</option>
+                                <option>Portieri</option>
+                                <option>Staff Tecnico</option>
+                                <option>L. Rossi</option>
+                                <option>M. Bianchi</option>
+                            </select>
+                            <label>Oggetto</label>
+                            <input type="text" placeholder="Oggetto del messaggio">
+                            <label>Messaggio</label>
+                            <textarea rows="10" placeholder="Scrivi il messaggio..."></textarea>
+                            <button class="btn-primary" style="align-self:flex-end;" onclick="sendMsg()">Invia Messaggio →</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL -->
+
+<div class="modal-overlay" id="modal-messaggio">
+    <div class="modal">
+        <h3>Invio Rapido</h3>
+        <div class="form-group">
+            <label>Destinatario</label>
+            <select>
+                <option>Tutta la squadra</option>
+                <option>Attaccanti</option>
+                <option>Centrocampisti</option>
+                <option>Difensori</option>
+                <option>Portieri</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Messaggio</label>
+            <textarea rows="6"></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-ghost" onclick="closeModal('modal-messaggio')">Annulla</button>
+            <button class="btn-primary" onclick="sendMsg()">Invia</button>
+        </div>
+    </div>
+</div>
+
+<script src="/html/js/messaggi.js"></script>
+
+</body>
+</html>

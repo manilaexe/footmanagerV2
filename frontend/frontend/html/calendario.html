@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FootManager - Calendario</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+    <link href="/html/css/styleall.css" rel="stylesheet">
+</head>
+<body>
+<div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="icon">⚽</div>
+            <span>FootManager</span>
+        </div>
+
+        <nav class="nav-section">
+            <div class="nav-label">Principale</div>
+            <a class="nav-item" href="dashboard.html"><span class="ico">🏠</span>Dashboard</a>
+            <a class="nav-item" href="rosa.html"><span class="ico">👥</span>Rosa</a>
+            <a class="nav-item active" href="calendario.html"><span class="ico">📅</span>Calendario</a>
+            <a class="nav-item" href="/html/statistiche.html"><span class="ico">📊</span>Statistiche</a>
+            <a class="nav-item" href="/html/messaggi.html"><span class="ico">💬</span>Messaggi</a>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-label">Impostazioni</div>
+            <a class="nav-item" href="#"><span class="ico">⚙️</span>Impostazioni</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="avatar">MC</div>
+                <div class="user-info">
+                    <strong>Marco Conti</strong>
+                    <small>Allenatore</small>
+                </div>
+                <button class="btn-logout" onclick="window.location.href='../login.html'">Esci</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+        <div class="topbar">
+            <h1>Calendario Squadra</h1>
+            <div class="topbar-right">
+                <button class="btn-primary" onclick="openModal('modal-evento')">+ Nuovo Evento</button>
+            </div>
+        </div>
+
+        <div class="content">
+
+            <!-- KPI -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Eventi del mese</div>
+                    <div class="stat-value">12</div>
+                    <div class="stat-sub">4 partite • 8 allenamenti</div>
+                </div>
+                <div class="stat-card info">
+                    <div class="stat-label">Prossimo evento</div>
+                    <div class="stat-value" style="font-size:1.3rem;">Gio 29</div>
+                    <div class="stat-sub">Allenamento Campo A</div>
+                </div>
+                <div class="stat-card warn">
+                    <div class="stat-label">Partita successiva</div>
+                    <div class="stat-value">1 Giu</div>
+                    <div class="stat-sub">vs Fortitudo</div>
+                </div>
+            </div>
+
+            <!-- CALENDARIO -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Programmazione Eventi</h2>
+                    <a href="#" class="card-link">Esporta PDF →</a>
+                </div>
+                <div class="card-body" style="padding:0;">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Ora</th>
+                            <th>Evento</th>
+                            <th>Luogo</th>
+                            <th>Tipo</th>
+                            <th>Azioni</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>29 Maggio</td>
+                            <td>09:00</td>
+                            <td>Allenamento Tecnico</td>
+                            <td>Campo A</td>
+                            <td>
+                                <span class="pill pill-green">Allenamento</span>
+                            </td>
+                            <td>
+                                <button class="btn-ghost">Modifica</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>01 Giugno</td>
+                            <td>15:30</td>
+                            <td>Fortitudo vs FootManager</td>
+                            <td>Stadio Centrale</td>
+                            <td>
+                                <span class="pill pill-blue">Partita</span>
+                            </td>
+                            <td>
+                                <button class="btn-ghost">Modifica</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>04 Giugno</td>
+                            <td>10:00</td>
+                            <td>Allenamento Tattico</td>
+                            <td>Campo B</td>
+                            <td>
+                                <span class="pill pill-green">
+                                    Allenamento
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn-ghost">Modifica</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>07 Giugno</td>
+                            <td>18:00</td>
+                            <td>Riunione Staff</td>
+                            <td>Sala Riunioni</td>
+                            <td>
+                                <span class="pill pill-amber">Riunione</span>
+                            </td>
+                            <td>
+                                <button class="btn-ghost">Modifica</button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <br>
+
+            <!-- PROSSIMI EVENTI -->
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Timeline Eventi</h2>
+                </div>
+                <div class="card-body">
+                    <div class="event-list">
+                        <div class="event-item">
+                            <div class="event-date">
+                                <div class="day">29</div>
+                                <div class="mon">Mag</div>
+                            </div>
+                            <div class="event-stripe stripe-green"></div>
+                            <div class="event-info">
+                                <div class="event-title">Allenamento Tecnico</div>
+                                <div class="event-meta">09:00 • Campo A</div>
+                            </div>
+                        </div>
+                        <div class="event-item">
+                            <div class="event-date">
+                                <div class="day">01</div>
+                                <div class="mon">Giu</div>
+                            </div>
+                            <div class="event-stripe stripe-blue"></div>
+                            <div class="event-info">
+                                <div class="event-title">Partita vs Fortitudo</div>
+                                <div class="event-meta">15:30 • Stadio Centrale</div>
+                            </div>
+                        </div>
+                        <div class="event-item">
+                            <div class="event-date">
+                                <div class="day">04</div>
+                                <div class="mon">Giu</div>
+                            </div>
+                            <div class="event-stripe stripe-green"></div>
+                            <div class="event-info">
+                                <div class="event-title">Allenamento Tattico</div>
+                                <div class="event-meta">10:00 • Campo B</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL -->
+
+<div class="modal-overlay" id="modal-evento">
+    <div class="modal">
+        <h3>Nuovo Evento</h3>
+        <div class="form-group">
+            <label>Titolo</label>
+            <input type="text" placeholder="Allenamento">
+        </div>
+        <div class="form-group">
+            <label>Tipo</label>
+            <select>
+                <option>Allenamento</option>
+                <option>Partita</option>
+                <option>Riunione</option>
+                <option>Extra Sportivo</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Data e Ora</label>
+            <input type="datetime-local">
+        </div>
+        <div class="form-group">
+            <label>Luogo</label>
+            <input type="text" placeholder="Campo A">
+        </div>
+        <div class="modal-footer">
+            <button class="btn-ghost" onclick="closeModal('modal-evento')">Annulla</button>
+            <button class="btn-primary" onclick="saveEvento()">Salva</button>
+        </div>
+    </div>
+</div>
+
+<script src="/html/js/calendario.js"></script>
+
+</body>
+</html>

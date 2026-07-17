@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FootManager – Statistiche</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="/html/css/stylestatistiche.css" rel="stylesheet" />
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="icon">⚽</div><span>FootManager</span></div>
+    <div class="nav-label">Principale</div>
+    <a class="nav-item" href="dashboard-allenatore.html">🏠 Dashboard</a>
+    <a class="nav-item" href="rosa.html">👥 Rosa</a>
+    <a class="nav-item" href="calendario.html">📅 Calendario</a>
+    <a class="nav-item active" href="#">📊 Statistiche</a>
+    <a class="nav-item" href="calendario.html">💬 Messaggi</a>
+
+    <nav class="nav-section">
+      <div class="nav-label">Impostazioni</div>
+      <a class="nav-item" href="#"><span class="ico">⚙️</span> Impostazioni</a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar">MC</div>
+        <div class="user-info"><strong>Marco Conti</strong><small>Allenatore</small></div>
+        <button class="btn-logout" onclick="window.location.href='../login.html'">Esci</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <h1>Statistiche Avanzate</h1>
+      <div class="topbar-right">
+        <select class="select-styled" id="sel-season">
+          <option>Stagione 2024/25</option>
+          <option>Stagione 2023/24</option>
+        </select>
+        <select class="select-styled" id="sel-comp">
+          <option>Tutte le competizioni</option>
+          <option>Campionato</option>
+          <option>Coppa</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- KPI SQUADRA -->
+      <div class="kpi-strip">
+        <div class="kpi-box"><div class="v" style="color:var(--green-l)">38</div><div class="l">Gol fatti</div></div>
+        <div class="kpi-box"><div class="v" style="color:#f87171">18</div><div class="l">Gol subiti</div></div>
+        <div class="kpi-box"><div class="v">18</div><div class="l">Partite</div></div>
+        <div class="kpi-box"><div class="v" style="color:var(--green-l)">12</div><div class="l">Vittorie</div></div>
+        <div class="kpi-box"><div class="v" style="color:#facc15">3</div><div class="l">Pareggi</div></div>
+        <div class="kpi-box"><div class="v" style="color:#f87171">3</div><div class="l">Sconfitte</div></div>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('squadra')">Squadra</div>
+        <div class="tab" onclick="switchTab('individuale')">Individuale</div>
+        <div class="tab" onclick="switchTab('confronto')">Confronto</div>
+        <div class="tab" onclick="switchTab('forma')">Forma</div>
+      </div>
+
+      <!-- ══════════ TAB SQUADRA ══════════ -->
+      <div class="tab-panel active" id="tab-squadra">
+        <div class="grid-2">
+
+          <!-- Rendimento offensivo -->
+          <div class="card">
+            <div class="card-header"><h2>⚽ Rendimento offensivo</h2></div>
+            <div class="card-body">
+              <div class="bar-chart">
+                <div class="bc-row"><div class="bc-label"><span class="name">Gol / partita</span><span>2.1</span></div><div class="bc-track"><div class="bc-fill fill-green" style="width:70%"></div></div></div>
+                <div class="bc-row"><div class="bc-label"><span class="name">Tiri in porta / partita</span><span>5.2</span></div><div class="bc-track"><div class="bc-fill fill-green" style="width:65%"></div></div></div>
+                <div class="bc-row"><div class="bc-label"><span class="name">Conversione tiri</span><span>23%</span></div><div class="bc-track"><div class="bc-fill fill-blue" style="width:23%"></div></div></div>
+                <div class="bc-row"><div class="bc-label"><span class="name">Big chance create / partita</span><span>3.4</span></div><div class="bc-track"><div class="bc-fill fill-amber" style="width:57%"></div></div></div>
+                <div class="bc-row"><div class="bc-label"><span class="name">Assist / partita</span><span>1.8</span></div><div class="bc-track"><div class="bc-fill fill-green" style="width:60%"></div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rendimento difensivo -->
+          <div class="card">
+            <div class="card-header"><h2>🛡 Rendimento difensivo</h2></div>
+            <div class="card-body">
+              <div class="bar-chart">
+                <div class="bc-row"><div class="bc-label"><span class="name">Gol subiti / partita</span><span>1.0</span></div><div class="bc-track"><div class="bc-fill fill-amber" style="width:33%"></div></div></div>
+                <div class="bc-row"><div class="bc-label"><span class="name">Clean sheet</span><span>7</span></div><div class="bc-track"><div class="bc-fill fill-green" style="width:39%"></div></div></div>
+                <div class="bc-row"><div class="bc-label"><span class="name">Tackle riusciti / partita</span><span>14.3</span></div><div class="bc-track"><div class="bc-fill fill-blue" style="width:72%"></div></div></div>
+                <div class="bc-row"><div class="bc-label"><span class="name">Intercetti / partita</span><span>8.6</span></div><div class="bc-track"><div class="bc-fill fill-blue" style="width:58%"></div></div></div>
+                <div class="bc-row"><div class="bc-label"><span class="name">Falli subiti / partita</span><span>11.2</span></div><div class="bc-track"><div class="bc-fill fill-amber" style="width:46%"></div></div></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Gol per giornata (line chart SVG) -->
+        <div class="card" style="margin-bottom:1.5rem">
+          <div class="card-header"><h2>📈 Gol segnati per giornata</h2></div>
+          <div class="card-body">
+            <div class="line-chart-wrap">
+              <svg class="line-chart" id="line-svg" viewBox="0 0 700 200" preserveAspectRatio="none"></svg>
+            </div>
+            <div style="display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:.78rem;color:var(--muted)">
+              <span><span style="display:inline-block;width:16px;height:3px;background:var(--green-l);border-radius:2px;vertical-align:middle;margin-right:4px"></span>Gol fatti</span>
+              <span><span style="display:inline-block;width:16px;height:3px;background:#f87171;border-radius:2px;vertical-align:middle;margin-right:4px"></span>Gol subiti</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Possesso + Passaggi -->
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-header"><h2>🔵 Possesso</h2></div>
+            <div class="card-body" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:1.5rem">
+              <div style="position:relative;width:120px;height:120px">
+                <svg viewBox="0 0 36 36" style="width:100%;height:100%;transform:rotate(-90deg)">
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--green-l)" stroke-width="3.5" stroke-dasharray="58 42" stroke-linecap="round"/>
+                </svg>
+                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800">58%</div>
+              </div>
+              <div style="font-size:.8rem;color:var(--muted)">Possesso medio</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h2>🎯 Precisione passaggi</h2></div>
+            <div class="card-body" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:1.5rem">
+              <div style="position:relative;width:120px;height:120px">
+                <svg viewBox="0 0 36 36" style="width:100%;height:100%;transform:rotate(-90deg)">
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="#60a5fa" stroke-width="3.5" stroke-dasharray="84 16" stroke-linecap="round"/>
+                </svg>
+                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800">84%</div>
+              </div>
+              <div style="font-size:.8rem;color:var(--muted)">Passaggi riusciti</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h2>⚠️ Disciplina</h2></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:14px;padding:.25rem 0">
+                <div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:800;color:#facc15">24</div><div style="font-size:.75rem;color:var(--muted);text-transform:uppercase">Ammonizioni</div></div>
+                <div style="height:1px;background:var(--border)"></div>
+                <div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:800;color:#f87171">2</div><div style="font-size:.75rem;color:var(--muted);text-transform:uppercase">Espulsioni</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════ TAB INDIVIDUALE ══════════ -->
+      <div class="tab-panel" id="tab-individuale">
+
+        <!-- Selezione giocatore -->
+        <div class="player-selector" id="player-selector"></div>
+
+        <div class="grid-2">
+          <!-- Radar chart -->
+          <div class="card">
+            <div class="card-header"><h2>🕸 Profilo tecnico</h2><span id="radar-name" style="font-size:.85rem;color:var(--muted)"></span></div>
+            <div class="card-body radar-wrap">
+              <svg id="radar-svg" viewBox="-130 -130 260 260" width="280" height="280"></svg>
+            </div>
+          </div>
+
+          <!-- Stats individuali -->
+          <div class="card">
+            <div class="card-header"><h2>📋 Statistiche dettagliate</h2></div>
+            <div class="card-body">
+              <div class="bar-chart" id="indiv-bars"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top marcatori -->
+        <div class="card">
+          <div class="card-header"><h2>🏅 Classifica marcatori</h2></div>
+          <div class="card-body">
+            <div class="hbar-chart" id="top-scorers"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ══════════ TAB CONFRONTO ══════════ -->
+      <div class="tab-panel" id="tab-confronto">
+        <div class="card" style="margin-bottom:1.5rem">
+          <div class="card-header">
+            <h2>⚖️ Confronto giocatori</h2>
+            <div style="display:flex;gap:8px">
+              <select class="select-styled" id="cmp-a" onchange="renderConfronto()">
+                <option value="0">L. Rossi</option><option value="1">M. Bianchi</option>
+                <option value="2">A. Ferrari</option><option value="3">G. Esposito</option>
+                <option value="4">P. Romano</option>
+              </select>
+              <span style="color:var(--muted);padding:.4rem">vs</span>
+              <select class="select-styled" id="cmp-b" onchange="renderConfronto()">
+                <option value="2">A. Ferrari</option><option value="0">L. Rossi</option>
+                <option value="1">M. Bianchi</option><option value="3">G. Esposito</option>
+                <option value="4">P. Romano</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="compare-grid" id="compare-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════ TAB FORMA ══════════ -->
+      <div class="tab-panel" id="tab-forma">
+        <div class="card" style="margin-bottom:1.5rem">
+          <div class="card-header"><h2>🔥 Forma recente squadra (ultime 10 partite)</h2></div>
+          <div class="card-body">
+            <div class="form-dots" id="form-dots"></div>
+            <div style="margin-top:1.25rem;display:flex;gap:20px;font-size:.8rem;color:var(--muted)">
+              <span><span style="display:inline-block;width:12px;height:12px;background:rgba(76,175,80,.3);border-radius:3px;vertical-align:middle;margin-right:4px"></span>Vittoria</span>
+              <span><span style="display:inline-block;width:12px;height:12px;background:rgba(234,179,8,.2);border-radius:3px;vertical-align:middle;margin-right:4px"></span>Pareggio</span>
+              <span><span style="display:inline-block;width:12px;height:12px;background:rgba(239,68,68,.15);border-radius:3px;vertical-align:middle;margin-right:4px"></span>Sconfitta</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h2>📅 Risultati recenti</h2></div>
+          <div class="card-body" style="padding:0">
+            <table>
+              <thead><tr><th>Data</th><th>Avversario</th><th>Ris.</th><th>Gol fatti</th><th>Gol sub.</th><th>Esito</th></tr></thead>
+              <tbody id="results-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div>
+</div>
+
+<script src="/frontend/js/statistiche.js"></script>
+</body>
+</html>

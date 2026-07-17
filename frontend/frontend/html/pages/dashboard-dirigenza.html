@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FootManager – Dirigenza</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="/html/css/styledir.css" rel="stylesheet" />
+
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="icon">📊</div>
+      <span>FootManager</span>
+    </div>
+    <div class="nav-label">Panoramica</div>
+    <a class="nav-item active" href="#">📊 Dashboard</a>
+    <a class="nav-item" href="#">⚽ Performance squadra</a>
+    <a class="nav-item" href="#">👥 Rosa</a>
+    <a class="nav-item" href="#">📅 Calendario</a>
+    <a class="nav-item" href="#">🏆 Classifica interna</a>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar">DF</div>
+        <div class="user-info"><strong>Dir. Ferrari</strong><small>Dirigenza</small></div>
+        <button class="btn-logout" onclick="window.location.href='../login.html'">Esci</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <h1>Panoramica Dirigenza</h1>
+      <div class="readonly-badge">👁 Sola lettura</div>
+    </div>
+
+    <div class="content">
+      <!-- KPI -->
+      <div class="kpi-row">
+        <div class="kpi-big">
+          <div class="icon">⚽</div>
+          <div class="val">23</div>
+          <div class="lbl">Giocatori in rosa</div>
+          <div class="trend trend-up">↑ +2 da inizio stagione</div>
+        </div>
+        <div class="kpi-big">
+          <div class="icon">🥅</div>
+          <div class="val">38</div>
+          <div class="lbl">Gol stagione</div>
+          <div class="trend trend-up">↑ Media 2.1/partita</div>
+        </div>
+        <div class="kpi-big">
+          <div class="icon">📅</div>
+          <div class="val">18</div>
+          <div class="lbl">Partite giocate</div>
+          <div class="trend" style="color:var(--muted)">12V · 3P · 3S</div>
+        </div>
+        <div class="kpi-big">
+          <div class="icon">🎮</div>
+          <div class="val">87%</div>
+          <div class="lbl">Partecipazione quiz</div>
+          <div class="trend trend-up">↑ +12% rispetto al mese scorso</div>
+        </div>
+      </div>
+
+      <!-- TOP MARCATORI + PERFORMANCE -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><h2>🏅 Top Marcatori</h2><span style="font-size:0.8rem;color:var(--muted)">Stagione 2024/25</span></div>
+          <div class="card-body" style="padding:0">
+            <table>
+              <thead><tr><th>#</th><th>Giocatore</th><th>Gol</th><th>Assist</th><th>Presenze</th></tr></thead>
+              <tbody>
+                <tr><td><span class="rank-medal">🥇</span></td><td>L. Rossi</td><td><strong>12</strong></td><td>5</td><td>18</td></tr>
+                <tr><td><span class="rank-medal">🥈</span></td><td>A. Ferrari</td><td><strong>9</strong></td><td>3</td><td>15</td></tr>
+                <tr><td><span class="rank-medal">🥉</span></td><td>M. Bianchi</td><td><strong>4</strong></td><td>8</td><td>20</td></tr>
+                <tr><td>4</td><td>P. Romano</td><td>2</td><td>1</td><td>19</td></tr>
+                <tr><td>5</td><td>F. Luca</td><td>1</td><td>4</td><td>17</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2>📈 Indicatori squadra</h2></div>
+          <div class="card-body">
+            <div class="chart-bar-list">
+              <div class="chart-bar-item">
+                <div class="chart-bar-label"><span class="name">Possesso medio</span><span>58%</span></div>
+                <div class="bar-track"><div class="bar-fill bar-blue" style="width:58%"></div></div>
+              </div>
+              <div class="chart-bar-item">
+                <div class="chart-bar-label"><span class="name">Passaggi riusciti</span><span>82%</span></div>
+                <div class="bar-track"><div class="bar-fill bar-green" style="width:82%"></div></div>
+              </div>
+              <div class="chart-bar-item">
+                <div class="chart-bar-label"><span class="name">Tiri in porta / partita</span><span>5.2</span></div>
+                <div class="bar-track"><div class="bar-fill bar-gold" style="width:65%"></div></div>
+              </div>
+              <div class="chart-bar-item">
+                <div class="chart-bar-label"><span class="name">Duelli vinti</span><span>53%</span></div>
+                <div class="bar-track"><div class="bar-fill bar-blue" style="width:53%"></div></div>
+              </div>
+              <div class="chart-bar-item">
+                <div class="chart-bar-label"><span class="name">Presenze medie / allenamento</span><span>91%</span></div>
+                <div class="bar-track"><div class="bar-fill bar-green" style="width:91%"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ATTIVITÀ RECENTI -->
+      <div class="section-title">Attività recenti</div>
+      <div class="card">
+        <div class="card-body">
+          <div class="activity-list">
+            <div class="activity-item"><div class="activity-dot"></div><div class="activity-info"><div class="activity-title">Allenamento completato – Campo A</div><div class="activity-time">Oggi, 29 Mag – 09:00/11:00 · 21 presenti su 23</div></div></div>
+            <div class="activity-item"><div class="activity-dot blue"></div><div class="activity-info"><div class="activity-title">Partita: Bologna FC 2 – 1 Fortitudo</div><div class="activity-time">25 Mag – Stadio Centrale</div></div></div>
+            <div class="activity-item"><div class="activity-dot"></div><div class="activity-info"><div class="activity-title">Allenamento tattico – Campo B</div><div class="activity-time">22 Mag – 10:00/12:00 · 23 presenti</div></div></div>
+            <div class="activity-item"><div class="activity-dot amber"></div><div class="activity-info"><div class="activity-title">Riunione staff tecnico</div><div class="activity-time">20 Mag – 18:00 – Sala riunioni</div></div></div>
+            <div class="activity-item"><div class="activity-dot blue"></div><div class="activity-info"><div class="activity-title">Partita: Bologna FC 1 – 1 Virtus</div><div class="activity-time">18 Mag – Trasferta</div></div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>
