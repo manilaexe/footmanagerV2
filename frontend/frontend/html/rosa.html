@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FootManager – Rosa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="/html/css/stylerosa.css" rel="stylesheet" />
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="icon">⚽</div>
+      <span>FootManager</span>
+    </div>
+    <div class="nav-label">Principale</div>
+    <a class="nav-item" href="dashboard-allenatore.html">🏠 Dashboard</a>
+    <a class="nav-item active" href="#">👥 Rosa</a>
+    <a class="nav-item" href="calendario.html">📅 Calendario</a>
+    <a class="nav-item" href="statistiche.html">📊 Statistiche</a>
+    <a class="nav-item" href="dashboard-allenatore.html">💬 Messaggi</a>
+
+    <nav class="nav-section">
+      <div class="nav-label">Impostazioni</div>
+      <a class="nav-item" href="#"><span class="ico">⚙️</span> Impostazioni</a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <!-- Avatar dinamico -->
+        <div class="avatar" id="userAvatar">U</div>
+        <!-- Dati utente dinamici -->
+        <div class="user-info">
+          <strong id="userName">Utente</strong>
+          <small id="userRole">Ruolo</small>
+        </div>
+        <!-- Pulsante Esci modificato per usare la funzione di logout() centralizzata -->
+        <button class="btn-logout" onclick="logout()">Esci</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <h1>Rosa della Squadra</h1>
+      <div class="topbar-right">
+        <button class="btn-ghost" id="btn-export">↓ Esporta CSV</button>
+        <button class="btn-primary" onclick="openModal('modal-add')">+ Aggiungi Giocatore</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- SOMMARIO -->
+      <div class="summary-row">
+        <div class="summary-card"><div class="val">23</div><div class="lbl">Totale rosa</div></div>
+        <div class="summary-card"><div class="val" style="color:#f87171">5</div><div class="lbl">Attaccanti</div></div>
+        <div class="summary-card"><div class="val" style="color:#60a5fa">8</div><div class="lbl">Centrocampisti</div></div>
+        <div class="summary-card"><div class="val" style="color:#facc15">7</div><div class="lbl">Difensori</div></div>
+        <div class="summary-card"><div class="val" style="color:#a78bfa">3</div><div class="lbl">Portieri</div></div>
+      </div>
+
+      <!-- FILTRI -->
+      <div class="filters-bar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" placeholder="Cerca per nome, ruolo, numero..." oninput="filterPlayers()" />
+        </div>
+        <div class="filter-group">
+          <button class="filter-btn active" onclick="setFilter('tutti',this)">Tutti</button>
+          <button class="filter-btn" onclick="setFilter('ATT',this)">ATT</button>
+          <button class="filter-btn" onclick="setFilter('CEN',this)">CEN</button>
+          <button class="filter-btn" onclick="setFilter('DIF',this)">DIF</button>
+          <button class="filter-btn" onclick="setFilter('POR',this)">POR</button>
+        </div>
+        <div class="filter-group">
+          <button class="filter-btn active" onclick="setStatus('tutti',this)">Tutti</button>
+          <button class="filter-btn" onclick="setStatus('available',this)">✔ Disponibili</button>
+          <button class="filter-btn" onclick="setStatus('injured',this)">✘ Infort.</button>
+        </div>
+        <div class="view-toggle">
+          <div class="view-btn active" id="btn-grid" onclick="setView('grid')" title="Griglia">⊞</div>
+          <div class="view-btn" id="btn-list" onclick="setView('list')" title="Lista">☰</div>
+        </div>
+      </div>
+
+      <!-- GRID VIEW -->
+      <div id="view-grid"></div>
+
+      <!-- LIST VIEW -->
+      <div id="view-list" style="background:var(--dark2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+        <table>
+          <!-- Cerca questa riga nel tuo rosa.html e sostituiscila -->
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Giocatore</th>
+              <th>Pos.</th>
+              <th>Piede</th>
+              <th>Pres.</th>
+              <th>Punti Tot.</th>       <!-- Modificato da "Gol" -->
+              <th>Punti Sett.</th>      <!-- Modificato da "Assist" -->
+              <th>Stato</th>
+              <th>Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="list-body"></tbody>
+        </table>
+      </div>
+
+    </div><!-- /content -->
+  </div>
+</div>
+
+<!-- MODAL DETTAGLIO GIOCATORE -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal">
+    <div class="modal-hero" id="detail-hero"></div>
+    <div class="modal-body" id="detail-body"></div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-detail')">Chiudi</button>
+      <button class="btn-primary">✏️ Modifica</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AGGIUNGI GIOCATORE -->
+<div class="modal-overlay" id="modal-add">
+  <div class="modal">
+    <div style="padding:1.5rem 2rem 0">
+      <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;text-transform:uppercase;margin-bottom:1.25rem">Aggiungi Giocatore</h3>
+      <div class="form-grid">
+        <div class="form-group"><label>Nome</label><input type="text" placeholder="Mario" /></div>
+        <div class="form-group"><label>Cognome</label><input type="text" placeholder="Rossi" /></div>
+        <div class="form-group"><label>Numero maglia</label><input type="number" placeholder="10" /></div>
+        <div class="form-group"><label>Posizione</label>
+          <select><option>Attaccante</option><option>Centrocampista</option><option>Difensore</option><option>Portiere</option></select>
+        </div>
+        <div class="form-group"><label>Piede</label>
+          <select><option>Destro</option><option>Sinistro</option><option>Ambidestro</option></select>
+        </div>
+        <div class="form-group"><label>Nazionalità</label><input type="text" placeholder="ITA" /></div>
+        <div class="form-group"><label>Altezza (cm)</label><input type="number" placeholder="180" /></div>
+        <div class="form-group"><label>Username account</label><input type="text" placeholder="m.rossi" /></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-add')">Annulla</button>
+      <button class="btn-primary" onclick="closeModal('modal-add');alert('Giocatore aggiunto!')">Salva Giocatore</button>
+    </div>
+  </div>
+</div>
+
+  <!-- JS SCRIPTS -->
+  <!-- 1. Importiamo prima l'utility del Token -->
+  <script src="js/utils.js"></script>
+  <!-- 2. Poi importiamo il file JS specifico della pagina -->
+  <script src="js/rosa.js"></script>
+</body>
+</html>

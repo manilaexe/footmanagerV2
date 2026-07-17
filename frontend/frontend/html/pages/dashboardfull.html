@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FootManager – Allenatore</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="/frontend/css/styledashboard.css" rel="stylesheet" />
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">⚽</div>
+    <span class="logo-text">FootManager</span>
+  </div>
+  <nav class="nav-section">
+    <div class="nav-label">Principale</div>
+    <div class="nav-item active" onclick="nav('dashboard',this)"><span class="ico">🏠</span>Dashboard</div>
+    <div class="nav-item" onclick="nav('rosa',this)"><span class="ico">👥</span>Rosa</div>
+    <div class="nav-item" onclick="nav('calendario',this)"><span class="ico">📅</span>Calendario</div>
+    <div class="nav-item" onclick="nav('statistiche',this)"><span class="ico">📊</span>Statistiche</div>
+    <div class="nav-item" onclick="nav('messaggi',this)"><span class="ico">💬</span>Messaggi<span class="nav-badge" id="msg-badge">3</span></div>
+  </nav>
+  <nav class="nav-section">
+    <div class="nav-label">Account</div>
+    <div class="nav-item" onclick="nav('impostazioni',this)"><span class="ico">⚙️</span>Impostazioni</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">MC</div>
+      <div class="user-info"><strong>Marco Conti</strong><small>Allenatore</small></div>
+      <button class="btn-logout" onclick="window.location.href='../login.html'">Esci</button>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <h1 id="page-title">Dashboard</h1>
+    <div class="topbar-right" id="topbar-actions"></div>
+  </div>
+  <div class="content-area">
+
+    <!-- ===== DASHBOARD ===== -->
+    <div class="section active" id="sec-dashboard">
+      <div class="grid-4">
+        <div class="stat-card c-green"><div class="stat-label">Giocatori in rosa</div><div class="stat-value">23</div><div class="stat-sub">2 infortunati</div></div>
+        <div class="stat-card c-blue"><div class="stat-label">Prossimo evento</div><div class="stat-value" style="font-size:1.35rem">Gio 29</div><div class="stat-sub">Allenamento – Campo A</div></div>
+        <div class="stat-card c-amber"><div class="stat-label">Messaggi non letti</div><div class="stat-value">3</div><div class="stat-sub">da 3 giocatori</div></div>
+        <div class="stat-card c-green"><div class="stat-label">Media gol/partita</div><div class="stat-value">2.1</div><div class="stat-sub">↑ +0.3 rispetto al mese scorso</div></div>
+      </div>
+      <div class="grid-3-1">
+        <div class="card">
+          <div class="card-header"><h2>Rosa – Ultima sessione</h2><span class="card-link" onclick="nav('rosa',document.querySelectorAll('.nav-item')[1])">Vedi tutti →</span></div>
+          <div class="card-body" style="padding:0">
+            <table>
+              <thead><tr><th>Giocatore</th><th>Pos</th><th>Pres.</th><th>Gol</th><th>Stato</th></tr></thead>
+              <tbody>
+                <tr><td><div class="player-name-cell"><div class="tbl-avatar">LR</div>L. Rossi</div></td><td><span class="pill pill-red">ATT</span></td><td>18</td><td><strong>12</strong></td><td><span class="pill pill-green">Disponibile</span></td></tr>
+                <tr><td><div class="player-name-cell"><div class="tbl-avatar">MB</div>M. Bianchi</div></td><td><span class="pill pill-blue">CEN</span></td><td>20</td><td><strong>4</strong></td><td><span class="pill pill-green">Disponibile</span></td></tr>
+                <tr><td><div class="player-name-cell"><div class="tbl-avatar">AF</div>A. Ferrari</div></td><td><span class="pill pill-red">ATT</span></td><td>15</td><td><strong>9</strong></td><td><span class="pill pill-red">Infortunato</span></td></tr>
+                <tr><td><div class="player-name-cell"><div class="tbl-avatar">GE</div>G. Esposito</div></td><td><span class="pill pill-purple">POR</span></td><td>22</td><td>0</td><td><span class="pill pill-green">Disponibile</span></td></tr>
+                <tr><td><div class="player-name-cell"><div class="tbl-avatar">PR</div>P. Romano</div></td><td><span class="pill pill-amber">DIF</span></td><td>19</td><td>2</td><td><span class="pill pill-amber">Squalificato</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h2>Prossimi eventi</h2><span class="card-link" onclick="nav('calendario',document.querySelectorAll('.nav-item')[2])">Vedi →</span></div>
+          <div class="card-body">
+            <div class="event-list">
+              <div class="event-item"><div class="event-date"><div class="day">29</div><div class="mon">Mag</div></div><div class="event-stripe" style="background:var(--green-l)"></div><div class="event-info"><div class="title">Allenamento</div><div class="meta">09:00 – Campo A</div></div></div>
+              <div class="event-item"><div class="event-date"><div class="day">01</div><div class="mon">Giu</div></div><div class="event-stripe" style="background:var(--blue)"></div><div class="event-info"><div class="title">Partita – vs Fortitudo</div><div class="meta">15:30 – Stadio Centrale</div></div></div>
+              <div class="event-item"><div class="event-date"><div class="day">04</div><div class="mon">Giu</div></div><div class="event-stripe" style="background:var(--green-l)"></div><div class="event-info"><div class="title">Allenamento tattico</div><div class="meta">10:00 – Campo B</div></div></div>
+              <div class="event-item"><div class="event-date"><div class="day">07</div><div class="mon">Giu</div></div><div class="event-stripe" style="background:var(--amber)"></div><div class="event-info"><div class="title">Riunione staff</div><div class="meta">18:00 – Sala riunioni</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><h2>Ultimi messaggi</h2><span class="card-link" onclick="nav('messaggi',document.querySelectorAll('.nav-item')[4])">Tutti →</span></div>
+          <div class="card-body">
+            <div class="msg-list">
+              <div class="msg-item"><div class="msg-head"><span class="msg-from">→ Tutta la squadra</span><span class="msg-time">Oggi 08:30</span></div><div class="msg-text">Domani allenamento anticipato alle 8:45.</div><div class="msg-status letto">✔✔ Letto da 18/23</div></div>
+              <div class="msg-item"><div class="msg-head"><span class="msg-from">→ L. Rossi</span><span class="msg-time">Ieri 16:00</span></div><div class="msg-text">Ottima prestazione sabato. Continua così.</div><div class="msg-status letto">✔✔ Letto</div></div>
+              <div class="msg-item"><div class="msg-head"><span class="msg-from">→ Difensori</span><span class="msg-time">23 Mag</span></div><div class="msg-text">Ripassate la disposizione tattica 4-3-3.</div><div class="msg-status inviato">✔ Inviato (2 non letti)</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h2>Messaggio rapido</h2></div>
+          <div class="card-body">
+            <div class="compose-box">
+              <select id="dash-msg-dest"><option value="">Destinatario…</option><option>Tutta la squadra</option><option>Attaccanti</option><option>Difensori</option><option>L. Rossi</option><option>M. Bianchi</option></select>
+              <textarea rows="4" id="dash-msg-text" placeholder="Scrivi il messaggio…"></textarea>
+              <button class="btn-primary" style="align-self:flex-end" onclick="sendQuickMsg()">Invia →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ROSA ===== -->
+    <div class="section" id="sec-rosa">
+      <div class="grid-4 mb">
+        <div class="stat-card c-green"><div class="stat-label">Totale rosa</div><div class="stat-value">23</div></div>
+        <div class="stat-card c-red"><div class="stat-label">Attaccanti</div><div class="stat-value">5</div></div>
+        <div class="stat-card c-blue"><div class="stat-label">Centrocampisti</div><div class="stat-value">8</div></div>
+        <div class="stat-card c-amber"><div class="stat-label">Difensori</div><div class="stat-value">7</div></div>
+      </div>
+      <div class="filters-bar">
+        <div class="search-box"><span class="search-icon">🔍</span><input type="text" id="rosa-search" placeholder="Cerca nome, ruolo, numero…" oninput="renderRosa()"/></div>
+        <div class="filter-group">
+          <button class="filter-btn active" onclick="setRosaFilter('tutti',this)">Tutti</button>
+          <button class="filter-btn" onclick="setRosaFilter('ATT',this)">ATT</button>
+          <button class="filter-btn" onclick="setRosaFilter('CEN',this)">CEN</button>
+          <button class="filter-btn" onclick="setRosaFilter('DIF',this)">DIF</button>
+          <button class="filter-btn" onclick="setRosaFilter('POR',this)">POR</button>
+        </div>
+        <div class="filter-group">
+          <button class="filter-btn active" onclick="setRosaStatus('tutti',this)">Tutti</button>
+          <button class="filter-btn" onclick="setRosaStatus('available',this)">✔ Disp.</button>
+          <button class="filter-btn" onclick="setRosaStatus('injured',this)">✘ Infort.</button>
+        </div>
+      </div>
+      <div class="player-grid" id="player-grid"></div>
+    </div>
+
+    <!-- ===== CALENDARIO ===== -->
+    <div class="section" id="sec-calendario">
+      <div class="month-nav">
+        <div class="btn-icon" onclick="calChangeMonth(-1)">‹</div>
+        <div class="month-title" id="cal-month-title"></div>
+        <button class="today-btn" onclick="calGoToday()">Oggi</button>
+        <div class="btn-icon" onclick="calChangeMonth(1)">›</div>
+      </div>
+      <div class="cal-wrap mb">
+        <div class="cal-header-row">
+          <div class="cal-dow">Lun</div><div class="cal-dow">Mar</div><div class="cal-dow">Mer</div>
+          <div class="cal-dow">Gio</div><div class="cal-dow">Ven</div>
+          <div class="cal-dow" style="color:rgba(139,148,158,.55)">Sab</div>
+          <div class="cal-dow" style="color:rgba(139,148,158,.55)">Dom</div>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>Elenco eventi del mese</h2></div>
+        <div class="card-body" style="padding:0">
+          <table><thead><tr><th>Data</th><th>Titolo</th><th>Tipo</th><th>Orario</th><th>Luogo</th><th>Azioni</th></tr></thead>
+          <tbody id="ev-list-tbl"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== STATISTICHE ===== -->
+    <div class="section" id="sec-statistiche">
+      <div class="kpi-strip">
+        <div class="kpi-box"><div class="v" style="color:var(--green-l)">38</div><div class="l">Gol fatti</div></div>
+        <div class="kpi-box"><div class="v" style="color:#f87171">18</div><div class="l">Gol subiti</div></div>
+        <div class="kpi-box"><div class="v">18</div><div class="l">Partite</div></div>
+        <div class="kpi-box"><div class="v" style="color:var(--green-l)">12</div><div class="l">Vittorie</div></div>
+        <div class="kpi-box"><div class="v" style="color:#facc15">3</div><div class="l">Pareggi</div></div>
+        <div class="kpi-box"><div class="v" style="color:#f87171">3</div><div class="l">Sconfitte</div></div>
+      </div>
+      <div class="tabs">
+        <div class="tab active" onclick="statTab('squadra',this)">Squadra</div>
+        <div class="tab" onclick="statTab('individuale',this)">Individuale</div>
+        <div class="tab" onclick="statTab('confronto',this)">Confronto</div>
+        <div class="tab" onclick="statTab('forma',this)">Forma</div>
+      </div>
+      <!-- Squadra -->
+      <div class="tab-panel active" id="stab-squadra">
+        <div class="grid-2">
+          <div class="card"><div class="card-header"><h2>⚽ Attacco</h2></div><div class="card-body"><div class="bar-chart">
+            <div class="bc-row"><div class="bc-label"><span class="name">Gol / partita</span><span>2.1</span></div><div class="bc-track"><div class="bc-fill fill-green" style="width:70%"></div></div></div>
+            <div class="bc-row"><div class="bc-label"><span class="name">Tiri in porta / partita</span><span>5.2</span></div><div class="bc-track"><div class="bc-fill fill-green" style="width:65%"></div></div></div>
+            <div class="bc-row"><div class="bc-label"><span class="name">Conversione tiri</span><span>23%</span></div><div class="bc-track"><div class="bc-fill fill-blue" style="width:23%"></div></div></div>
+            <div class="bc-row"><div class="bc-label"><span class="name">Big chance create</span><span>3.4/partita</span></div><div class="bc-track"><div class="bc-fill fill-amber" style="width:57%"></div></div></div>
+          </div></div></div>
+          <div class="card"><div class="card-header"><h2>🛡 Difesa</h2></div><div class="card-body"><div class="bar-chart">
+            <div class="bc-row"><div class="bc-label"><span class="name">Gol subiti / partita</span><span>1.0</span></div><div class="bc-track"><div class="bc-fill fill-amber" style="width:33%"></div></div></div>
+            <div class="bc-row"><div class="bc-label"><span class="name">Clean sheet</span><span>7</span></div><div class="bc-track"><div class="bc-fill fill-green" style="width:39%"></div></div></div>
+            <div class="bc-row"><div class="bc-label"><span class="name">Tackle riusciti / partita</span><span>14.3</span></div><div class="bc-track"><div class="bc-fill fill-blue" style="width:72%"></div></div></div>
+            <div class="bc-row"><div class="bc-label"><span class="name">Intercetti / partita</span><span>8.6</span></div><div class="bc-track"><div class="bc-fill fill-blue" style="width:57%"></div></div></div>
+          </div></div></div>
+        </div>
+        <div class="card mb"><div class="card-header"><h2>📈 Gol per giornata</h2></div>
+          <div class="card-body"><div class="line-chart-wrap"><svg class="line-chart" id="line-svg" viewBox="0 0 700 180" preserveAspectRatio="none"></svg></div>
+          <div style="display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:.75rem;color:var(--muted)">
+            <span><span style="display:inline-block;width:14px;height:3px;background:var(--green-l);border-radius:2px;vertical-align:middle;margin-right:4px"></span>Gol fatti</span>
+            <span><span style="display:inline-block;width:14px;height:3px;background:#f87171;border-radius:2px;vertical-align:middle;margin-right:4px"></span>Gol subiti</span>
+          </div></div>
+        </div>
+      </div>
+      <!-- Individuale -->
+      <div class="tab-panel" id="stab-individuale">
+        <div class="player-selector" id="stat-player-sel"></div>
+        <div class="grid-2">
+          <div class="card"><div class="card-header"><h2>🕸 Profilo tecnico</h2><span id="radar-player-name" style="font-size:.82rem;color:var(--muted)"></span></div><div class="card-body radar-wrap"><svg id="radar-svg" viewBox="-130 -130 260 260" width="260" height="260"></svg></div></div>
+          <div class="card"><div class="card-header"><h2>📋 Statistiche</h2></div><div class="card-body"><div class="stat-row-grid" id="indiv-kpi"></div><div class="bar-chart" id="indiv-bars"></div></div></div>
+        </div>
+        <div class="card mb"><div class="card-header"><h2>🏅 Classifica marcatori</h2></div><div class="card-body"><div class="hbar-chart" id="top-scorers"></div></div></div>
+      </div>
+      <!-- Confronto -->
+      <div class="tab-panel" id="stab-confronto">
+        <div class="card mb">
+          <div class="card-header">
+            <h2>⚖️ Confronto giocatori</h2>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select style="background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.8rem;padding:5px 10px;outline:none" id="cmp-a" onchange="renderConfronto()">
+                <option value="0">L. Rossi</option><option value="1">M. Bianchi</option><option value="2">A. Ferrari</option><option value="4">P. Romano</option>
+              </select>
+              <span style="color:var(--muted)">vs</span>
+              <select style="background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.8rem;padding:5px 10px;outline:none" id="cmp-b" onchange="renderConfronto()">
+                <option value="2">A. Ferrari</option><option value="0">L. Rossi</option><option value="1">M. Bianchi</option><option value="4">P. Romano</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body"><div id="compare-grid" style="display:grid;grid-template-columns:1fr auto 1fr;gap:.75rem;align-items:start"></div></div>
+        </div>
+      </div>
+      <!-- Forma -->
+      <div class="tab-panel" id="stab-forma">
+        <div class="card mb"><div class="card-header"><h2>🔥 Forma recente (ultime 10 partite)</h2></div>
+          <div class="card-body">
+            <div class="form-dots" id="form-dots"></div>
+            <div style="display:flex;gap:14px;margin-top:1rem;font-size:.75rem;color:var(--muted)">
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(76,175,80,.3);vertical-align:middle;margin-right:4px"></span>V</span>
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(234,179,8,.2);vertical-align:middle;margin-right:4px"></span>P</span>
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(239,68,68,.15);vertical-align:middle;margin-right:4px"></span>S</span>
+            </div>
+          </div>
+        </div>
+        <div class="card mb"><div class="card-header"><h2>📅 Risultati recenti</h2></div>
+          <div class="card-body" style="padding:0">
+            <table><thead><tr><th>Data</th><th>Avversario</th><th>Risultato</th><th>Esito</th></tr></thead><tbody id="results-tbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MESSAGGI ===== -->
+    <div class="section" id="sec-messaggi">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><h2>📤 Messaggi inviati</h2><span id="msg-count-label" style="font-size:.78rem;color:var(--muted)"></span></div>
+          <div class="card-body">
+            <div style="margin-bottom:.75rem"><input type="search" placeholder="Cerca…" style="width:100%;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.85rem;padding:7px 10px;outline:none" oninput="filterMsgs(this.value)"/></div>
+            <div class="msg-list" id="msg-sent-list"></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:1.25rem">
+          <div class="card">
+            <div class="card-header"><h2>✏️ Nuovo messaggio</h2></div>
+            <div class="card-body">
+              <div class="compose-box">
+                <select id="msg-dest-full"><option value="">Destinatario…</option><option>Tutta la squadra</option><option>Attaccanti</option><option>Difensori</option><option>Centrocampisti</option><option>Portieri</option><option>L. Rossi</option><option>M. Bianchi</option><option>A. Ferrari</option><option>G. Esposito</option><option>P. Romano</option></select>
+                <select id="msg-tipo"><option value="direttiva">📋 Direttiva tecnica</option><option value="convocazione">📣 Convocazione</option><option value="aggiornamento">ℹ️ Aggiornamento</option><option value="altro">💬 Altro</option></select>
+                <textarea rows="5" id="msg-body-full" placeholder="Scrivi il messaggio…"></textarea>
+                <button class="btn-primary" style="align-self:flex-end" onclick="sendMsg()">Invia →</button>
+              </div>
+            </div>
+          </div>
+          <div class="card" id="msg-detail-card" style="display:none">
+            <div class="card-header"><h2>📩 Dettaglio</h2><span style="cursor:pointer;color:var(--muted);font-size:1.1rem" onclick="document.getElementById('msg-detail-card').style.display='none'">✕</span></div>
+            <div class="card-body" id="msg-detail-body"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== IMPOSTAZIONI ===== -->
+    <div class="section" id="sec-impostazioni">
+      <div class="profile-hero">
+        <div class="profile-pic">MC</div>
+        <div>
+          <div class="profile-name">Marco Conti</div>
+          <div class="profile-role">Allenatore · Bologna FC Prima Squadra</div>
+          <div style="margin-top:.75rem"><button class="btn-ghost" style="font-size:.8rem;padding:.35rem .8rem">🖼 Cambia foto</button></div>
+        </div>
+      </div>
+      <div class="grid-2 mb">
+        <div class="card"><div class="card-header"><h2>👤 Dati personali</h2></div>
+          <div class="card-body">
+            <div class="form-row"><div class="form-group"><label>Nome</label><input type="text" value="Marco"/></div><div class="form-group"><label>Cognome</label><input type="text" value="Conti"/></div></div>
+            <div class="form-group"><label>Username</label><input type="text" value="marco.conti"/></div>
+            <div class="form-group"><label>Email</label><input type="email" value="m.conti@bolognacalcio.it"/></div>
+            <div class="form-group"><label>Squadra</label><input type="text" value="Bologna FC Prima Squadra" readonly style="opacity:.6"/></div>
+            <button class="btn-primary" onclick="alert('Dati salvati!')">Salva modifiche</button>
+          </div>
+        </div>
+        <div class="card"><div class="card-header"><h2>🔒 Sicurezza</h2></div>
+          <div class="card-body">
+            <div class="form-group"><label>Password attuale</label><input type="password" placeholder="••••••••"/></div>
+            <div class="form-group"><label>Nuova password</label><input type="password" placeholder="••••••••"/></div>
+            <div class="form-group"><label>Conferma nuova password</label><input type="password" placeholder="••••••••"/></div>
+            <button class="btn-primary" onclick="alert('Password aggiornata!')">Aggiorna password</button>
+          </div>
+        </div>
+      </div>
+      <div class="card mb"><div class="card-header"><h2>🔔 Notifiche</h2></div>
+        <div class="card-body"><div class="settings-grid">
+          <div class="setting-item"><div class="setting-info"><div class="setting-name">Notifiche messaggi</div><div class="setting-desc">Avvisi per nuovi messaggi</div></div><label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
+          <div class="setting-item"><div class="setting-info"><div class="setting-name">Promemoria eventi</div><div class="setting-desc">1 ora prima di ogni evento</div></div><label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
+          <div class="setting-item"><div class="setting-info"><div class="setting-name">Aggiornamenti rosa</div><div class="setting-desc">Modifiche stato giocatori</div></div><label class="toggle"><input type="checkbox"/><span class="toggle-slider"></span></label></div>
+          <div class="setting-item"><div class="setting-info"><div class="setting-name">Report settimanale</div><div class="setting-desc">Riepilogo ogni lunedì</div></div><label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
+          <div class="setting-item"><div class="setting-info"><div class="setting-name">Email di notifica</div><div class="setting-desc">Copia via email</div></div><label class="toggle"><input type="checkbox"/><span class="toggle-slider"></span></label></div>
+          <div class="setting-item"><div class="setting-info"><div class="setting-name">Risultati quiz</div><div class="setting-desc">Classifica aggiornata</div></div><label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
+        </div></div>
+      </div>
+      <div class="card"><div class="card-header"><h2>🎨 Preferenze</h2></div>
+        <div class="card-body"><div class="settings-grid">
+          <div class="setting-item"><div class="setting-info"><div class="setting-name">Tema scuro</div><div class="setting-desc">Interfaccia dark mode</div></div><label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
+          <div class="setting-item"><div class="setting-info"><div class="setting-name">Lingua</div><div class="setting-desc">Lingua interfaccia</div></div><select style="background:var(--dark3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.8rem;padding:4px 8px;outline:none"><option>Italiano</option><option>English</option></select></div>
+        </div></div>
+      </div>
+    </div>
+
+  </div><!-- /content-area -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- MODAL EVENTO -->
+<div class="modal-overlay" id="modal-evento">
+  <div class="modal">
+    <div class="modal-header"><h3 id="ev-modal-title">Nuovo Evento</h3><button class="modal-close" onclick="closeModal('modal-evento')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="ev-edit-id"/>
+      <div class="form-group"><label>Titolo</label><input type="text" id="ev-titolo" placeholder="es. Allenamento tattico"/></div>
+      <div class="form-group"><label>Tipo</label><select id="ev-tipo"><option value="allenamento">⚽ Allenamento</option><option value="partita">🏟 Partita</option><option value="riunione">📋 Riunione</option><option value="extra">🎯 Extra</option></select></div>
+      <div class="form-row">
+        <div class="form-group"><label>Inizio</label><input type="datetime-local" id="ev-inizio"/></div>
+        <div class="form-group"><label>Fine</label><input type="datetime-local" id="ev-fine"/></div>
+      </div>
+      <div class="form-group"><label>Luogo</label><input type="text" id="ev-luogo" placeholder="es. Campo A"/></div>
+      <div class="form-group"><label>Note</label><textarea id="ev-note" rows="3" style="width:100%;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Barlow',sans-serif;font-size:.875rem;padding:8px 10px;outline:none;resize:none" placeholder="Note…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="ev-delete-btn" style="display:none;margin-right:auto" onclick="deleteEvent()">🗑 Elimina</button>
+      <button class="btn-ghost" onclick="closeModal('modal-evento')">Annulla</button>
+      <button class="btn-primary" onclick="saveEvent()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GIOCATORE -->
+<div class="modal-overlay" id="modal-player">
+  <div class="modal" style="width:600px">
+    <div id="modal-player-content"></div>
+    <div class="modal-footer"><button class="btn-ghost" onclick="closeModal('modal-player')">Chiudi</button><button class="btn-primary">✏️ Modifica</button></div>
+  </div>
+</div>
+
+<script src="/frontend/js/dashboardfull.js"> </script>
+</body>
+</html>
