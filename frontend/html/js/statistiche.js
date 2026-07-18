@@ -141,15 +141,15 @@ function drawLineChart(gf = [], gs = []){
   
   const path=(arr,col)=>{
     let d=arr.map((v,i)=>`${i===0?'M':'L'}${xs(i).toFixed(1)},${ys(v).toFixed(1)}`).join(' ');
-    return `<path d="${d}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            ${arr.map((v,i)=>`<circle cx="${xs(i)}" cy="${ys(v)}" r="4" fill="${col}" opacity=".8"/>`).join('')}`;
+    return `<path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            ${arr.map((v,i)=>`<circle cx="${xs(i)}" cy="${ys(v)}" r="3" fill="${col}" opacity=".8"/>`).join('')}`;
   };
 
   let grid='';
   for(let g=0;g<=maxV;g++){
     const y=ys(g);
     grid+=`<line x1="${pad}" y1="${y}" x2="${W-pad}" y2="${y}" stroke="rgba(48,54,61,.6)" stroke-width="1"/>
-           <text x="${pad-4}" y="${y+4}" text-anchor="end" font-size="10" fill="#8b949e">${g}</text>`;
+           <text x="${pad-10}" y="${y+4}" text-anchor="end" font-size="14" fill="#8b949e">${g}</text>`;
   }
   svg.innerHTML=grid+path(gf,'#4caf50')+path(gs,'#f87171');
 }
