@@ -90,16 +90,16 @@ function reindirizzaUtente(ruolo) {
             window.location.href = '/html/pages/dashboard-allenatore.html';
             break;
         case 'GIOCATORE':
-            window.location.href = 'dashboard-giocatore.html';
+            window.location.href = '/html/pages/dashboard-giocatore.html';
             break;
         case 'STAFF':
-            window.location.href = 'dashboard-staff.html';
+            window.location.href = '/html/pages/dashboard-staff.html';
             break;
         case 'DIRIGENZA':
-            window.location.href = 'dashboard-dirigenza.html';
+            window.location.href = '/html/pages/dashboard-dirigenza.html';
             break;
         default:
-            window.location.href = 'dashboardfull.html';
+            window.location.href = '/html/pages/dashboardfull.html';
             break;
     }
 }
