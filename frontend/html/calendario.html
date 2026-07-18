@@ -1,237 +1,186 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FootManager - Calendario</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-    <link href="/html/css/styleall.css" rel="stylesheet">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FootManager – Calendario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="/html/css/stylecalendario.css" rel="stylesheet" />
 </head>
 <body>
 <div class="app">
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-        <div class="sidebar-logo">
-            <div class="icon">⚽</div>
-            <span>FootManager</span>
-        </div>
+<!-- ══════ SIDEBAR ══════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">⚽</div>
+    <span class="logo-text">FootManager</span>
+  </div>
+  <div style="padding:.75rem 0">
+    <div class="nav-label">Principale</div>
+    <a class="nav-item" href="dashboard-allenatore-full.html"><span class="ico">🏠</span>Dashboard</a>
+    <a class="nav-item" href="rosa.html"><span class="ico">👥</span>Rosa</a>
+    <a class="nav-item active" href="#"><span class="ico">📅</span>Calendario</a>
+    <a class="nav-item" href="statistiche.html"><span class="ico">📊</span>Statistiche</a>
+    <a class="nav-item" href="messaggi.html"><span class="ico">💬</span>Messaggi</a>
+    <div class="nav-label" style="margin-top:.5rem">Account</div>
+    <a class="nav-item" href="#"><span class="ico">⚙️</span>Impostazioni</a>
+  </div>
 
-        <nav class="nav-section">
-            <div class="nav-label">Principale</div>
-            <a class="nav-item" href="/html/pages/dashboard.html"><span class="ico">🏠</span>Dashboard</a>
-            <a class="nav-item" href="rosa.html"><span class="ico">👥</span>Rosa</a>
-            <a class="nav-item active" href="calendario.html"><span class="ico">📅</span>Calendario</a>
-            <a class="nav-item" href="/html/statistiche.html"><span class="ico">📊</span>Statistiche</a>
-            <a class="nav-item" href="/html/messaggi.html"><span class="ico">💬</span>Messaggi</a>
-        </nav>
+  <div class="sidebar-legend">
+    <div class="legend-title">Legenda tipi evento</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green-l)"></div>Allenamento</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Partita</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Riunione</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>Altro</div>
+  </div>
 
-        <nav class="nav-section">
-            <div class="nav-label">Impostazioni</div>
-            <a class="nav-item" href="#"><span class="ico">⚙️</span>Impostazioni</a>
-        </nav>
-
-        <div class="sidebar-footer">
-            <div class="user-card">
-                <div class="avatar">MC</div>
-                <div class="user-info">
-                    <strong>Marco Conti</strong>
-                    <small>Allenatore</small>
-                </div>
-                <button class="btn-logout" onclick="window.location.href='../login.html'">Esci</button>
-            </div>
-        </div>
-    </aside>
-
-    <!-- MAIN -->
-    <div class="main">
-        <div class="topbar">
-            <h1>Calendario Squadra</h1>
-            <div class="topbar-right">
-                <button class="btn-primary" onclick="openModal('modal-evento')">+ Nuovo Evento</button>
-            </div>
-        </div>
-
-        <div class="content">
-
-            <!-- KPI -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-label">Eventi del mese</div>
-                    <div class="stat-value">12</div>
-                    <div class="stat-sub">4 partite • 8 allenamenti</div>
-                </div>
-                <div class="stat-card info">
-                    <div class="stat-label">Prossimo evento</div>
-                    <div class="stat-value" style="font-size:1.3rem;">Gio 29</div>
-                    <div class="stat-sub">Allenamento Campo A</div>
-                </div>
-                <div class="stat-card warn">
-                    <div class="stat-label">Partita successiva</div>
-                    <div class="stat-value">1 Giu</div>
-                    <div class="stat-sub">vs Fortitudo</div>
-                </div>
-            </div>
-
-            <!-- CALENDARIO -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>Programmazione Eventi</h2>
-                    <a href="#" class="card-link">Esporta PDF →</a>
-                </div>
-                <div class="card-body" style="padding:0;">
-                    <table>
-                        <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Ora</th>
-                            <th>Evento</th>
-                            <th>Luogo</th>
-                            <th>Tipo</th>
-                            <th>Azioni</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr>
-                            <td>29 Maggio</td>
-                            <td>09:00</td>
-                            <td>Allenamento Tecnico</td>
-                            <td>Campo A</td>
-                            <td>
-                                <span class="pill pill-green">Allenamento</span>
-                            </td>
-                            <td>
-                                <button class="btn-ghost">Modifica</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>01 Giugno</td>
-                            <td>15:30</td>
-                            <td>Fortitudo vs FootManager</td>
-                            <td>Stadio Centrale</td>
-                            <td>
-                                <span class="pill pill-blue">Partita</span>
-                            </td>
-                            <td>
-                                <button class="btn-ghost">Modifica</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>04 Giugno</td>
-                            <td>10:00</td>
-                            <td>Allenamento Tattico</td>
-                            <td>Campo B</td>
-                            <td>
-                                <span class="pill pill-green">
-                                    Allenamento
-                                </span>
-                            </td>
-                            <td>
-                                <button class="btn-ghost">Modifica</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>07 Giugno</td>
-                            <td>18:00</td>
-                            <td>Riunione Staff</td>
-                            <td>Sala Riunioni</td>
-                            <td>
-                                <span class="pill pill-amber">Riunione</span>
-                            </td>
-                            <td>
-                                <button class="btn-ghost">Modifica</button>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <br>
-
-            <!-- PROSSIMI EVENTI -->
-
-            <div class="card">
-                <div class="card-header">
-                    <h2>Timeline Eventi</h2>
-                </div>
-                <div class="card-body">
-                    <div class="event-list">
-                        <div class="event-item">
-                            <div class="event-date">
-                                <div class="day">29</div>
-                                <div class="mon">Mag</div>
-                            </div>
-                            <div class="event-stripe stripe-green"></div>
-                            <div class="event-info">
-                                <div class="event-title">Allenamento Tecnico</div>
-                                <div class="event-meta">09:00 • Campo A</div>
-                            </div>
-                        </div>
-                        <div class="event-item">
-                            <div class="event-date">
-                                <div class="day">01</div>
-                                <div class="mon">Giu</div>
-                            </div>
-                            <div class="event-stripe stripe-blue"></div>
-                            <div class="event-info">
-                                <div class="event-title">Partita vs Fortitudo</div>
-                                <div class="event-meta">15:30 • Stadio Centrale</div>
-                            </div>
-                        </div>
-                        <div class="event-item">
-                            <div class="event-date">
-                                <div class="day">04</div>
-                                <div class="mon">Giu</div>
-                            </div>
-                            <div class="event-stripe stripe-green"></div>
-                            <div class="event-info">
-                                <div class="event-title">Allenamento Tattico</div>
-                                <div class="event-meta">10:00 • Campo B</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar" id="sb-initials">MC</div>
+      <div class="user-info">
+        <strong id="sb-name">Marco Conti</strong>
+        <small id="sb-role">Allenatore</small>
+      </div>
+      <button class="btn-logout" onclick="logout()">Esci</button>
     </div>
+  </div>
+</aside>
+
+<!-- ══════ MAIN ══════ -->
+<div class="main">
+  <div class="topbar">
+    <h1>Calendario</h1>
+    <div class="topbar-right">
+      <div class="view-toggle">
+        <button class="view-btn active" onclick="setView('month',this)">Mese</button>
+        <button class="view-btn" onclick="setView('week',this)">Settimana</button>
+        <button class="view-btn" onclick="setView('list',this)">Lista</button>
+      </div>
+      <button class="btn-primary" onclick="openAddModal()">+ Nuovo Evento</button>
+    </div>
+  </div>
+
+  <div class="content-area">
+    <!-- Navigazione -->
+    <div class="month-nav">
+      <button class="btn-icon" onclick="navigate(-1)">‹</button>
+      <div class="month-title" id="nav-title">—</div>
+      <button class="today-btn" onclick="goToday()">Oggi</button>
+      <button class="btn-icon" onclick="navigate(1)">›</button>
+    </div>
+
+    <!-- MESE -->
+    <div id="view-month">
+      <div class="cal-wrap">
+        <div class="loading-overlay" id="month-loader"><div class="spinner"></div></div>
+        <div class="cal-header-row">
+          <div class="cal-dow">Lun</div><div class="cal-dow">Mar</div><div class="cal-dow">Mer</div>
+          <div class="cal-dow">Gio</div><div class="cal-dow">Ven</div>
+          <div class="cal-dow" style="color:rgba(139,148,158,.5)">Sab</div>
+          <div class="cal-dow" style="color:rgba(139,148,158,.5)">Dom</div>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+    </div>
+
+    <!-- SETTIMANA -->
+    <div id="view-week" style="display:none">
+      <div class="week-wrap">
+        <div class="loading-overlay" id="week-loader"><div class="spinner"></div></div>
+        <div class="week-header-row" id="week-header">
+          <div class="week-time-head"></div>
+        </div>
+        <div class="week-body-scroll">
+          <div class="week-body-grid" id="week-body">
+            <div class="time-col-inner" id="time-col"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LISTA -->
+    <div id="view-list" style="display:none">
+      <div class="loading-overlay" id="list-loader" style="position:fixed;border-radius:0"><div class="spinner"></div></div>
+      <div class="list-container" id="list-container"></div>
+    </div>
+
+  </div><!-- /content-area -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ══════ MODAL FORM ══════ -->
+<div class="modal-overlay" id="modal-form">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="form-title">Nuovo Evento</h3>
+      <button class="modal-close" onclick="closeModal('modal-form')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-err" id="form-err"></div>
+      <input type="hidden" id="ev-id"/>
+
+      <div class="form-group">
+        <label>Titolo *</label>
+        <input type="text" id="ev-titolo" placeholder="es. Allenamento tattico"/>
+      </div>
+
+      <div class="form-group">
+        <label>Tipo *</label>
+        <select id="ev-tipo">
+          <option value="ALLENAMENTO">⚽ Allenamento</option>
+          <option value="PARTITA">🏟 Partita</option>
+          <option value="RIUNIONE">📋 Riunione</option>
+          <option value="ALTRO">🎯 Altro</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Inizio *</label>
+          <input type="datetime-local" id="ev-inizio"/>
+        </div>
+        <div class="form-group">
+          <label>Fine *</label>
+          <input type="datetime-local" id="ev-fine"/>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Luogo</label>
+        <input type="text" id="ev-luogo" placeholder="es. Campo A, Stadio Centrale…"/>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="btn-delete" style="display:none;margin-right:auto" onclick="deleteEvento()">🗑 Elimina</button>
+      <button class="btn-ghost" onclick="closeModal('modal-form')">Annulla</button>
+      <button class="btn-primary" id="btn-save" onclick="saveEvento()">
+        <span id="btn-save-text">Salva Evento</span>
+      </button>
+    </div>
+  </div>
 </div>
 
-<!-- MODAL -->
-
-<div class="modal-overlay" id="modal-evento">
-    <div class="modal">
-        <h3>Nuovo Evento</h3>
-        <div class="form-group">
-            <label>Titolo</label>
-            <input type="text" placeholder="Allenamento">
-        </div>
-        <div class="form-group">
-            <label>Tipo</label>
-            <select>
-                <option>Allenamento</option>
-                <option>Partita</option>
-                <option>Riunione</option>
-                <option>Extra Sportivo</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Data e Ora</label>
-            <input type="datetime-local">
-        </div>
-        <div class="form-group">
-            <label>Luogo</label>
-            <input type="text" placeholder="Campo A">
-        </div>
-        <div class="modal-footer">
-            <button class="btn-ghost" onclick="closeModal('modal-evento')">Annulla</button>
-            <button class="btn-primary" onclick="saveEvento()">Salva</button>
-        </div>
+<!-- ══════ MODAL DETTAGLIO ══════ -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal">
+    <div class="modal-body" id="detail-body" style="padding:1.5rem 1.6rem"></div>
+    <div class="modal-footer">
+      <button class="btn-danger" onclick="deleteFromDetail()">🗑 Elimina</button>
+      <button class="btn-ghost" onclick="closeModal('modal-detail')">Chiudi</button>
+      <button class="btn-primary" onclick="editFromDetail()">✏️ Modifica</button>
     </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span id="toast-icon">✅</span>
+  <span id="toast-text"></span>
 </div>
 
 <script src="/html/js/calendario.js"></script>
-
 </body>
 </html>
