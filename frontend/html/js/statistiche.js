@@ -1,27 +1,123 @@
+// ── CONFIGURAZIONE API ──
+const API_BASE_URL = 'http://localhost:8080/api';
+const token = localStorage.getItem('token'); // Recuperato al login
 
-/* ── DATI ── */
-const PLAYERS = [
-  {nome:'L. Rossi',   pres:18,gol:12,ass:5, tiri:34,pass:78,drib:62,duelli:58,intercetti:12,amm:2,esp:0},
-  {nome:'M. Bianchi', pres:20,gol:4, ass:8, tiri:18,pass:85,drib:70,duelli:64,intercetti:20,amm:3,esp:0},
-  {nome:'A. Ferrari', pres:15,gol:9, ass:3, tiri:28,pass:72,drib:68,duelli:52,intercetti:10,amm:1,esp:0},
-  {nome:'G. Esposito',pres:22,gol:0, ass:0, tiri:0, pass:88,drib:0, duelli:45,intercetti:8, amm:1,esp:0},
-  {nome:'P. Romano',  pres:19,gol:2, ass:1, tiri:8, pass:80,drib:45,duelli:70,intercetti:25,amm:5,esp:1},
-];
+// Array dinamici che verranno popolati dalle chiamate API
+let PLAYERS = [];
+let MATCHES = [];
 
-const MATCHES = [
-  {data:'25 Mag',avv:'Fortitudo',  gf:2,gs:1,esito:'w'},
-  {data:'18 Mag',avv:'Virtus',    gf:1,gs:1,esito:'d'},
-  {data:'11 Mag',avv:'Progresso', gf:3,gs:0,esito:'w'},
-  {data:'04 Mag',avv:'Imolese',   gf:2,gs:2,esito:'d'},
-  {data:'27 Apr',avv:'Sasso',     gf:1,gs:2,esito:'l'},
-  {data:'20 Apr',avv:'Centese',   gf:4,gs:1,esito:'w'},
-  {data:'13 Apr',avv:'Argenta',   gf:2,gs:0,esito:'w'},
-  {data:'06 Apr',avv:'Mezzolara', gf:0,gs:1,esito:'l'},
-  {data:'30 Mar',avv:'Pieve',     gf:3,gs:1,esito:'w'},
-  {data:'23 Mar',avv:'Sanpaimola',gf:1,gs:0,esito:'w'},
-];
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!token) {
+        // Se non autenticato, reindirizza al login
+        window.location.href = '../login.html';
+        return;
+    }
+    
+    // Mostra uno stato iniziale di caricamento o azzeramento dei grafici
+    aggiornaInterfacciaCaricamento();
 
-/* ── TABS ── */
+    // Avvia il caricamento parallelo dei dati dal Backend
+    await Promise.all([
+        caricaDatiSquadra(),
+        caricaDatiGiocatori()
+    ]);
+});
+
+/* ── REPERIMENTO DATI DAL BACKEND ── */
+
+// 1. Recupera le statistiche generali di squadra e le ultime partite
+async function caricaDatiSquadra() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/statistiche/squadra`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error('Errore nel recupero dei dati squadra');
+        
+        const data = await response.json();
+        
+        // Popola i KPI della squadra in alto
+        popolaKpiSquadra(data.kpi);
+        
+        // Disegna il line chart dei gol con i dati reali del backend
+        drawLineChart(data.andamentoGolFatti, data.andamentoGolSubiti);
+        
+        // Salva i match reali e renderizza la scheda Forma
+        MATCHES = data.ultimiMatch || [];
+        renderForma();
+        
+    } catch (error) {
+        console.error('Errore nel caricamento della squadra:', error);
+    }
+}
+
+// 2. Recupera le statistiche individuali di tutti i giocatori della rosa
+async function caricaDatiGiocatori() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/statistiche/giocatori`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error('Errore nel recupero dei giocatori');
+        
+        PLAYERS = await response.json();
+        
+        if (PLAYERS.length > 0) {
+            buildSelector();
+            renderConfronto();
+            renderTopScorers();
+        } else {
+            document.getElementById('player-selector').innerHTML = "<p>Nessun giocatore trovato.</p>";
+        }
+    } catch (error) {
+        console.error('Errore nel caricamento dei giocatori:', error);
+    }
+}
+
+/* ── POPOLAMENTO ELEMENTI STATICI/KPI ── */
+/* ── NUOVA FUNZIONE PER METTERE I DATI DEL DB NELL'HTML ── */
+function popolaKpiSquadra(kpi) {
+    if (!kpi) return;
+    
+    // Funzione interna di utilità per cambiare il testo se l'elemento esiste
+    const impostaTesto = (id, valore) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = valore;
+    };
+
+    // 1. Iniettiamo i valori del DB nei box in alto
+    impostaTesto('kpi-gol-fatti', kpi.golFatti ?? 0);
+    impostaTesto('kpi-gol-subiti', kpi.golSubiti ?? 0);
+    impostaTesto('kpi-partite', kpi.partiteGiocate ?? 0);
+    impostaTesto('kpi-vittorie', kpi.vittorie ?? 0);
+    impostaTesto('kpi-pareggi', kpi.pareggi ?? 0);
+    impostaTesto('kpi-sconfitte', kpi.sconfitte ?? 0);
+    
+    // 2. Iniettiamo i valori nei box in basso
+    impostaTesto('kpi-possesso', (kpi.possessoMedio ?? 0) + '%');
+    impostaTesto('kpi-precisione', (kpi.precisionePassaggi ?? 0) + '%');
+    impostaTesto('kpi-ammonizioni', kpi.ammonizioniTotali ?? 0);
+    impostaTesto('kpi-espulsioni', kpi.espulsioniTotali ?? 0);
+
+    // 3. AGGIORNAMENTO DINAMICO DEI GRAFICI A CERCHIO (SVG)
+    // Aggiorna la linea colorata del possesso palla
+    const cerchioPossesso = document.getElementById('circle-possesso');
+    if (cerchioPossesso) {
+        const possesso = kpi.possessoMedio ?? 0;
+        cerchioPossesso.setAttribute('stroke-dasharray', `${possesso} ${100 - possesso}`);
+    }
+
+    // Aggiorna la linea colorata della precisione dei passaggi
+    const cerchioPrecisione = document.getElementById('circle-precisione');
+    if (cerchioPrecisione) {
+        const precisione = kpi.precisionePassaggi ?? 0;
+        cerchioPrecisione.setAttribute('stroke-dasharray', `${precisione} ${100 - precisione}`);
+    }
+}
+
+function aggiornaInterfacciaCaricamento() {
+    document.getElementById('player-selector').innerHTML = "Caricamento giocatori...";
+}
+
+/* ── TABS (Invariato) ── */
 function switchTab(name){
   document.querySelectorAll('.tab').forEach((t,i)=>{
     t.classList.toggle('active',['squadra','individuale','confronto','forma'][i]===name);
@@ -31,20 +127,24 @@ function switchTab(name){
   });
 }
 
-/* ── LINE CHART ── */
-function drawLineChart(){
-  const gf=[2,1,0,3,2,4,2,0,3,1,2,3,1,4,2,3,1,2];
-  const gs=[1,0,2,0,2,1,0,1,1,0,1,2,0,1,1,0,2,1];
-  const svg=document.getElementById('line-svg');
-  const W=700,H=200,pad=20,maxV=5;
-  const xs=i=>pad+(W-2*pad)*(i/(gf.length-1));
+/* ── LINE CHART (Dinamico) ── */
+function drawLineChart(gf = [], gs = []){
+  if (gf.length === 0) gf = [0];
+  if (gs.length === 0) gs = [0];
+  
+  const svg = document.getElementById('line-svg');
+  if(!svg) return;
+  
+  const W=700,H=200,pad=20,maxV=Math.max(...gf, ...gs, 5);
+  const xs=i=>pad+(W-2*pad)*(i/(gf.length-1 || 1));
   const ys=v=>H-pad-(H-2*pad)*(v/maxV);
+  
   const path=(arr,col)=>{
     let d=arr.map((v,i)=>`${i===0?'M':'L'}${xs(i).toFixed(1)},${ys(v).toFixed(1)}`).join(' ');
     return `<path d="${d}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
             ${arr.map((v,i)=>`<circle cx="${xs(i)}" cy="${ys(v)}" r="4" fill="${col}" opacity=".8"/>`).join('')}`;
   };
-  // grid
+
   let grid='';
   for(let g=0;g<=maxV;g++){
     const y=ys(g);
@@ -63,26 +163,29 @@ function radarPts(vals,max=100,r=100){
     return [d*Math.cos(angle),d*Math.sin(angle)];
   });
 }
+
 function drawRadar(idx){
   const p=PLAYERS[idx];
   const svg=document.getElementById('radar-svg');
+  if(!svg || !p) return;
+  
   const N=RADAR_CATS.length,R=100;
   const maxVals=[20,12,100,100,100,30];
   const vals=[p.gol,p.ass,p.pass,p.drib,p.duelli,p.intercetti];
-  // grid
+
   let html='';
   for(let ring=1;ring<=5;ring++){
     const pts=RADAR_CATS.map((_,i)=>{const a=(2*Math.PI*i/N)-Math.PI/2;const r2=(ring/5)*R;return`${(r2*Math.cos(a)).toFixed(1)},${(r2*Math.sin(a)).toFixed(1)}`;});
     html+=`<polygon points="${pts.join(' ')}" fill="none" stroke="rgba(48,54,61,.7)" stroke-width="1"/>`;
   }
-  // axes + labels
+
   RADAR_CATS.forEach((cat,i)=>{
     const a=(2*Math.PI*i/N)-Math.PI/2;
     html+=`<line x1="0" y1="0" x2="${(R*Math.cos(a)).toFixed(1)}" y2="${(R*Math.sin(a)).toFixed(1)}" stroke="rgba(48,54,61,.8)" stroke-width="1"/>`;
     const lx=(R*1.2*Math.cos(a)).toFixed(1),ly=(R*1.2*Math.sin(a)).toFixed(1);
     html+=`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" font-size="10" fill="#8b949e">${cat}</text>`;
   });
-  // shape
+
   const pts=radarPts(vals.map((v,i)=>Math.min(v/maxVals[i]*100,100)),100,R);
   const poly=pts.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
   html+=`<polygon points="${poly}" fill="rgba(76,175,80,.15)" stroke="#4caf50" stroke-width="2"/>`;
@@ -94,6 +197,7 @@ function drawRadar(idx){
 /* ── INDIVIDUALE BARS ── */
 function renderIndivBars(idx){
   const p=PLAYERS[idx];
+  if(!p) return;
   const items=[
     {l:'Presenze',v:p.pres,max:25,c:'fill-green'},
     {l:'Gol',v:p.gol,max:20,c:'fill-green'},
@@ -112,14 +216,15 @@ function renderIndivBars(idx){
 /* ── TOP SCORERS ── */
 function renderTopScorers(){
   const sorted=[...PLAYERS].sort((a,b)=>b.gol-a.gol).slice(0,6);
+  if(sorted.length === 0) return;
   const max=sorted[0].gol||1;
   const cols=['#facc15','#94a3b8','#b45309','#4caf50','#60a5fa','#a78bfa'];
   document.getElementById('top-scorers').innerHTML=sorted.map((p,i)=>`
     <div class="hbar-row">
       <div class="hbar-name">${i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':''}${p.nome}</div>
       <div class="hbar-track">
-        <div class="hbar-fill" style="width:${(p.gol/max*100).toFixed(0)}%;background:${cols[i]}20;border:1px solid ${cols[i]}40">
-          <span style="color:${cols[i]}">${p.gol} gol</span>
+        <div class="hbar-fill" style="width:${(p.gol/max*100).toFixed(0)}%;background:${cols[i] || '#60a5fa'}20;border:1px solid ${cols[i] || '#60a5fa'}40">
+          <span style="color:${cols[i] || '#60a5fa'}">${p.gol} gol</span>
         </div>
       </div>
     </div>
@@ -132,16 +237,36 @@ function buildSelector(){
   document.getElementById('player-selector').innerHTML=PLAYERS.map((p,i)=>`
     <button class="ps-btn ${i===0?'active':''}" onclick="selectPlayer(${i},this)">${p.nome}</button>
   `).join('');
-  drawRadar(0); renderIndivBars(0);
+  
+  // Popola anche le select del Confronto in automatico coi giocatori reali del DB
+  popolaSelectConfronto();
+  
+  drawRadar(0); 
+  renderIndivBars(0);
 }
+
 function selectPlayer(i,btn){
   selPlayer=i;
   document.querySelectorAll('#player-selector .ps-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  drawRadar(i); renderIndivBars(i);
+  drawRadar(i); 
+  renderIndivBars(i);
 }
 
 /* ── CONFRONTO ── */
+function popolaSelectConfronto() {
+    const cmpA = document.getElementById('cmp-a');
+    const cmpB = document.getElementById('cmp-b');
+    if(!cmpA || !cmpB) return;
+
+    const opzioni = PLAYERS.map((p, i) => `<option value="${i}">${p.nome}</option>`).join('');
+    cmpA.innerHTML = opzioni;
+    cmpB.innerHTML = opzioni;
+    
+    // Seleziona di default il secondo elemento per il secondo giocatore (se esiste)
+    if(PLAYERS.length > 1) cmpB.value = 1;
+}
+
 const COMPARE_CATS=[
   {lbl:'Gol',key:'gol',max:20},
   {lbl:'Assist',key:'ass',max:12},
@@ -150,14 +275,18 @@ const COMPARE_CATS=[
   {lbl:'Passaggi %',key:'pass',max:100},
   {lbl:'Dribbling %',key:'drib',max:100},
 ];
+
 function renderConfronto(){
-  const ia=+document.getElementById('cmp-a').value;
-  const ib=+document.getElementById('cmp-b').value;
+  if(PLAYERS.length === 0) return;
+  const ia=+document.getElementById('cmp-a').value || 0;
+  const ib=+document.getElementById('cmp-b').value || 0;
   const pa=PLAYERS[ia],pb=PLAYERS[ib];
+  if(!pa || !pb) return;
+  
   const grid=document.getElementById('compare-grid');
   let leftH='',centerH='',rightH='';
   COMPARE_CATS.forEach(c=>{
-    const va=pa[c.key],vb=pb[c.key];
+    const va=pa[c.key] || 0, vb=pb[c.key] || 0;
     const pctA=Math.min(va/c.max*100,100),pctB=Math.min(vb/c.max*100,100);
     const unitSuffix=c.lbl.includes('%')?'%':'';
     leftH+=`<div class="compare-row">
@@ -192,12 +321,22 @@ function renderConfronto(){
 /* ── FORMA ── */
 function renderForma(){
   const esito={w:'V',d:'P',l:'S'};
-  document.getElementById('form-dots').innerHTML=MATCHES.map(m=>`
-    <div class="form-dot ${m.esito}" title="${m.avv} ${m.gf}-${m.gs}">${esito[m.esito]}</div>
+  const containerDots = document.getElementById('form-dots');
+  const containerTable = document.getElementById('results-tbody');
+  
+  if(MATCHES.length === 0) {
+      containerDots.innerHTML = "<p>Nessun match recente registrato.</p>";
+      containerTable.innerHTML = "<tr><td colspan='6' style='text-align:center'>Nessun dato</td></tr>";
+      return;
+  }
+
+  containerDots.innerHTML=MATCHES.map(m=>`
+    <div class="form-dot ${m.esito}" title="${m.avv} ${m.gf}-${m.gs}">${esito[m.esito] || 'P'}</div>
   `).join('');
+  
   const pill={w:'pill-green',d:'pill-amber',l:'pill-red'};
   const label={w:'Vittoria',d:'Pareggio',l:'Sconfitta'};
-  document.getElementById('results-tbody').innerHTML=MATCHES.map(m=>`
+  containerTable.innerHTML=MATCHES.map(m=>`
     <tr>
       <td>${m.data}</td>
       <td>${m.avv}</td>
@@ -208,10 +347,3 @@ function renderForma(){
     </tr>
   `).join('');
 }
-
-/* ── INIT ── */
-drawLineChart();
-buildSelector();
-renderConfronto();
-renderForma();
-renderTopScorers();

@@ -179,4 +179,51 @@ public class Dtos {
         private Integer puntiSettimanali;
         private Integer puntiTotali;
     }
+
+    // ── PER LE STATISTICHE SQUADRA E CONFRONTI ──
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class SquadraStatsResponse {
+        private KpiSquadraDto kpi;
+        private List<Integer> andamentoGolFatti;
+        private List<Integer> andamentoGolSubiti;
+        private List<MatchRecenteDto> ultimiMatch;
+    }
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class KpiSquadraDto {
+        private int golFatti;
+        private int golSubiti;
+        private int partiteGiocate;
+        private int vittorie;
+        private int pareggi;
+        private int sconfitte;
+        private int possessoMedio;
+        private int precisionePassaggi;
+        private int ammonizioniTotali;
+        private int espulsioniTotali;
+    }
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class MatchRecenteDto {
+        private String data;
+        private String avv;
+        private int gf;
+        private int gs;
+        private String esito; // "w" | "d" | "l"
+    }
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class GiocatoreCompletoStatsDto {
+        private String nome;
+        private int pres;
+        private int gol;
+        private int ass;
+        private int tiri;
+        private int pass;       // Percentuale passaggi riusciti
+        private int drib;       // Percentuale dribbling réussiti
+        private int duelli;     // Percentuale duelli vinti
+        private int intercetti;
+        private int amm;
+        private int esp;
+    }
 }

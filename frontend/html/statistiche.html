@@ -56,12 +56,12 @@
 
       <!-- KPI SQUADRA -->
       <div class="kpi-strip">
-        <div class="kpi-box"><div class="v" style="color:var(--green-l)">38</div><div class="l">Gol fatti</div></div>
-        <div class="kpi-box"><div class="v" style="color:#f87171">18</div><div class="l">Gol subiti</div></div>
-        <div class="kpi-box"><div class="v">18</div><div class="l">Partite</div></div>
-        <div class="kpi-box"><div class="v" style="color:var(--green-l)">12</div><div class="l">Vittorie</div></div>
-        <div class="kpi-box"><div class="v" style="color:#facc15">3</div><div class="l">Pareggi</div></div>
-        <div class="kpi-box"><div class="v" style="color:#f87171">3</div><div class="l">Sconfitte</div></div>
+        <div class="kpi-box"><div class="v" id="kpi-gol-fatti" style="color:var(--green-l)">--</div><div class="l">Gol fatti</div></div>
+        <div class="kpi-box"><div class="v" id="kpi-gol-subiti" style="color:#f87171">--</div><div class="l">Gol subiti</div></div>
+        <div class="kpi-box"><div class="v" id="kpi-partite">--</div><div class="l">Partite</div></div>
+        <div class="kpi-box"><div class="v" id="kpi-vittorie" style="color:var(--green-l)">--</div><div class="l">Vittorie</div></div>
+        <div class="kpi-box"><div class="v" id="kpi-pareggi" style="color:#facc15">--</div><div class="l">Pareggi</div></div>
+        <div class="kpi-box"><div class="v" id="kpi-sconfitte" style="color:#f87171">--</div><div class="l">Sconfitte</div></div>
       </div>
 
       <!-- TABS -->
@@ -128,9 +128,9 @@
               <div style="position:relative;width:120px;height:120px">
                 <svg viewBox="0 0 36 36" style="width:100%;height:100%;transform:rotate(-90deg)">
                   <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
-                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--green-l)" stroke-width="3.5" stroke-dasharray="58 42" stroke-linecap="round"/>
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--green-l)" stroke-width="3.5" stroke-dasharray="0 100" id="circle-possesso" stroke-linecap="round"/>
                 </svg>
-                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800">58%</div>
+                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800" id="kpi-possesso">--%</div>
               </div>
               <div style="font-size:.8rem;color:var(--muted)">Possesso medio</div>
             </div>
@@ -141,9 +141,9 @@
               <div style="position:relative;width:120px;height:120px">
                 <svg viewBox="0 0 36 36" style="width:100%;height:100%;transform:rotate(-90deg)">
                   <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
-                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="#60a5fa" stroke-width="3.5" stroke-dasharray="84 16" stroke-linecap="round"/>
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="#60a5fa" stroke-width="3.5" stroke-dasharray="0 100" id="circle-precisione" stroke-linecap="round"/>
                 </svg>
-                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800">84%</div>
+                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800" id="kpi-precisione">--%</div>
               </div>
               <div style="font-size:.8rem;color:var(--muted)">Passaggi riusciti</div>
             </div>
@@ -152,9 +152,9 @@
             <div class="card-header"><h2>⚠️ Disciplina</h2></div>
             <div class="card-body">
               <div style="display:flex;flex-direction:column;gap:14px;padding:.25rem 0">
-                <div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:800;color:#facc15">24</div><div style="font-size:.75rem;color:var(--muted);text-transform:uppercase">Ammonizioni</div></div>
+                <div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:800;color:#facc15" id="kpi-ammonizioni">--</div><div style="font-size:.75rem;color:var(--muted);text-transform:uppercase">Ammonizioni</div></div>
                 <div style="height:1px;background:var(--border)"></div>
-                <div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:800;color:#f87171">2</div><div style="font-size:.75rem;color:var(--muted);text-transform:uppercase">Espulsioni</div></div>
+                <div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:800;color:#f87171" id="kpi-espulsioni">--</div><div style="font-size:.75rem;color:var(--muted);text-transform:uppercase">Espulsioni</div></div>
               </div>
             </div>
           </div>
@@ -248,6 +248,6 @@
   </div>
 </div>
 
-<script src="/frontend/js/statistiche.js"></script>
+<script src="js/statistiche.js"></script>
 </body>
 </html>
