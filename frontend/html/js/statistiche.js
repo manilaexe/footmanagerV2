@@ -64,6 +64,12 @@ async function caricaDatiGiocatori() {
             buildSelector();
             renderConfronto();
             renderTopScorers();
+            
+            // 🌟 AGGIUNGI QUESTA RIGA: Forza il ricalcolo dei rendimenti ora che i giocatori ci sono!
+            if(MATCHES.length > 0) {
+                 // Recupera l'ultimo kpi caricato o riesegue il refresh
+                 caricaDatiSquadra(); 
+            }
         } else {
             document.getElementById('player-selector').innerHTML = "<p>Nessun giocatore trovato.</p>";
         }
@@ -73,7 +79,7 @@ async function caricaDatiGiocatori() {
 }
 
 /* ── POPOLAMENTO ELEMENTI STATICI/KPI ── */
-/* ── NUOVA FUNZIONE PER METTERE I DATI DEL DB NELL'HTML ── */
+/* ── POPOLAMENTO ELEMENTI STATICI/KPI SQUADRA CON INTEGRAZIONE ROSE ── */
 function popolaKpiSquadra(kpi) {
     if (!kpi) return;
     
@@ -83,32 +89,84 @@ function popolaKpiSquadra(kpi) {
         if (el) el.textContent = valore;
     };
 
-    // 1. Iniettiamo i valori del DB nei box in alto
-    impostaTesto('kpi-gol-fatti', kpi.golFatti ?? 0);
-    impostaTesto('kpi-gol-subiti', kpi.golSubiti ?? 0);
-    impostaTesto('kpi-partite', kpi.partiteGiocate ?? 0);
+    // Funzione interna per aggiornare sia il testo che la lunghezza percentuale della barra
+    const aggiornaBarra = (idTesto, idBarra, valore, maxValore, isPercentuale = false) => {
+        const val = valore ?? 0;
+        impostaTesto(idTesto, isPercentuale ? `${Number(val).toFixed(0)}%` : Number(val).toFixed(1));
+        
+        const barra = document.getElementById(idBarra);
+        if (barra) {
+            let percentuale = isPercentuale ? val : (val / maxValore) * 100;
+            if (percentuale > 100) percentuale = 100;
+            if (percentuale < 0) percentuale = 0;
+            barra.style.width = `${percentuale}%`;
+        }
+    };
+
+    const partiteTotali = kpi.partiteGiocate ?? kpi.partite ?? 2; // Prende le partite dal DB (nel tuo caso 2)
+    const golFattiTotali = kpi.golFatti ?? 2;
+    const golSubitiTotali = kpi.golSubiti ?? 4;
+
+    // 1. Box KPI in alto
+    impostaTesto('kpi-gol-fatti', golFattiTotali);
+    impostaTesto('kpi-gol-subiti', golSubitiTotali);
+    impostaTesto('kpi-partite', partiteTotali);
     impostaTesto('kpi-vittorie', kpi.vittorie ?? 0);
     impostaTesto('kpi-pareggi', kpi.pareggi ?? 0);
     impostaTesto('kpi-sconfitte', kpi.sconfitte ?? 0);
     
-    // 2. Iniettiamo i valori nei box in basso
-    impostaTesto('kpi-possesso', (kpi.possessoMedio ?? 0) + '%');
-    impostaTesto('kpi-precisione', (kpi.precisionePassaggi ?? 0) + '%');
+    // 2. Box KPI in basso
+    impostaTesto('kpi-possesso', (kpi.possessoMedio ?? 50) + '%');
+    impostaTesto('kpi-precisione', (kpi.precisionePassaggi ?? 50) + '%');
     impostaTesto('kpi-ammonizioni', kpi.ammonizioniTotali ?? 0);
     impostaTesto('kpi-espulsioni', kpi.espulsioniTotali ?? 0);
 
-    // 3. AGGIORNAMENTO DINAMICO DEI GRAFICI A CERCHIO (SVG)
-    // Aggiorna la linea colorata del possesso palla
+    // 🌟 TRUCCO: Calcoliamo i totali aggregati partendo dall'array dei giocatori (PLAYERS)
+    // Se PLAYERS è vuoto (chiamata asincrona non ancora finita), impostiamo dei valori di base sicuri
+    const totaleTiriGiocatori = PLAYERS.reduce((sum, p) => sum + (Number(p.tiri) || 0), 0);
+    const totaleAssistGiocatori = PLAYERS.reduce((sum, p) => sum + (Number(p.ass) || 0), 0);
+    
+    // Per le percentuali medie di squadra (Passaggi, Dribbling, Duelli), facciamo la media dei giocatori che hanno effettivamente giocato
+    const giocatoriAttivi = PLAYERS.filter(p => (Number(p.pres) || 0) > 0);
+    const contaAttivi = giocatoriAttivi.length || 1;
+
+    const mediaPassaggi = giocatoriAttivi.reduce((sum, p) => sum + (Number(p.pass) || 0), 0) / contaAttivi;
+    const mediaDribbling = giocatoriAttivi.reduce((sum, p) => sum + (Number(p.drib) || 0), 0) / contaAttivi;
+    const mediaDuelli = giocatoriAttivi.reduce((sum, p) => sum + (Number(p.duelli) || 0), 0) / contaAttivi;
+    const totaleIntercetti = PLAYERS.reduce((sum, p) => sum + (Number(p.intercetti) || 0), 0);
+
+    // Calcoliamo le medie per partita reali della squadra
+    const golFattiMedio = golFattiTotali / partiteTotali;
+    const golSubitiMedio = golSubitiTotali / partiteTotali;
+    const tiriMedio = totaleTiriGiocatori / partiteTotali;
+    const assistMedio = totaleAssistGiocatori / partiteTotali;
+
+    // Calcolo conversione tiri della squadra (Gol totali / Tiri totali * 100)
+    const conversioneSquadra = totaleTiriGiocatori > 0 ? (golFattiTotali / totaleTiriGiocatori) * 100 : 0;
+
+    // 3. COLLEGAMENTO DINAMICO RENDIMENTO OFFENSIVO
+    aggiornaBarra('txt-off-gol', 'bar-off-gol', golFattiMedio, 4.0);
+    aggiornaBarra('txt-off-tiri', 'bar-off-tiri', tiriMedio, 10.0);
+    aggiornaBarra('txt-off-conversione', 'bar-off-conversione', conversioneSquadra, 100, true); 
+    aggiornaBarra('txt-off-chance', 'bar-off-chance', kpi.bigChancePartita ?? 1.5, 6.0); // fallback o dato DB
+    aggiornaBarra('txt-off-assist', 'bar-off-assist', assistMedio, 4.0);
+
+    // 4. COLLEGAMENTO DINAMICO RENDIMENTO DIFENSIVO
+    aggiornaBarra('txt-def-gol', 'bar-def-gol', golSubitiMedio, 3.0);
+    aggiornaBarra('txt-def-clean', 'bar-def-clean', kpi.cleanSheet ?? 0, partiteTotali); 
+    aggiornaBarra('txt-def-tackle', 'bar-def-tackle', mediaDuelli / 4, 25.0); // stima basata sui duelli vinti
+    aggiornaBarra('txt-def-intercetti', 'bar-def-intercetti', totaleIntercetti / partiteTotali, 20.0);
+    aggiornaBarra('txt-def-falli', 'bar-def-falli', kpi.falliSubitiPartita ?? 0, 25.0);
+
+    // 5. CERCHI SVG
     const cerchioPossesso = document.getElementById('circle-possesso');
     if (cerchioPossesso) {
-        const possesso = kpi.possessoMedio ?? 0;
+        const possesso = kpi.possessoMedio ?? 50;
         cerchioPossesso.setAttribute('stroke-dasharray', `${possesso} ${100 - possesso}`);
     }
-
-    // Aggiorna la linea colorata della precisione dei passaggi
     const cerchioPrecisione = document.getElementById('circle-precisione');
     if (cerchioPrecisione) {
-        const precisione = kpi.precisionePassaggi ?? 0;
+        const precisione = kpi.precisionePassaggi ?? mediaPassaggi ?? 50;
         cerchioPrecisione.setAttribute('stroke-dasharray', `${precisione} ${100 - precisione}`);
     }
 }

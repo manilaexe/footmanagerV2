@@ -72,7 +72,7 @@
         <div class="tab" onclick="switchTab('forma')">Forma</div>
       </div>
 
-      <!-- ══════════ TAB SQUADRA ══════════ -->
+      <!-- ══════════ TAB SQUADRA AGGIORNATO CON ID PER LE BARRE ══════════ -->
       <div class="tab-panel active" id="tab-squadra">
         <div class="grid-2">
 
@@ -81,11 +81,32 @@
             <div class="card-header"><h2>⚽ Rendimento offensivo</h2></div>
             <div class="card-body">
               <div class="bar-chart">
-                <div class="bc-row"><div class="bc-label"><span class="name">Gol / partita</span><span>2.1</span></div><div class="bc-track"><div class="bc-fill fill-green" style="width:70%"></div></div></div>
-                <div class="bc-row"><div class="bc-label"><span class="name">Tiri in porta / partita</span><span>5.2</span></div><div class="bc-track"><div class="bc-fill fill-green" style="width:65%"></div></div></div>
-                <div class="bc-row"><div class="bc-label"><span class="name">Conversione tiri</span><span>23%</span></div><div class="bc-track"><div class="bc-fill fill-blue" style="width:23%"></div></div></div>
-                <div class="bc-row"><div class="bc-label"><span class="name">Big chance create / partita</span><span>3.4</span></div><div class="bc-track"><div class="bc-fill fill-amber" style="width:57%"></div></div></div>
-                <div class="bc-row"><div class="bc-label"><span class="name">Assist / partita</span><span>1.8</span></div><div class="bc-track"><div class="bc-fill fill-green" style="width:60%"></div></div></div>
+                
+                <div class="bc-row">
+                  <div class="bc-label"><span class="name">Gol / partita</span><span id="txt-off-gol">--</span></div>
+                  <div class="bc-track"><div class="bc-fill fill-green" id="bar-off-gol" style="width:0%"></div></div>
+                </div>
+                
+                <div class="bc-row">
+                  <div class="bc-label"><span class="name">Tiri in porta / partita</span><span id="txt-off-tiri">--</span></div>
+                  <div class="bc-track"><div class="bc-fill fill-green" id="bar-off-tiri" style="width:0%"></div></div>
+                </div>
+                
+                <div class="bc-row">
+                  <div class="bc-label"><span class="name">Conversione tiri</span><span id="txt-off-conversione">--%</span></div>
+                  <div class="bc-track"><div class="bc-fill fill-blue" id="bar-off-conversione" style="width:0%"></div></div>
+                </div>
+                
+                <div class="bc-row">
+                  <div class="bc-label"><span class="name">Big chance create / partita</span><span id="txt-off-chance">--</span></div>
+                  <div class="bc-track"><div class="bc-fill fill-amber" id="bar-off-chance" style="width:0%"></div></div>
+                </div>
+                
+                <div class="bc-row">
+                  <div class="bc-label"><span class="name">Assist / partita</span><span id="txt-off-assist">--</span></div>
+                  <div class="bc-track"><div class="bc-fill fill-green" id="bar-off-assist" style="width:0%"></div></div>
+                </div>
+                
               </div>
             </div>
           </div>
@@ -95,16 +116,38 @@
             <div class="card-header"><h2>🛡 Rendimento difensivo</h2></div>
             <div class="card-body">
               <div class="bar-chart">
-                <div class="bc-row"><div class="bc-label"><span class="name">Gol subiti / partita</span><span>1.0</span></div><div class="bc-track"><div class="bc-fill fill-amber" style="width:33%"></div></div></div>
-                <div class="bc-row"><div class="bc-label"><span class="name">Clean sheet</span><span>7</span></div><div class="bc-track"><div class="bc-fill fill-green" style="width:39%"></div></div></div>
-                <div class="bc-row"><div class="bc-label"><span class="name">Tackle riusciti / partita</span><span>14.3</span></div><div class="bc-track"><div class="bc-fill fill-blue" style="width:72%"></div></div></div>
-                <div class="bc-row"><div class="bc-label"><span class="name">Intercetti / partita</span><span>8.6</span></div><div class="bc-track"><div class="bc-fill fill-blue" style="width:58%"></div></div></div>
-                <div class="bc-row"><div class="bc-label"><span class="name">Falli subiti / partita</span><span>11.2</span></div><div class="bc-track"><div class="bc-fill fill-amber" style="width:46%"></div></div></div>
+                
+                <div class="bc-row">
+                  <div class="bc-label"><span class="name">Gol subiti / partita</span><span id="txt-def-gol">--</span></div>
+                  <div class="bc-track"><div class="bc-fill fill-amber" id="bar-def-gol" style="width:0%"></div></div>
+                </div>
+                
+                <div class="bc-row">
+                  <div class="bc-label"><span class="name">Clean sheet</span><span id="txt-def-clean">--</span></div>
+                  <div class="bc-track"><div class="bc-fill fill-green" id="bar-def-clean" style="width:0%"></div></div>
+                </div>
+                
+                <div class="bc-row">
+                  <div class="bc-label"><span class="name">Tackle riusciti / partita</span><span id="txt-def-tackle">--</span></div>
+                  <div class="bc-track"><div class="bc-fill fill-blue" id="bar-def-tackle" style="width:0%"></div></div>
+                </div>
+                
+                <div class="bc-row">
+                  <div class="bc-label"><span class="name">Intercetti / partita</span><span id="txt-def-intercetti">--</span></div>
+                  <div class="bc-track"><div class="bc-fill fill-blue" id="bar-def-intercetti" style="width:0%"></div></div>
+                </div>
+                
+                <div class="bc-row">
+                  <div class="bc-label"><span class="name">Falli subiti / partita</span><span id="txt-def-falli">--</span></div>
+                  <div class="bc-track"><div class="bc-fill fill-amber" id="bar-def-falli" style="width:0%"></div></div>
+                </div>
+                
               </div>
             </div>
           </div>
 
         </div>
+      </div>
 
         <!-- Gol per giornata (line chart SVG) -->
         <div class="card" style="margin-bottom:1.5rem">
