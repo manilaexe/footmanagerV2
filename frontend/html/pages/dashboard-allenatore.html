@@ -34,12 +34,15 @@
 
     <div class="sidebar-footer">
       <div class="user-card">
-        <div class="avatar">MC</div>
+        <!-- Aggiunto id="user-avatar" -->
+        <div class="avatar" id="user-avatar">--</div>
         <div class="user-info">
-          <strong>Marco Conti</strong>
-          <small>Allenatore</small>
+          <!-- Aggiunto id="user-name" -->
+          <strong id="user-name">Caricamento...</strong>
+          <!-- Aggiunto id="user-role" -->
+          <small id="user-role">Ruolo</small>
         </div>
-        <button class="btn-logout" onclick="window.location.href='../login.html'">Esci</button>
+        <button class="btn-logout" onclick="localStorage.clear(); window.location.href='../login.html'">Esci</button>
       </div>
     </div>
   </aside>

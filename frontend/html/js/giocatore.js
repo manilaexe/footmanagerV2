@@ -1,8 +1,46 @@
-// Assicurati che all'inizio del file venga controllata l'autenticazione
+// Assicurati che all'inizio del file venga controllata l'autenticazione e caricati i dati
 document.addEventListener('DOMContentLoaded', () => {
-    verificaAutenticazione();
-    // Qui puoi caricare eventuali dati iniziali della dashboard giocatore, se necessario.
+    // Controllo e recupero dei dati salvati al login
+    const token = localStorage.getItem('token');
+    const ruoloReal = localStorage.getItem('ruolo');
+    const nome = localStorage.getItem('nomeReale');
+    const cognome = localStorage.getItem('cognomeReale');
+
+    const nameElement = document.getElementById('user-name');
+    const roleElement = document.getElementById('user-role');
+    const avatarElement = document.getElementById('user-avatar');
+
+    // 1. Formattiamo il testo del ruolo nella sidebar (es. GIOCATORE -> Giocatore)
+    if (roleElement && ruoloReal) {
+        roleElement.textContent = ruoloReal.charAt(0).toUpperCase() + ruoloReal.slice(1).toLowerCase();
+    }
+
+    // Se l'utente non è loggato, rimandalo alla pagina di login
+    if (!token) {
+        window.location.href = '../login.html';
+        return;
+    }
+
+    // 2. Mostriamo Nome e Cognome reali presi dalla tabella giocatore al login
+    if (nameElement && nome) {
+        nameElement.textContent = cognome ? `${nome} ${cognome}` : nome;
+        
+        // Genera l'avatar con le iniziali (es. Cristiano Ronaldo -> CR)
+        if (avatarElement) {
+            const inizialeNome = nome.charAt(0);
+            const inizialeCognome = cognome ? cognome.charAt(0) : '';
+            avatarElement.textContent = (inizialeNome + inizialeCognome).toUpperCase();
+        }
+    }
 });
+
+function usaFallbackUsernameGiocatore(nameElement, avatarElement) {
+    const usernameReal = localStorage.getItem('username');
+    if (nameElement && usernameReal) {
+        nameElement.textContent = usernameReal;
+        if (avatarElement) avatarElement.textContent = usernameReal.substring(0, 2).toUpperCase();
+    }
+}
 
 // ── QUIZ TIMER ──
 let secondsLeft = 40;

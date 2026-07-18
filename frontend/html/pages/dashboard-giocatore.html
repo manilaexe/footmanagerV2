@@ -26,14 +26,18 @@
       <a class="nav-item" href="#"><span class="ico">🎮</span> Quiz del giorno</a>
       <a class="nav-item" href="#"><span class="ico">🏆</span> Classifica</a>
     </nav>
+
     <div class="sidebar-footer">
       <div class="user-card">
-        <div class="avatar">LR</div>
+        <!-- Aggiunto id="user-avatar" -->
+        <div class="avatar" id="user-avatar">--</div>
         <div class="user-info">
-          <strong>L. Rossi</strong>
-          <small>Calciatore · ATT</small>
+          <!-- Aggiunto id="user-name" -->
+          <strong id="user-name">Caricamento...</strong>
+          <!-- Aggiunto id="user-role" -->
+          <small id="user-role">Giocatore</small>
         </div>
-        <button class="btn-logout" onclick="window.location.href='../login.html'">Esci</button>
+        <button class="btn-logout" onclick="localStorage.clear(); window.location.href='../login.html'">Esci</button>
       </div>
     </div>
   </aside>

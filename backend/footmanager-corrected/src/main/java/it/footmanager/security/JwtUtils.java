@@ -1,13 +1,18 @@
 package it.footmanager.security;
 
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+
+import javax.crypto.SecretKey;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 
 /**
  * Utility per la generazione, il parsing e la validazione dei JWT.
@@ -28,7 +33,7 @@ public class JwtUtils {
     }
 
     /** Genera un JWT con username come subject e ruolo come claim. */
-    public String generateToken(UserDetails userDetails) {
+    public String generateToken(UserDetails userDetails, String nome, String cognome) {
         String ruolo = userDetails.getAuthorities().stream()
                 .findFirst()
                 .map(a -> a.getAuthority().replace("ROLE_", ""))
@@ -37,6 +42,8 @@ public class JwtUtils {
         return Jwts.builder()
                 .subject(userDetails.getUsername())
                 .claim("ruolo", ruolo)
+                .claim("nome", nome)
+                .claim("cognome", cognome) // Inseriamo l'anagrafica reale nel pacchetto criptato
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(secretKey)

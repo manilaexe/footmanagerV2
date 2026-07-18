@@ -10,8 +10,11 @@ import java.util.Optional;
 
 @Repository
 public interface GiocatoreRepository extends JpaRepository<Giocatore, Integer> {
-    Optional<Giocatore> findByUtente_Id(Integer utenteId);
-    List<Giocatore>     findBySquadra_Id(Integer squadraId);
+    // Forziamo il JOIN FETCH dell'utente per evitare problemi con il caricamento Lazy
+    @Query("SELECT g FROM Giocatore g JOIN FETCH g.utente u WHERE u.id = :utenteId")
+    Optional<Giocatore> findByUtente_Id(@Param("utenteId") Integer utenteId);
+    
+    List<Giocatore> findBySquadra_Id(Integer squadraId);
 
     // Top marcatori per la squadra (somma gol da Statistiche)
     @Query("""

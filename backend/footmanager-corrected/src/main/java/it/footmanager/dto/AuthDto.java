@@ -11,11 +11,14 @@ public class AuthDto {
         @NotBlank private String password;
     }
 
-    @Data @AllArgsConstructor
+    @Data @AllArgsConstructor @NoArgsConstructor @Builder // Aggiunti NoArgsConstructor e Builder per comodità
     public static class LoginResponse {
         private String  token;
-        private String  ruolo;     // nome dell'enum, es. "STAFF"
+        private String  ruolo;     // nome dell'enum, es. "ALLENATORE"
         private String  username;
         private Integer utenteId;
+        // ── AGGIUNGI QUESTI DUE CAMPI ──
+        private String  nome;      // Verrà popolato con il nome dell'allenatore
+        private String  cognome;   // Verrà popolato con il cognome dell'allenatore
     }
 }
