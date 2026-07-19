@@ -46,6 +46,7 @@ const toInputStr  = s => s ? s.slice(0,16) : '';
 const TODAY    = new Date();
 let viewYear   = TODAY.getFullYear();
 let viewMonth  = TODAY.getMonth();       // 0-based
+let weekCursor = weekStartOf(new Date()); // âncora settimana (aggiornata da navigate)
 let events     = [];                     // cache locale
 let detailId   = null;                   // id aperto nel modal dettaglio
 let curView    = 'month';
@@ -163,14 +164,33 @@ function esc(s) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+/* ─── WEEK HELPER (definito prima di navigate) ───────────────── */
+function weekStartOf(date) {
+  const d = new Date(date);
+  const dow = d.getDay();
+  d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 /* ─── NAVIGAZIONE ────────────────────────────────────────────── */
 function setView(v) {
   curView = v;
+  // Quando si entra nella vista settimana, ancora il cursore alla settimana
+  // che contiene il giorno 1 del mese corrente (o oggi se è lo stesso mese)
+  if (v === 'week') {
+    const anchor = (viewYear === TODAY.getFullYear() && viewMonth === TODAY.getMonth())
+      ? new Date()
+      : new Date(viewYear, viewMonth, 1);
+    weekCursor = weekStartOf(anchor);
+    const mid  = new Date(weekCursor.getTime() + 3 * 86400000);
+    viewYear   = mid.getFullYear();
+    viewMonth  = mid.getMonth();
+  }
   ['month','week','list'].forEach(n => {
     const el = document.getElementById('view-' + n);
     if (el) el.style.display = (n === v) ? 'block' : 'none';
   });
-  // aggiorna bottoni view-toggle
   document.querySelectorAll('.view-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.view === v);
   });
@@ -179,10 +199,12 @@ function setView(v) {
 
 function navigate(delta) {
   if (curView === 'week') {
-    const ws = weekStart(new Date(viewYear, viewMonth, 14));
-    ws.setDate(ws.getDate() + delta * 7);
-    viewYear  = ws.getFullYear();
-    viewMonth = ws.getMonth();
+    // Sposta il cursore settimana di 7 giorni
+    weekCursor.setDate(weekCursor.getDate() + delta * 7);
+    // Sincronizza viewYear/viewMonth sul giorno centrale della settimana
+    const mid = new Date(weekCursor.getTime() + 3 * 86400000);
+    viewYear  = mid.getFullYear();
+    viewMonth = mid.getMonth();
   } else {
     viewMonth += delta;
     if (viewMonth > 11) { viewMonth = 0; viewYear++; }
@@ -192,8 +214,9 @@ function navigate(delta) {
 }
 
 function goToday() {
-  viewYear  = TODAY.getFullYear();
-  viewMonth = TODAY.getMonth();
+  viewYear   = TODAY.getFullYear();
+  viewMonth  = TODAY.getMonth();
+  weekCursor = weekStartOf(new Date());
   render();
 }
 
@@ -323,16 +346,12 @@ function renderMonth() {
 /* ─── VISTA SETTIMANA ────────────────────────────────────────── */
 const HOURS_WEEK = ['07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22'];
 
-function weekStart(date) {
-  const d = new Date(date);
-  const dow = d.getDay();
-  d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
-  d.setHours(0,0,0,0);
-  return d;
-}
+/* weekStart è un alias di weekStartOf per compatibilità */
+function weekStart(date) { return weekStartOf(date); }
 
 function renderWeek() {
-  const ws = weekStart(new Date(viewYear, viewMonth, 14));
+  // weekCursor è sempre il lunedì della settimana da visualizzare
+  const ws = new Date(weekCursor);
   const we = new Date(ws.getTime() + 6 * 86400000);
 
   const titleEl = document.getElementById('cal-month-title');

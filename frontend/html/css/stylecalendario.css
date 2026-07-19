@@ -614,3 +614,35 @@ tbody td { padding: 10px 12px; vertical-align: middle; }
     .pill-blue   { background: rgba(59,130,246,.15); color: #60a5fa; }
     .pill-amber  { background: rgba(234,179,8,.15);  color: #facc15; }
     .pill-purple { background: rgba(139,92,246,.15); color: #c4b5fd; }
+/* ── LEGENDA SIDEBAR ─────────────────────────────────────────── */
+.sidebar-legend {
+    padding: 1rem 1.25rem 0.5rem;
+    border-top: 1px solid var(--border);
+    margin-top: 0.5rem;
+}
+.legend-title {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--muted);
+    margin-bottom: 0.65rem;
+}
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    padding: 0.22rem 0;
+}
+.legend-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+.legend-dot.allenamento { background: #4caf50; }
+.legend-dot.partita     { background: #3b82f6; }
+.legend-dot.riunione    { background: #eab308; }
+.legend-dot.altro       { background: #8b5cf6; }
