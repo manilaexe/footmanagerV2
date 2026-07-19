@@ -4,26 +4,33 @@ let filtroRuolo = 'tutti';
 let filtroStato = 'tutti';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Esegue il controllo sulla validità del login
+    // 1. Esegue il controllo sulla validità del login
     verificaAutenticazione();
 
-    // Popola dinamicamente i dati dell'utente nella Sidebar
-    const username = localStorage.getItem('username') || 'Utente';
-    const ruolo = localStorage.getItem('ruolo') || 'Ospite';
+    // 2. Popola la sidebar con nome/ruolo dal localStorage (Stessa identica logica di calendario.js)
+    const sbName = document.getElementById('sb-nome');
+    const sbRole = document.getElementById('sb-ruolo');
+    const sbAv   = document.getElementById('sb-avatar');
+    
+    const nome    = localStorage.getItem('nomeReale')    || localStorage.getItem('username') || 'Utente';
+    const cognome = localStorage.getItem('cognomeReale') || '';
+    const ruolo   = localStorage.getItem('ruolo')        || '';
+    
+    if (sbName) sbName.textContent = cognome ? `${nome} ${cognome}` : nome;
+    if (sbRole) sbRole.textContent = ruolo;
+    if (sbAv)   sbAv.textContent   = (nome[0]||('')).toUpperCase() + (cognome[0]||nome[1]||'').toUpperCase();
 
-    const userNameEl = document.getElementById('userName');
-    const userRoleEl = document.getElementById('userRole');
-    const userAvatarEl = document.getElementById('userAvatar');
-
-    if (userNameEl) userNameEl.textContent = username;
-    if (userRoleEl) userRoleEl.textContent = ruolo.charAt(0) + ruolo.slice(1).toLowerCase(); 
-    if (userAvatarEl && username) {
-        userAvatarEl.textContent = username.substring(0, 2).toUpperCase(); 
-    }
-
-    // Scarica la rosa dal backend
+    // 3. Scarica la rosa dal backend
     caricaRosa(); 
 });
+
+/**
+ * Funzione di Logout richiesta dal pulsante "Esci"
+ */
+function logout() {
+    localStorage.clear();
+    window.location.href = '/html/login.html';
+}
 
 // --- 1. RECUPERO DATI DAL BACKEND ---
 async function caricaRosa() {

@@ -1,48 +1,69 @@
-// Assicurati che all'inizio del file venga controllata l'autenticazione e caricati i dati
+// ─── 1. INIZIALIZZAZIONE DELLA PAGINA & SIDEBAR ───
 document.addEventListener('DOMContentLoaded', () => {
-    // Controllo e recupero dei dati salvati al login
-    const token = localStorage.getItem('token');
-    const ruoloReal = localStorage.getItem('ruolo');
-    const nome = localStorage.getItem('nomeReale');
-    const cognome = localStorage.getItem('cognomeReale');
-
-    const nameElement = document.getElementById('user-name');
-    const roleElement = document.getElementById('user-role');
-    const avatarElement = document.getElementById('user-avatar');
-
-    // 1. Formattiamo il testo del ruolo nella sidebar (es. GIOCATORE -> Giocatore)
-    if (roleElement && ruoloReal) {
-        roleElement.textContent = ruoloReal.charAt(0).toUpperCase() + ruoloReal.slice(1).toLowerCase();
-    }
-
-    // Se l'utente non è loggato, rimandalo alla pagina di login
-    if (!token) {
-        window.location.href = '../login.html';
-        return;
-    }
-
-    // 2. Mostriamo Nome e Cognome reali presi dalla tabella giocatore al login
-    if (nameElement && nome) {
-        nameElement.textContent = cognome ? `${nome} ${cognome}` : nome;
-        
-        // Genera l'avatar con le iniziali (es. Cristiano Ronaldo -> CR)
-        if (avatarElement) {
-            const inizialeNome = nome.charAt(0);
-            const inizialeCognome = cognome ? cognome.charAt(0) : '';
-            avatarElement.textContent = (inizialeNome + inizialeCognome).toUpperCase();
+    // 1. Controllo di sicurezza centralizzato (se presente in utils.js)
+    if (typeof verificaAutenticazione === 'function') {
+        verificaAutenticazione();
+    } else {
+        // Fallback locale se verificaAutenticazione non è caricata
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '../login.html';
+            return;
         }
     }
+
+    // 2. Popolamento e sincronizzazione immediata della Sidebar
+    function popolaSidebarGiocatore() {
+        const sbName = document.getElementById('sb-nome');
+        const sbRole = document.getElementById('sb-ruolo');
+        const sbAv   = document.getElementById('sb-avatar');
+
+        const nome        = localStorage.getItem('nomeReale');
+        const cognome     = localStorage.getItem('cognomeReale');
+        const ruoloReal   = localStorage.getItem('ruolo') || 'Giocatore';
+        const usernameReal = localStorage.getItem('username') || 'Utente';
+
+        // Gestione del Ruolo (es. GIOCATORE -> Giocatore)
+        if (sbRole && ruoloReal) {
+            sbRole.textContent = ruoloReal;
+        }
+
+        // Gestione di Nome, Cognome o Fallback su Username
+        if (sbName) {
+            if (nome) {
+                sbName.textContent = cognome ? `${nome} ${cognome}` : nome;
+                
+                // Generazione Avatar dalle iniziali reali
+                if (sbAv) {
+                    const inNome = nome.charAt(0);
+                    const inCognome = cognome ? cognome.charAt(0) : '';
+                    sbAv.textContent = (inNome + inCognome).toUpperCase();
+                }
+            } else {
+                // Fallback pulito se mancano i dati anagrafici reali
+                sbName.textContent = usernameReal;
+                if (sbAv) {
+                    sbAv.textContent = usernameReal.substring(0, 2).toUpperCase();
+                }
+            }
+        }
+    }
+
+    // Esegui subito il caricamento della grafica
+    popolaSidebarGiocatore();
+    // Micro-ritardo di sicurezza per prevenire sfarfallii del DOM asincrono
+    setTimeout(popolaSidebarGiocatore, 50);
 });
 
-function usaFallbackUsernameGiocatore(nameElement, avatarElement) {
-    const usernameReal = localStorage.getItem('username');
-    if (nameElement && usernameReal) {
-        nameElement.textContent = usernameReal;
-        if (avatarElement) avatarElement.textContent = usernameReal.substring(0, 2).toUpperCase();
-    }
+/**
+ * Funzione globale di logout collegata al bottone Esci della sidebar
+ */
+function logout() {
+    localStorage.clear();
+    window.location.href = '../login.html';
 }
 
-// ── QUIZ TIMER ──
+// ─── 2. QUIZ TIMER & LOGICA DI GIOCO ───
 let secondsLeft = 40;
 let selectedOpt = null;
 const timerFill = document.getElementById('timer-fill');
@@ -100,21 +121,26 @@ async function endQuiz(correct) {
 
     // ── AGGIORNAMENTO SU DB TRAMITE BACKEND ──
     try {
-        const idGiocatore = localStorage.getItem('idGiocatore'); // Recuperato durante il login
+        const idGiocatore = localStorage.getItem('idGiocatore'); 
         
+        // Verifica se getAuthHeaders() è definita globalmente in utils.js, altrimenti genera l'header locale
+        const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : {
+            'Authorization': 'Bearer ' + localStorage.getItem('token'),
+            'Content-Type': 'application/json'
+        };
+
         const response = await fetch('http://localhost:8080/api/quiz/risposta', {
             method: 'POST',
-            headers: getAuthHeaders(), // Utilizza il token JWT da utils.js
+            headers: headers,
             body: JSON.stringify({
                 idGiocatore: idGiocatore,
-                esito: correct, // true o false
-                tempoImpiegato: 40 - secondsLeft // Calcola il tempo di risposta
+                esito: correct, 
+                tempoImpiegato: 40 - secondsLeft
             })
         });
 
         if (response.ok) {
             console.log('Risposta salvata con successo sul Database.');
-            // Se la risposta è corretta, potresti voler aggiornare i punti visibili a schermo
             if (correct) {
                 aggiornaPuntiSchermo(10);
             }
@@ -126,16 +152,15 @@ async function endQuiz(correct) {
     }
 }
 
-// Funzione di utilità locale per incrementare i punti mostrati nella UI senza ricaricare la pagina
 function aggiornaPuntiSchermo(puntiInPiu) {
-    const puntiTotEl = document.getElementById('punti-totali'); // Assicurati di avere questo ID nell'HTML
+    const puntiTotEl = document.getElementById('punti-totali'); 
     if (puntiTotEl) {
         const puntiAttuali = parseInt(puntiTotEl.textContent) || 0;
         puntiTotEl.textContent = puntiAttuali + puntiInPiu;
     }
 }
 
-// ── MESSAGGI: segna come letto ──
+// ─── 3. MESSAGGI: SEGNA COME LETTO ───
 async function openMsg(el, idMessaggio) {
     el.classList.remove('unread');
     const dot = el.querySelector('.unread-dot');
@@ -143,9 +168,13 @@ async function openMsg(el, idMessaggio) {
 
     // ── NOTIFICA IL BACKEND DEL CAMBIO STATO ──
     try {
+        const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : {
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+        };
+
         const response = await fetch(`http://localhost:8080/api/messaggi/${idMessaggio}/letto`, {
             method: 'PATCH',
-            headers: getAuthHeaders() // Passa il Token di sicurezza
+            headers: headers
         });
 
         if (response.ok) {

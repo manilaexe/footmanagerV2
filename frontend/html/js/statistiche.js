@@ -7,16 +7,31 @@ let PLAYERS = [];
 let MATCHES = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
-    if (!token) {
-        // Se non autenticato, reindirizza al login
-        window.location.href = '../login.html';
-        return;
+    // 1. Esegue il controllo sulla validità del login
+    verificaAutenticazione();
+
+    // 2. Popola la sidebar con nome/ruolo dal localStorage (Stessa identica logica di rosa.js)
+    const sbName = document.getElementById('sb-nome');
+    const sbRole = document.getElementById('sb-ruolo');
+    const sbAv   = document.getElementById('sb-avatar');
+    
+    const nome    = localStorage.getItem('nomeReale')    || localStorage.getItem('username') || 'Utente';
+    const cognome = localStorage.getItem('cognomeReale') || '';
+    const ruolo   = localStorage.getItem('ruolo')        || '';
+    
+    if (sbName) sbName.textContent = cognome ? `${nome} ${cognome}` : nome;
+    
+    // Formattiamo il testo del Ruolo in modo elegante (es. ALLENATORE -> Allenatore)
+    if (sbRole && ruolo) {
+        sbRole.textContent = ruolo;
     }
     
-    // Mostra uno stato iniziale di caricamento o azzeramento dei grafici
+    if (sbAv) sbAv.textContent = (nome[0]||('')).toUpperCase() + (cognome[0]||nome[1]||'').toUpperCase();
+
+    // 3. Mostra lo stato iniziale di caricamento o azzeramento dei grafici
     aggiornaInterfacciaCaricamento();
 
-    // Avvia il caricamento parallelo dei dati dal Backend
+    // 4. Avvia il caricamento parallelo dei dati dal Backend
     await Promise.all([
         caricaDatiSquadra(),
         caricaDatiGiocatori()

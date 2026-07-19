@@ -11,34 +11,36 @@
 <body>
 <div class="app">
 
-  <!-- SIDEBAR -->
+  <!-- ══ SIDEBAR ══ -->
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="icon">⚽</div>
       <span>FootManager</span>
     </div>
-    <div class="nav-label">Principale</div>
-    <a class="nav-item" href="/html/pages/dashboard-allenatore.html">🏠 Dashboard</a>
-    <a class="nav-item active" href="#">👥 Rosa</a>
-    <a class="nav-item" href="calendario.html">📅 Calendario</a>
-    <a class="nav-item" href="statistiche.html">📊 Statistiche</a>
-    <a class="nav-item" href="dashboard-allenatore.html">💬 Messaggi</a>
+
+    <nav class="nav-section">
+      <div class="nav-label">Principale</div>
+      <a class="nav-item" href="/html/pages/dashboard-allenatore.html"><span class="ico">🏠</span>Dashboard</a>
+      <a class="nav-item active" href="#"><span class="ico">👥</span>Rosa</a>
+      <a class="nav-item" href="/html/calendario.html"><span class="ico">📅</span>Calendario</a>
+      <a class="nav-item" href="/html/statistiche.html"><span class="ico">📊</span>Statistiche</a>
+      <a class="nav-item" href="/html/messaggi.html"><span class="ico">💬</span>Messaggi</a>
+    </nav>
 
     <nav class="nav-section">
       <div class="nav-label">Impostazioni</div>
-      <a class="nav-item" href="#"><span class="ico">⚙️</span> Impostazioni</a>
+      <a class="nav-item" href="#"><span class="ico">⚙️</span>Impostazioni</a>
     </nav>
 
     <div class="sidebar-footer">
       <div class="user-card">
-        <!-- Avatar dinamico -->
-        <div class="avatar" id="userAvatar">U</div>
-        <!-- Dati utente dinamici -->
+        <!-- ID allineati a calendario.html per il caricamento dinamico -->
+        <div class="avatar" id="sb-avatar">?</div>
         <div class="user-info">
-          <strong id="userName">Utente</strong>
-          <small id="userRole">Ruolo</small>
+          <strong id="sb-nome">—</strong>
+          <small id="sb-ruolo">—</small>
         </div>
-        <!-- Pulsante Esci modificato per usare la funzione di logout() centralizzata -->
+        <!-- Utilizza la funzione logout() definita in js -->
         <button class="btn-logout" onclick="logout()">Esci</button>
       </div>
     </div>

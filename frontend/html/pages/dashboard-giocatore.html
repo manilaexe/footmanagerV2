@@ -29,15 +29,12 @@
 
     <div class="sidebar-footer">
       <div class="user-card">
-        <!-- Aggiunto id="user-avatar" -->
-        <div class="avatar" id="user-avatar">--</div>
-        <div class="user-info">
-          <!-- Aggiunto id="user-name" -->
-          <strong id="user-name">Caricamento...</strong>
-          <!-- Aggiunto id="user-role" -->
-          <small id="user-role">Giocatore</small>
-        </div>
-        <button class="btn-logout" onclick="localStorage.clear(); window.location.href='../login.html'">Esci</button>
+        <div class="avatar" id="sb-avatar">?</div>
+          <div class="user-info">
+              <strong id="sb-nome">—</strong>
+              <small id="sb-ruolo">—</small>
+          </div>
+          <button class="btn-logout" onclick="logout()">Esci</button>
       </div>
     </div>
   </aside>
@@ -198,6 +195,8 @@
   </div><!-- /main -->
 </div>
 
-<script src="/html/js/giocatore.js"></script>
+  <!-- 1. Prima l'utility che contiene verificaAutenticazione() -->
+  <script src="/html/js/utils.js"></script> 
+  <script src="/html/js/giocatore.js"></script>
 </body>
 </html>
