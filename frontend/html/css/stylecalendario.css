@@ -16,8 +16,9 @@ html, body { height: 100%; font-family: 'Barlow', sans-serif; background: var(--
     border-right: 1px solid var(--border);
     display: flex; flex-direction: column;
     padding: 1.5rem 0;
-    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    position: sticky; top: 0; height: 100vh;
 }
+
 .sidebar-logo {
     display: flex; align-items: center; gap: 10px;
     padding: 0 1.25rem 1.5rem;
