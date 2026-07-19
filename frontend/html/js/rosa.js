@@ -111,38 +111,95 @@ function renderizzaGiocatori(giocatori) {
         const puntiTotali = g.puntiTotali || g.punti_totali || 0;
         const puntiSettimanali = g.puntiSettimanali || g.punti_settimanali || 0;
 
-        // 3a. Generazione HTML per la Griglia (Grid View)
+        // Gestione dinamica dello stato per attivare i colori corretti del pallino (.status-dot)
+        let statoDotClass = 'available';
+        if (g.stato === 'injured' || g.stato?.toLowerCase() === 'infortunato') {
+            statoDotClass = 'injured';
+        } else if (g.stato === 'suspended' || g.stato?.toLowerCase() === 'squalificato') {
+            statoDotClass = 'suspended';
+        }
+
+        // Determina il colore del badge del ruolo (es. pos-att, pos-cen...)
+        let posClass = 'pos-cen';
+        const posPura = g.posizione?.toLowerCase() || '';
+        if (posPura.includes('att')) posClass = 'pos-att';
+        else if (posPura.includes('dif')) posClass = 'pos-dif';
+        else if (posPura.includes('por')) posClass = 'pos-por';
+
+        // 3a. Generazione HTML per la Griglia (Grid View) - PERFETTAMENTE INTEGRATO CON IL TUO CSS
         if (gridView) {
             const card = document.createElement('div');
-            card.className = `player-card ${g.stato === 'injured' ? 'injured' : ''}`;
+            card.className = 'player-card';
+            // Aggiungiamo il click su tutta la card come suggerisce il tuo CSS (cursor: pointer)
+            card.setAttribute('onclick', `mostraDettaglio(${idGiocatoreCorrente})`);
+            
             card.innerHTML = `
-                <div class="player-photo">
-                    <img src="${playerImg}" alt="${g.nome} ${g.cognome}">
-                    <span class="player-number">${g.numero || '-'}</span>
-                </div>
-                <div class="player-info">
-                    <h3>${g.nome} ${g.cognome}</h3>
-                    <p class="role">${g.posizione || 'N/D'}</p>
-                    <div class="stats-preview">
-                        <span>Punti Tot: <strong>${puntiTotali}</strong></span>
-                        <span>Piede: <strong>${g.piede || 'N/D'}</strong></span>
+                <div class="player-card-top">
+                    <div class="number">#${g.numero || '-'}</div>
+                    <div class="status-dot ${statoDotClass}"></div>
+                    
+                    <!-- L'immagine del giocatore forzata dentro il cerchio 70x70px del tuo CSS -->
+                    <div class="player-pic" style="overflow: hidden; padding: 0;">
+                        <img src="${playerImg}" alt="${g.nome}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                     </div>
+                    
+                    <div class="name">${g.nome} ${g.cognome}</div>
+                    <span class="pos-badge ${posClass}">${g.posizione || 'N/D'}</span>
                 </div>
-                <div class="card-footer">
-                    <button class="btn-ghost-sm" onclick="mostraDettaglio(${idGiocatoreCorrente})">Info</button>
+                
+                <div class="player-card-body">
+                    <div class="mini-stats">
+                        <div class="mini-stat">
+                            <div class="v">${g.presenze || 0}</div>
+                            <div class="l">Presenze</div>
+                        </div>
+                        <div class="mini-stat">
+                            <div class="v">${puntiTotali}</div>
+                            <div class="l">Pt Tot</div>
+                        </div>
+                        <div class="mini-stat">
+                            <div class="v">${puntiSettimanali}</div>
+                            <div class="l">Pt Sett</div>
+                        </div>
+                    </div>
+                    
+                    <div class="player-meta">
+                        <span class="meta-tag">Piede: ${g.piede || '-'}</span>
+                        <span class="meta-tag">H: ${g.altezza ? g.altezza + ' cm' : '-'}</span>
+                    </div>
+                    
+                    <div class="card-actions">
+                        <button class="btn-card primary">Visualizza Info</button>
+                    </div>
                 </div>
             `;
             gridView.appendChild(card);
         }
 
-        // 3b. Generazione HTML per la Tabella (List View)
+        // 3b. Generazione HTML per la Tabella (List View) - INTEGRATO CON .list-avatar DEL TUO CSS
         if (listBody) {
             const tr = document.createElement('tr');
+            tr.setAttribute('onclick', `mostraDettaglio(${idGiocatoreCorrente})`);
+            
+            // Assegna la classe pill corretta per la tabella
+            let pillStato = 'pill-green';
+            let testoStato = '✔ Disponibile';
+            if (statoDotClass === 'injured') {
+                pillStato = 'pill-red';
+                testoStato = '✘ Infort.';
+            } else if (statoDotClass === 'suspended') {
+                pillStato = 'pill-amber';
+                testoStato = '⚠️ Squal.';
+            }
+
             tr.innerHTML = `
-                <td><strong>${g.numero || '-'}</strong></td>
+                <td><strong>#${g.numero || '-'}</strong></td>
                 <td>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <img src="${playerImg}" style="width:30px; height:30px; border-radius:50%; object-fit:cover;">
+                    <div class="player-name-cell">
+                        <!-- Usiamo il contenitore circolare .list-avatar già presente nel tuo CSS -->
+                        <div class="list-avatar" style="overflow: hidden; padding: 0;">
+                            <img src="${playerImg}" alt="${g.nome}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                        </div>
                         <span>${g.nome} ${g.cognome}</span>
                     </div>
                 </td>
@@ -152,12 +209,10 @@ function renderizzaGiocatori(giocatori) {
                 <td>${puntiTotali} pt</td>
                 <td>${puntiSettimanali} pt</td>
                 <td>
-                    <span class="badge ${g.stato === 'injured' ? 'badge-danger' : 'badge-success'}">
-                        ${g.stato === 'injured' ? '✘ Infort.' : '✔ Disponibile'}
-                    </span>
+                    <span class="pill ${pillStato}">${testoStato}</span>
                 </td>
-                <td>
-                    <button class="btn-ghost" onclick="mostraDettaglio(${idGiocatoreCorrente})">👁️ Det.</button>
+                <td class="tbl-actions">
+                    <button class="btn-sm">👁️ Det.</button>
                 </td>
             `;
             listBody.appendChild(tr);
