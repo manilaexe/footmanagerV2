@@ -1,134 +1,538 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>FootManager – Calendario</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet"/>
-<link href="/html/css/stylecalendario.css" rel="stylesheet" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>FootManager – Calendario</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet"/>
+  <!--
+    USA IL CSS ESISTENTE DEL TUO PROGETTO.
+    Abbiamo aggiunto solo le classi mancanti in fondo con un <style> inline.
+  -->
+  <link href="/html/css/styleall.css" rel="stylesheet"/>
+
+  <style>
+    /* ── CLASSI AGGIUNTIVE PER IL CALENDARIO INTERATTIVO ──
+       Non sovrascrivono il tuo CSS esistente.
+    ──────────────────────────────────────────────────────── */
+
+    /* Banner errore backend */
+    #error-banner {
+      display: none;
+      background: rgba(239,68,68,.1);
+      border: 1px solid rgba(239,68,68,.35);
+      border-radius: 8px;
+      padding: .65rem 1rem;
+      font-size: .85rem;
+      color: #f87171;
+      margin-bottom: 1rem;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Navigazione mese/settimana */
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .cal-nav-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      flex: 1;
+      color: var(--text, #e6edf3);
+    }
+    .btn-cal-nav {
+      width: 34px; height: 34px;
+      background: var(--dark3, #21262d);
+      border: 1px solid var(--border, #30363d);
+      border-radius: 8px;
+      color: var(--text, #e6edf3);
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .14s;
+    }
+    .btn-cal-nav:hover { border-color: var(--green, #3a7d44); color: #4caf50; }
+    .btn-today {
+      background: none;
+      border: 1px solid var(--border, #30363d);
+      border-radius: 8px;
+      color: var(--muted, #8b949e);
+      font-size: .78rem;
+      padding: 4px 13px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-today:hover { border-color: #4caf50; color: #4caf50; }
+
+    /* View toggle */
+    .view-toggle {
+      display: flex;
+      gap: 3px;
+      background: var(--dark3, #21262d);
+      border: 1px solid var(--border, #30363d);
+      border-radius: 8px;
+      padding: 3px;
+    }
+    .view-btn {
+      padding: 4px 14px;
+      border-radius: 6px;
+      border: none;
+      background: none;
+      color: var(--muted, #8b949e);
+      font-family: 'Barlow', sans-serif;
+      font-size: .8rem;
+      cursor: pointer;
+      transition: all .14s;
+    }
+    .view-btn.active { background: var(--green, #3a7d44); color: #fff; font-weight: 600; }
+
+    /* ── GRIGLIA MENSILE ── */
+    .cal-wrap {
+      background: var(--dark2, #161b22);
+      border: 1px solid var(--border, #30363d);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+    .cal-dow-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+    }
+    .cal-dow {
+      padding: .6rem;
+      text-align: center;
+      font-size: .67rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--muted, #8b949e);
+      border-bottom: 1px solid var(--border, #30363d);
+      background: var(--dark3, #21262d);
+    }
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+    }
+    .cal-cell {
+      min-height: 100px;
+      border-right: 1px solid var(--border, #30363d);
+      border-bottom: 1px solid var(--border, #30363d);
+      padding: 5px;
+      cursor: pointer;
+      transition: background .12s;
+      position: relative;
+    }
+    .cal-cell:nth-child(7n) { border-right: none; }
+    .cal-cell:hover { background: rgba(58,125,68,.06); }
+    .cal-cell.other-month { opacity: .28; }
+    .cal-cell.today .day-num {
+      background: var(--green, #3a7d44);
+      color: #fff;
+      border-radius: 50%;
+      width: 26px; height: 26px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cal-cell.weekend .day-num { color: rgba(139,148,158,.6); }
+    .day-num {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: .95rem;
+      font-weight: 700;
+      width: 26px; height: 26px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 3px;
+    }
+    .event-chip {
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: .66rem;
+      font-weight: 600;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      transition: filter .14s;
+      line-height: 1.4;
+      display: block;
+    }
+    .event-chip:hover { filter: brightness(1.25); }
+    .more-chip {
+      font-size: .65rem;
+      color: var(--muted, #8b949e);
+      cursor: pointer;
+      padding: 1px 4px;
+      display: block;
+    }
+    .more-chip:hover { color: #4caf50; }
+
+    /* Colori chip — corrispondono agli ENUM MySQL */
+    .ev-chip-ALLENAMENTO { background: rgba(58,125,68,.28);  color: #6fcf80; border-left: 3px solid #4caf50; }
+    .ev-chip-PARTITA     { background: rgba(59,130,246,.22); color: #93c5fd; border-left: 3px solid #3b82f6; }
+    .ev-chip-RIUNIONE    { background: rgba(234,179,8,.18);  color: #fde047; border-left: 3px solid #eab308; }
+    .ev-chip-ALTRO       { background: rgba(139,92,246,.18); color: #c4b5fd; border-left: 3px solid #8b5cf6; }
+
+    /* ── VISTA SETTIMANA ── */
+    .week-wrap {
+      background: var(--dark2, #161b22);
+      border: 1px solid var(--border, #30363d);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+    .week-head-row {
+      display: grid;
+      grid-template-columns: 60px repeat(7,1fr);
+      border-bottom: 1px solid var(--border, #30363d);
+    }
+    .week-time-head { background: var(--dark3, #21262d); border-right: 1px solid var(--border, #30363d); }
+    .week-day-head {
+      padding: .7rem .5rem;
+      text-align: center;
+      border-right: 1px solid var(--border, #30363d);
+      background: var(--dark3, #21262d);
+    }
+    .week-day-head:last-child { border-right: none; }
+    .wdh-dow { font-size: .62rem; text-transform: uppercase; letter-spacing: .7px; color: var(--muted, #8b949e); }
+    .wdh-num { font-family: 'Barlow Condensed', sans-serif; font-size: 1.25rem; font-weight: 800; line-height: 1.1; color: var(--text, #e6edf3); }
+    .week-day-head.today-col .wdh-num { color: #4caf50; }
+    .week-body-scroll { overflow-y: auto; max-height: calc(100vh - 340px); }
+    .week-body-grid { display: grid; grid-template-columns: 60px repeat(7,1fr); }
+    .hour-label {
+      height: 54px;
+      display: flex; align-items: flex-start; justify-content: flex-end;
+      padding-right: 8px; padding-top: 2px;
+      font-size: .63rem;
+      color: var(--muted, #8b949e);
+      border-bottom: 1px solid rgba(48,54,61,.3);
+      flex-shrink: 0;
+    }
+    .day-col-week {
+      border-right: 1px solid var(--border, #30363d);
+      position: relative;
+      min-height: 864px;
+    }
+    .day-col-week:last-child { border-right: none; }
+    .hour-line-week { height: 54px; border-bottom: 1px solid rgba(48,54,61,.3); }
+    .week-ev-chip {
+      position: absolute; left: 2px; right: 2px;
+      border-radius: 6px; padding: 3px 6px;
+      font-size: .7rem; font-weight: 600;
+      cursor: pointer; overflow: hidden;
+      transition: filter .14s; z-index: 2; line-height: 1.35;
+    }
+    .week-ev-chip:hover { filter: brightness(1.2); }
+
+    /* ── VISTA LISTA ── */
+    #list-container { display: flex; flex-direction: column; gap: .85rem; margin-bottom: 1.5rem; }
+    .list-week-sep {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: .82rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted, #8b949e);
+      padding-bottom: .4rem;
+      border-bottom: 1px solid var(--border, #30363d);
+    }
+    .list-event-row {
+      background: var(--dark2, #161b22);
+      border: 1px solid var(--border, #30363d);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      display: flex; align-items: center; gap: 1.25rem;
+      cursor: pointer; transition: border-color .15s;
+    }
+    .list-event-row:hover { border-color: #4caf50; }
+    .list-date-box { text-align: center; min-width: 46px; flex-shrink: 0; }
+    .list-day { font-family: 'Barlow Condensed', sans-serif; font-size: 1.7rem; font-weight: 800; line-height: 1; color: var(--text, #e6edf3); }
+    .list-mon { font-size: .62rem; text-transform: uppercase; color: var(--muted, #8b949e); }
+    .list-stripe { width: 4px; align-self: stretch; border-radius: 2px; flex-shrink: 0; }
+    .list-info { flex: 1; min-width: 0; }
+    .list-title { font-size: .95rem; font-weight: 600; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text, #e6edf3); }
+    .list-meta { font-size: .78rem; color: var(--muted, #8b949e); display: flex; gap: 12px; flex-wrap: wrap; }
+    .list-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .btn-sm-cal {
+      background: none; border: 1px solid var(--border, #30363d);
+      border-radius: 6px; color: var(--muted, #8b949e);
+      font-size: .78rem; padding: 3px 8px; cursor: pointer; transition: all .14s;
+    }
+    .btn-sm-cal:hover { border-color: #4caf50; color: #4caf50; }
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 4rem 2rem; color: var(--muted, #8b949e); text-align: center;
+    }
+    .empty-state p { font-size: .9rem; line-height: 1.7; }
+
+    /* ── LOADER ── */
+    .cal-loader {
+      position: absolute; inset: 0;
+      background: rgba(13,17,23,.55);
+      display: none; align-items: center; justify-content: center;
+      z-index: 20; border-radius: 10px;
+    }
+    @keyframes _spin { to { transform: rotate(360deg); } }
+    .cal-spinner {
+      width: 36px; height: 36px;
+      border: 3px solid rgba(76,175,80,.2);
+      border-top-color: #4caf50;
+      border-radius: 50%;
+      animation: _spin .7s linear infinite;
+    }
+
+    /* ── MODAL FORM ── */
+    .fm-modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.72);
+      display: none; align-items: center; justify-content: center;
+      z-index: 200; padding: 1rem;
+    }
+    .fm-modal-overlay.open { display: flex; }
+    .fm-modal {
+      background: var(--dark2, #161b22);
+      border: 1px solid var(--border, #30363d);
+      border-radius: 16px;
+      width: 520px; max-width: 96vw; max-height: 92vh;
+      overflow-y: auto;
+    }
+    .fm-modal-header {
+      padding: 1.4rem 1.6rem 0;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1.1rem;
+    }
+    .fm-modal-header h3 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.35rem; font-weight: 800; text-transform: uppercase;
+      color: var(--text, #e6edf3);
+    }
+    .btn-modal-close {
+      background: none; border: none;
+      color: var(--muted, #8b949e); font-size: 1.4rem; cursor: pointer; line-height: 1;
+    }
+    .btn-modal-close:hover { color: var(--text, #e6edf3); }
+    .fm-modal-body { padding: 0 1.6rem 1.4rem; }
+    .fm-modal-footer {
+      display: flex; gap: 8px; justify-content: flex-end;
+      padding: 1rem 1.6rem 1.4rem;
+      border-top: 1px solid var(--border, #30363d);
+    }
+    #fm-form-err {
+      display: none;
+      background: rgba(239,68,68,.1);
+      border: 1px solid rgba(239,68,68,.35);
+      border-radius: 8px; padding: .6rem .9rem;
+      font-size: .82rem; color: #f87171;
+      margin-bottom: 1rem;
+    }
+    .fm-form-group { margin-bottom: 1rem; }
+    .fm-form-group label {
+      display: block; font-size: .7rem; text-transform: uppercase;
+      letter-spacing: .8px; color: var(--muted, #8b949e); margin-bottom: 4px;
+    }
+    .fm-form-group input,.fm-form-group select {
+      width: 100%;
+      background: var(--dark3, #21262d);
+      border: 1px solid var(--border, #30363d);
+      border-radius: 8px; color: var(--text, #e6edf3);
+      font-family: 'Barlow', sans-serif; font-size: .9rem;
+      padding: .65rem .9rem; outline: none; transition: border-color .2s;
+    }
+    .fm-form-group input:focus,.fm-form-group select:focus { border-color: #4caf50; }
+    .fm-form-group option { background: var(--dark2, #161b22); }
+    .fm-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .btn-danger-fm {
+      background: none; border: 1px solid rgba(239,68,68,.4);
+      border-radius: 8px; color: #f87171; font-size: .875rem;
+      padding: .45rem .9rem; cursor: pointer; margin-right: auto;
+    }
+    .btn-danger-fm:hover { background: rgba(239,68,68,.1); }
+
+    /* ── MODAL DETTAGLIO ── */
+    .detail-info-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: .75rem; margin-top: 1rem;
+    }
+    .detail-lbl {
+      font-size: .68rem; text-transform: uppercase;
+      letter-spacing: .6px; color: var(--muted, #8b949e); margin-bottom: 2px;
+    }
+    .detail-val { font-size: .9rem; font-weight: 500; color: var(--text, #e6edf3); }
+
+    /* ── TOAST ── */
+    .fm-toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      background: var(--dark2, #161b22);
+      border: 1px solid var(--border, #30363d);
+      border-radius: 10px; padding: .85rem 1.25rem;
+      font-size: .875rem; color: var(--text, #e6edf3);
+      display: flex; align-items: center; gap: 10px;
+      z-index: 999;
+      transform: translateY(80px); opacity: 0;
+      transition: all .3s; max-width: 340px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.45);
+    }
+    .fm-toast-show { transform: translateY(0) !important; opacity: 1 !important; }
+    .fm-toast-err  { border-color: rgba(239,68,68,.5) !important; }
+
+    /* ── PILL ── */
+    .pill-green  { background: rgba(58,125,68,.2);   color: #4caf50; }
+    .pill-blue   { background: rgba(59,130,246,.15); color: #60a5fa; }
+    .pill-amber  { background: rgba(234,179,8,.15);  color: #facc15; }
+    .pill-purple { background: rgba(139,92,246,.15); color: #c4b5fd; }
+  </style>
 </head>
 <body>
 <div class="app">
 
-<!-- ══════ SIDEBAR ══════ -->
-<aside class="sidebar">
-  <div class="sidebar-logo">
-    <div class="logo-icon">⚽</div>
-    <span class="logo-text">FootManager</span>
-  </div>
-  <div style="padding:.75rem 0">
-    <div class="nav-label">Principale</div>
-    <a class="nav-item" href="dashboard-allenatore-full.html"><span class="ico">🏠</span>Dashboard</a>
-    <a class="nav-item" href="rosa.html"><span class="ico">👥</span>Rosa</a>
-    <a class="nav-item active" href="#"><span class="ico">📅</span>Calendario</a>
-    <a class="nav-item" href="statistiche.html"><span class="ico">📊</span>Statistiche</a>
-    <a class="nav-item" href="messaggi.html"><span class="ico">💬</span>Messaggi</a>
-    <div class="nav-label" style="margin-top:.5rem">Account</div>
-    <a class="nav-item" href="#"><span class="ico">⚙️</span>Impostazioni</a>
-  </div>
-
-  <div class="sidebar-legend">
-    <div class="legend-title">Legenda tipi evento</div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--green-l)"></div>Allenamento</div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Partita</div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Riunione</div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>Altro</div>
-  </div>
-
-  <div class="sidebar-footer">
-    <div class="user-card">
-      <div class="user-avatar" id="sb-initials">MC</div>
-      <div class="user-info">
-        <strong id="sb-name">Marco Conti</strong>
-        <small id="sb-role">Allenatore</small>
-      </div>
-      <button class="btn-logout" onclick="logout()">Esci</button>
-    </div>
-  </div>
-</aside>
-
-<!-- ══════ MAIN ══════ -->
-<div class="main">
-  <div class="topbar">
-    <h1>Calendario</h1>
-    <div class="topbar-right">
-      <div class="view-toggle">
-        <button class="view-btn active" onclick="setView('month',this)">Mese</button>
-        <button class="view-btn" onclick="setView('week',this)">Settimana</button>
-        <button class="view-btn" onclick="setView('list',this)">Lista</button>
-      </div>
-      <button class="btn-primary" onclick="openAddModal()">+ Nuovo Evento</button>
-    </div>
-  </div>
-
-  <div class="content-area">
-    <!-- Navigazione -->
-    <div class="month-nav">
-      <button class="btn-icon" onclick="navigate(-1)">‹</button>
-      <div class="month-title" id="nav-title">—</div>
-      <button class="today-btn" onclick="goToday()">Oggi</button>
-      <button class="btn-icon" onclick="navigate(1)">›</button>
+  <!-- ══ SIDEBAR ══ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="icon">⚽</div>
+      <span>FootManager</span>
     </div>
 
-    <!-- MESE -->
-    <div id="view-month">
-      <div class="cal-wrap">
-        <div class="loading-overlay" id="month-loader"><div class="spinner"></div></div>
-        <div class="cal-header-row">
-          <div class="cal-dow">Lun</div><div class="cal-dow">Mar</div><div class="cal-dow">Mer</div>
-          <div class="cal-dow">Gio</div><div class="cal-dow">Ven</div>
-          <div class="cal-dow" style="color:rgba(139,148,158,.5)">Sab</div>
-          <div class="cal-dow" style="color:rgba(139,148,158,.5)">Dom</div>
+    <nav class="nav-section">
+      <div class="nav-label">Principale</div>
+      <a class="nav-item" href="/html/pages/dashboard-allenatore.html"><span class="ico">🏠</span>Dashboard</a>
+      <a class="nav-item" href="/html/rosa.html"><span class="ico">👥</span>Rosa</a>
+      <a class="nav-item active" href="/html/calendario.html"><span class="ico">📅</span>Calendario</a>
+      <a class="nav-item" href="/html/statistiche.html"><span class="ico">📊</span>Statistiche</a>
+      <a class="nav-item" href="/html/messaggi.html"><span class="ico">💬</span>Messaggi</a>
+    </nav>
+
+    <nav class="nav-section">
+      <div class="nav-label">Impostazioni</div>
+      <a class="nav-item" href="#"><span class="ico">⚙️</span>Impostazioni</a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar" id="sb-avatar">?</div>
+        <div class="user-info">
+          <strong id="sb-nome">—</strong>
+          <small id="sb-ruolo">—</small>
         </div>
-        <div class="cal-grid" id="cal-grid"></div>
+        <button class="btn-logout" onclick="logout()">Esci</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══ -->
+  <div class="main">
+    <div class="topbar">
+      <h1>Calendario Squadra</h1>
+      <div class="topbar-right" style="display:flex;align-items:center;gap:8px">
+        <div class="view-toggle">
+          <button class="view-btn active" data-view="month" onclick="setView('month')">Mese</button>
+          <button class="view-btn" data-view="week"  onclick="setView('week')">Settimana</button>
+          <button class="view-btn" data-view="list"  onclick="setView('list')">Lista</button>
+        </div>
+        <button class="btn-primary" id="btn-nuovo-evento" onclick="openNuovoEventoModal()">+ Nuovo Evento</button>
       </div>
     </div>
 
-    <!-- SETTIMANA -->
-    <div id="view-week" style="display:none">
-      <div class="week-wrap">
-        <div class="loading-overlay" id="week-loader"><div class="spinner"></div></div>
-        <div class="week-header-row" id="week-header">
-          <div class="week-time-head"></div>
+    <div class="content">
+
+      <!-- Banner errore backend -->
+      <div id="error-banner"></div>
+
+      <!-- KPI -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Eventi del mese</div>
+          <div class="stat-value" id="kpi-eventi-mese">—</div>
+          <div class="stat-sub" id="kpi-eventi-sub">caricamento…</div>
         </div>
-        <div class="week-body-scroll">
-          <div class="week-body-grid" id="week-body">
-            <div class="time-col-inner" id="time-col"></div>
+        <div class="stat-card info">
+          <div class="stat-label">Prossimo evento</div>
+          <div class="stat-value" id="kpi-prossimo" style="font-size:1.3rem">—</div>
+          <div class="stat-sub" id="kpi-prossimo-sub">caricamento…</div>
+        </div>
+        <div class="stat-card warn">
+          <div class="stat-label">Prossima partita</div>
+          <div class="stat-value" id="kpi-partita">—</div>
+          <div class="stat-sub" id="kpi-partita-sub">caricamento…</div>
+        </div>
+      </div>
+
+      <!-- Navigazione mese/settimana -->
+      <div class="cal-nav">
+        <button class="btn-cal-nav" onclick="navigate(-1)">‹</button>
+        <div class="cal-nav-title" id="cal-month-title">—</div>
+        <button class="btn-today" onclick="goToday()">Oggi</button>
+        <button class="btn-cal-nav" onclick="navigate(1)">›</button>
+      </div>
+
+      <!-- ─── VISTA MESE ─── -->
+      <div id="view-month">
+        <div class="cal-wrap">
+          <div class="cal-loader" id="cal-loader"><div class="cal-spinner"></div></div>
+          <div class="cal-dow-row">
+            <div class="cal-dow">Lun</div><div class="cal-dow">Mar</div>
+            <div class="cal-dow">Mer</div><div class="cal-dow">Gio</div>
+            <div class="cal-dow">Ven</div>
+            <div class="cal-dow" style="color:rgba(139,148,158,.5)">Sab</div>
+            <div class="cal-dow" style="color:rgba(139,148,158,.5)">Dom</div>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+      </div>
+
+      <!-- ─── VISTA SETTIMANA ─── -->
+      <div id="view-week" style="display:none">
+        <div class="week-wrap">
+          <div class="cal-loader" id="week-loader"><div class="cal-spinner"></div></div>
+          <div class="week-head-row" id="week-header">
+            <div class="week-time-head"></div>
+          </div>
+          <div class="week-body-scroll">
+            <div class="week-body-grid" id="week-body">
+              <div class="time-col-inner" id="week-time-col" style="display:flex;flex-direction:column"></div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- LISTA -->
-    <div id="view-list" style="display:none">
-      <div class="loading-overlay" id="list-loader" style="position:fixed;border-radius:0"><div class="spinner"></div></div>
-      <div class="list-container" id="list-container"></div>
-    </div>
-
-  </div><!-- /content-area -->
-</div><!-- /main -->
-</div><!-- /app -->
-
-<!-- ══════ MODAL FORM ══════ -->
-<div class="modal-overlay" id="modal-form">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 id="form-title">Nuovo Evento</h3>
-      <button class="modal-close" onclick="closeModal('modal-form')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-err" id="form-err"></div>
-      <input type="hidden" id="ev-id"/>
-
-      <div class="form-group">
-        <label>Titolo *</label>
-        <input type="text" id="ev-titolo" placeholder="es. Allenamento tattico"/>
+      <!-- ─── VISTA LISTA ─── -->
+      <div id="view-list" style="display:none">
+        <div class="cal-loader" id="list-loader" style="position:fixed;border-radius:0">
+          <div class="cal-spinner"></div>
+        </div>
+        <div id="list-container"></div>
       </div>
 
-      <div class="form-group">
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ══ MODAL NUOVO / MODIFICA EVENTO ══ -->
+<div class="fm-modal-overlay" id="modalNuovoEvento">
+  <div class="fm-modal">
+    <div class="fm-modal-header">
+      <h3 id="fm-modal-title">Nuovo Evento</h3>
+      <button class="btn-modal-close" onclick="closeModal('modalNuovoEvento')">✕</button>
+    </div>
+    <div class="fm-modal-body">
+      <div id="fm-form-err"></div>
+      <input type="hidden" id="fm-ev-id"/>
+
+      <div class="fm-form-group">
+        <label>Titolo *</label>
+        <input type="text" id="fm-ev-titolo" placeholder="es. Allenamento tattico" maxlength="150"/>
+      </div>
+
+      <div class="fm-form-group">
         <label>Tipo *</label>
-        <select id="ev-tipo">
+        <select id="fm-ev-tipo">
+          <!--
+            IMPORTANTE: i valori devono corrispondere ESATTAMENTE
+            all'ENUM MySQL: ALLENAMENTO | PARTITA | RIUNIONE | ALTRO
+          -->
           <option value="ALLENAMENTO">⚽ Allenamento</option>
           <option value="PARTITA">🏟 Partita</option>
           <option value="RIUNIONE">📋 Riunione</option>
@@ -136,51 +540,53 @@
         </select>
       </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label>Inizio *</label>
-          <input type="datetime-local" id="ev-inizio"/>
+      <div class="fm-form-row">
+        <div class="fm-form-group">
+          <label>Data e ora inizio *</label>
+          <input type="datetime-local" id="fm-ev-inizio"/>
         </div>
-        <div class="form-group">
-          <label>Fine *</label>
-          <input type="datetime-local" id="ev-fine"/>
+        <div class="fm-form-group">
+          <label>Data e ora fine *</label>
+          <input type="datetime-local" id="fm-ev-fine"/>
         </div>
       </div>
 
-      <div class="form-group">
+      <div class="fm-form-group">
         <label>Luogo</label>
-        <input type="text" id="ev-luogo" placeholder="es. Campo A, Stadio Centrale…"/>
+        <input type="text" id="fm-ev-luogo" placeholder="es. Campo A, Stadio Centrale…" maxlength="200"/>
       </div>
-
     </div>
-    <div class="modal-footer">
-      <button class="btn-danger" id="btn-delete" style="display:none;margin-right:auto" onclick="deleteEvento()">🗑 Elimina</button>
-      <button class="btn-ghost" onclick="closeModal('modal-form')">Annulla</button>
-      <button class="btn-primary" id="btn-save" onclick="saveEvento()">
-        <span id="btn-save-text">Salva Evento</span>
+
+    <div class="fm-modal-footer">
+      <button class="btn-danger-fm" id="fm-btn-delete" style="display:none" onclick="eliminaDalForm()">
+        🗑 Elimina
       </button>
+      <button class="btn-ghost" onclick="closeModal('modalNuovoEvento')">Annulla</button>
+      <button class="btn-primary" id="fm-btn-save" onclick="salvaEvento()">Salva Evento</button>
     </div>
   </div>
 </div>
 
-<!-- ══════ MODAL DETTAGLIO ══════ -->
-<div class="modal-overlay" id="modal-detail">
-  <div class="modal">
-    <div class="modal-body" id="detail-body" style="padding:1.5rem 1.6rem"></div>
-    <div class="modal-footer">
-      <button class="btn-danger" onclick="deleteFromDetail()">🗑 Elimina</button>
-      <button class="btn-ghost" onclick="closeModal('modal-detail')">Chiudi</button>
+<!-- ══ MODAL DETTAGLIO ══ -->
+<div class="fm-modal-overlay" id="modalDettaglio">
+  <div class="fm-modal">
+    <div class="fm-modal-body" id="detail-modal-body" style="padding:1.5rem 1.6rem"></div>
+    <div class="fm-modal-footer">
+      <button class="btn-danger-fm" onclick="deleteFromDetail()">🗑 Elimina</button>
+      <button class="btn-ghost" onclick="closeModal('modalDettaglio')">Chiudi</button>
       <button class="btn-primary" onclick="editFromDetail()">✏️ Modifica</button>
     </div>
   </div>
 </div>
 
 <!-- TOAST -->
-<div class="toast" id="toast">
-  <span id="toast-icon">✅</span>
-  <span id="toast-text"></span>
+<div class="fm-toast" id="fm-toast">
+  <span id="fm-toast-icon">✅</span>
+  <span id="fm-toast-text"></span>
 </div>
 
+<!-- JS del calendario — UNICA dipendenza -->
 <script src="/html/js/calendario.js"></script>
+
 </body>
 </html>

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController @RequestMapping("/api/eventi") @RequiredArgsConstructor
+@CrossOrigin(origins="*")
 public class EventoController {
     private final EventoService svc;
 
