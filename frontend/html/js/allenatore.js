@@ -149,35 +149,42 @@ function renderizzaTabellaRosa() {
 
     // Mostriamo solo le prime 5 righe per non appesantire la dashboard (esattamente come il vecchio statico)
     tuttiGiocatoriDashboard.slice(0, 5).forEach(g => {
-        const iniziali = g.nome && g.cognome ? (g.nome[0] + g.cognome[0]).toUpperCase() : 'GP';
-        const puntiTotali = g.puntiTotali || g.punti_totali || 0;
-        const tr = document.createElement('tr');
-        
-        let statoClass = 'pill-green';
-        let statoTesto = 'Disponibile';
-        
-        if (g.stato?.toLowerCase() === 'injured' || g.stato?.toLowerCase() === 'infortunato') {
-            statoClass = 'pill-red';
-            statoTesto = 'Infortunato';
-        } else if (g.stato?.toLowerCase() === 'squalificato') {
-            statoClass = 'pill-amber';
-            statoTesto = 'Squalificato';
-        }
+    const iniziali = g.nome && g.cognome ? (g.nome[0] + g.cognome[0]).toUpperCase() : 'GP';
+    const puntiTotali = g.puntiTotali || g.punti_totali || 0;
+    const tr = document.createElement('tr');
+    
+    // 1. GESTIONE DINAMICA DEL COLORE DEL RUOLO
+    let ruoloClass; 
+    const pos = (g.posizione || '').toLowerCase();
+    
 
-        tr.innerHTML = `
-            <td>
-                <div class="player-name">
-                    <div class="player-avatar">${iniziali}</div>
-                    ${g.nome} ${g.cognome}
-                </div>
-            </td>
-            <td><span class="pill pill-blue">${g.posizione || 'N/D'}</span></td>
-            <td>${g.presenze || 0}</td>
-            <td>${puntiTotali} pt</td>
-            <td><span class="pill ${statoClass}">${statoTesto}</span></td>
-        `;
-        tbody.appendChild(tr);
-    });
+    // 2. GESTIONE DINAMICA DEL COLORE DELLO STATO
+    let statoClass = 'pill-green';
+    let statoTesto = 'Disponibile';
+    
+    if (g.stato?.toLowerCase() === 'injured' || g.stato?.toLowerCase() === 'infortunato') {
+        statoClass = 'pill-red';
+        statoTesto = 'Infortunato';
+    } else if (g.stato?.toLowerCase() === 'squalificato') {
+        statoClass = 'pill-amber';
+        statoTesto = 'Squalificato';
+    }
+
+    // Inseriamo la variabile ruoloClass all'interno dello span del ruolo
+    tr.innerHTML = `
+        <td>
+            <div class="player-name">
+                <div class="player-avatar">${iniziali}</div>
+                ${g.nome} ${g.cognome}
+            </div>
+        </td>
+        <td><span class="pill ${ruoloClass}">${g.posizione || 'N/D'}</span></td>
+        <td>${g.presenze || 0}</td>
+        <td>${puntiTotali} pt</td>
+        <td><span class="pill ${statoClass}">${statoTesto}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
 function renderizzaListaEventi() {

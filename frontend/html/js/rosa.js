@@ -20,6 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sbRole) sbRole.textContent = ruolo;
     if (sbAv)   sbAv.textContent   = (nome[0]||('')).toUpperCase() + (cognome[0]||nome[1]||'').toUpperCase();
 
+    // Imposta la vista di base (Griglia) all'avvio della pagina
+    setView('grid');
+
     // 3. Scarica la rosa dal backend
     caricaRosa(); 
 });
@@ -175,7 +178,8 @@ function filterPlayers() {
 
         let matchRuolo = true;
         if (filtroRuolo !== 'tutti') {
-            matchRuolo = g.posizione?.toUpperCase().substring(0, 3) === filtroRuolo;
+            // Controllo sicuro e flessibile per la stringa del ruolo
+            matchRuolo = g.posizione?.toLowerCase().startsWith(filtroRuolo.toLowerCase());
         }
 
         let matchStato = true;
@@ -191,18 +195,26 @@ function filterPlayers() {
     renderizzaGiocatori(giocatoriFiltrati);
 }
 
-// Cambia il ruolo selezionato dai bottoni
+// Cambia il ruolo selezionato dai bottoni (Corretto l'aggiornamento visivo della classe active)
 function setFilter(ruolo, btn) {
     filtroRuolo = ruolo;
-    document.querySelectorAll('.filter-group:nth-of-type(1) .filter-btn').forEach(b => b.classList.remove('active'));
+    
+    // Trova ed elimina la classe 'active' solo dai bottoni di questo specifico gruppo ruolo
+    const fratelli = btn.parentElement.querySelectorAll('.filter-btn');
+    fratelli.forEach(b => b.classList.remove('active'));
+    
     btn.classList.add('active');
     filterPlayers();
 }
 
-// Cambia lo stato selezionato
+// Cambia lo stato selezionato (Corretto l'aggiornamento visivo della classe active)
 function setStatus(stato, btn) {
     filtroStato = stato;
-    document.querySelectorAll('.filter-group:nth-of-type(2) .filter-btn').forEach(b => b.classList.remove('active'));
+    
+    // Trova ed elimina la classe 'active' solo dai bottoni di questo specifico gruppo stato
+    const fratelli = btn.parentElement.querySelectorAll('.filter-btn');
+    fratelli.forEach(b => b.classList.remove('active'));
+    
     btn.classList.add('active');
     filterPlayers();
 }
