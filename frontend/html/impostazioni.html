@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impostazioni Allenatore - FootmanagerV5</title>
+    <link rel="stylesheet" href="styleimpostazioni.css">
+</head>
+<body>
+    <div class="settings-container">
+        <!-- Header della pagina -->
+        <header class="settings-header">
+            <h1>Impostazioni Allenatore</h1>
+            <p>Gestisci il tuo profilo e le preferenze della tua squadra.</p>
+        </header>
+
+        <div class="settings-content">
+            <!-- Sidebar di navigazione interna -->
+            <nav class="settings-sidebar">
+                <button class="tab-btn active" data-tab="profilo">Profilo Personale</button>
+                <button class="tab-btn" data-tab="squadra">Impostazioni Squadra</button>
+                <button class="tab-btn" data-tab="notifiche">Notifiche</button>
+            </nav>
+
+            <!-- Aree di contenuto -->
+            <main class="settings-panels">
+                
+                <!-- Tab Profilo -->
+                <section id="profilo" class="tab-panel active">
+                    <h2>Il tuo Profilo</h2>
+                    <form id="form-profilo" class="settings-form">
+                        <div class="form-group">
+                            <label for="nome-allenatore">Nome Allenatore</label>
+                            <input type="text" id="nome-allenatore" placeholder="Es. Carlo Ancelotti" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" placeholder="mister@footmanager.it" required>
+                        </div>
+                        <button type="submit" class="btn-save">Salva Profilo</button>
+                    </form>
+                </section>
+
+                <!-- Tab Squadra -->
+                <section id="squadra" class="tab-panel">
+                    <h2>Preferenze Squadra</h2>
+                    <form id="form-squadra" class="settings-form">
+                        <div class="form-group">
+                            <label for="modulo-base">Modulo di Base</label>
+                            <select id="modulo-base">
+                                <option value="442">4-4-2</option>
+                                <option value="433">4-3-3</option>
+                                <option value="352">3-5-2</option>
+                                <option value="4231">4-2-3-1</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="stile-gioco">Stile di Gioco</label>
+                            <select id="stile-gioco">
+                                <option value="possesso">Tiki-Taka (Possesso)</option>
+                                <option value="contropiede">Contropiede</option>
+                                <option value="pressing">Gegenpressing</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-save">Salva Tattiche</button>
+                    </form>
+                </section>
+
+                <!-- Tab Notifiche -->
+                <section id="notifiche" class="tab-panel">
+                    <h2>Impostazioni Notifiche</h2>
+                    <form id="form-notifiche" class="settings-form">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="notif-infortuni" checked>
+                            <label for="notif-infortuni">Avvisi infortuni giocatori</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="notif-mercato" checked>
+                            <label for="notif-mercato">Aggiornamenti calciomercato</label>
+                        </div>
+                        <button type="submit" class="btn-save">Salva Notifiche</button>
+                    </form>
+                </section>
+
+            </main>
+        </div>
+    </div>
+    
+    <script src="impostazioni.js"></script>
+</body>
+</html>

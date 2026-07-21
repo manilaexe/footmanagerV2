@@ -122,15 +122,28 @@ public class Dtos {
         private Integer       id;
         private String        testo;
         private LocalDateTime dataOra;
-        private String        stato;
+        private String        stato;          // "INVIATO" | "LETTO"
         private String        nomeAllenatore;
         private String        nomeGiocatore;
+        private Integer       giocatoreId;    // aggiunto: utile al frontend per raggruppare
     }
 
     @Data
     public static class InviaMessaggioRequest {
         @NotNull  private Integer giocatoreId;
         @NotBlank private String  testo;
+    }
+
+    /**
+     * DTO leggero usato per popolare il <select> destinatari nel form
+     * di composizione messaggi — restituito da GET /api/messaggi/giocatori-squadra
+     */
+    @Data @Builder
+    public static class GiocatoreSelectDto {
+        private Integer id;
+        private String  nomeCompleto;   // "Nome Cognome"
+        private String  posizione;      // es. "Attaccante"
+        private Integer numero;         // numero di maglia
     }
 
     // ── Quiz (risposta_corretta + opzione_b + opzione_c) ─────────────────

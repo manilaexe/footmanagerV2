@@ -17,20 +17,31 @@ public class MessaggioService {
     private final AllenatoreRepository allenatoreRepo;
     private final UtenteRepository     utenteRepo;
 
+    // ── Messaggi ricevuti da un giocatore (usato dalla view giocatore) ────
     @Transactional(readOnly = true)
     public List<MessaggioDto> msgPerGiocatore(Integer giocatoreId) {
-        return mesRepo.findByGiocatore_IdOrderByDataOraDesc(giocatoreId).stream().map(this::toDto).toList();
+        return mesRepo.findByGiocatore_IdOrderByDataOraDesc(giocatoreId)
+                .stream().map(this::toDto).toList();
     }
 
+    // ── Messaggi inviati da un allenatore (usato dalla view allenatore) ───
+    @Transactional(readOnly = true)
+    public List<MessaggioDto> msgInviatiDaAllenatore(Integer allenatoreId) {
+        return mesRepo.findByAllenatore_IdOrderByDataOraDesc(allenatoreId)
+                .stream().map(this::toDto).toList();
+    }
+
+    // ── Conta messaggi non letti per un giocatore ─────────────────────────
     @Transactional(readOnly = true)
     public long nonLetti(Integer giocatoreId) {
         return mesRepo.countByGiocatore_IdAndStato(giocatoreId, "INVIATO");
     }
 
+    // ── Invia un messaggio a un singolo giocatore ─────────────────────────
     public MessaggioDto invia(InviaMessaggioRequest req, String usernameAllenatore) {
-        // Ricava allenatore dal suo username
         Integer uid = utenteRepo.findByUsername(usernameAllenatore)
-                .orElseThrow(() -> new ResourceNotFoundException("Utente: " + usernameAllenatore)).getId();
+                .orElseThrow(() -> new ResourceNotFoundException("Utente: " + usernameAllenatore))
+                .getId();
         Allenatore all = allenatoreRepo.findByUtente_Id(uid)
                 .orElseThrow(() -> new ResourceNotFoundException("Allenatore: " + usernameAllenatore));
         Giocatore g = giocatoreRepo.findById(req.getGiocatoreId())
@@ -44,6 +55,7 @@ public class MessaggioService {
         return toDto(mesRepo.save(m));
     }
 
+    // ── Segna il messaggio come letto ─────────────────────────────────────
     public MessaggioDto segnaLetto(Integer id) {
         Messaggio m = mesRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Messaggio", Long.valueOf(id)));
@@ -51,13 +63,22 @@ public class MessaggioService {
         return toDto(mesRepo.save(m));
     }
 
+    // ── Conversione Entity → DTO ──────────────────────────────────────────
     private MessaggioDto toDto(Messaggio m) {
         String nomeAll = m.getAllenatore() != null
                 ? m.getAllenatore().getNome() + " " + m.getAllenatore().getCognome() : null;
         String nomeG   = m.getGiocatore() != null
                 ? m.getGiocatore().getNome()  + " " + m.getGiocatore().getCognome()  : null;
-        return MessaggioDto.builder().id(m.getId()).testo(m.getTesto())
-                .dataOra(m.getDataOra()).stato(m.getStato())
-                .nomeAllenatore(nomeAll).nomeGiocatore(nomeG).build();
+        Integer gid    = m.getGiocatore() != null ? m.getGiocatore().getId() : null;
+
+        return MessaggioDto.builder()
+                .id(m.getId())
+                .testo(m.getTesto())
+                .dataOra(m.getDataOra())
+                .stato(m.getStato())
+                .nomeAllenatore(nomeAll)
+                .nomeGiocatore(nomeG)
+                .giocatoreId(gid)
+                .build();
     }
 }
