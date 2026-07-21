@@ -85,7 +85,10 @@
         <div class="card">
           <div class="card-header">
             <h2>Rosa</h2>
-            <a class="card-link" href="/html/rosa.html">Vedi tutti →</a>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <a class="card-link" href="/html/rosa.html">Vedi tutti →</a>
+              <button class="btn-primary" style="font-size: 0.8rem; padding: 4px 8px;" onclick="openModal('modal-giocatore')">+ Aggiungi</button>
+            </div>
           </div>
           <div class="card-body" style="padding:0">
             <table>
@@ -112,7 +115,10 @@
         <div class="card">
           <div class="card-header">
             <h2>Prossimi eventi</h2>
-            <button class="btn-primary" style="font-size: 0.8rem; padding: 4px 8px;" onclick="openModal('modal-evento')">+ Aggiungi</button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <a class="card-link" href="/html/calendario.html">Vedi tutti →</a>
+              <button class="btn-primary" style="font-size: 0.8rem; padding: 4px 8px;" onclick="openModal('modal-evento')">+ Aggiungi</button>
+            </div>
           </div>
           <div class="card-body">
             <!-- Agganciato a JS per iniettare la lista eventi del DB -->
@@ -169,7 +175,6 @@
 <div class="modal-overlay" id="modal-evento">
   <div class="modal">
     <h3>Nuovo Evento</h3>
-    <!-- Inserito un tag form reale per intercettare il submit -->
     <form id="dashboard-evento-form">
       <div class="form-group">
         <label>Titolo</label>
@@ -189,6 +194,10 @@
         <input type="datetime-local" id="evt-start" required />
       </div>
       <div class="form-group">
+        <label>Data e ora fine</label>
+        <input type="datetime-local" id="evt-end" required />
+      </div>
+      <div class="form-group">
         <label>Luogo</label>
         <input type="text" id="evt-location" placeholder="es. Campo A" required />
       </div>
@@ -196,6 +205,94 @@
         <button type="button" class="btn-ghost" onclick="closeModal('modal-evento')">Annulla</button>
         <button type="submit" class="btn-primary">Salva Evento</button>
       </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL NUOVO GIOCATORE COMPLETO -->
+<div class="modal-overlay" id="modal-giocatore">
+  <div class="modal" style="max-width: 550px;">
+    <h3>Nuovo Giocatore</h3>
+    <form id="dashboard-giocatore-form">
+      
+      <!-- CREDENZIALI ACCOUNT UTENTE -->
+      <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 1fr solid #333;">
+        <small style="color: #aaa; display: block; margin-bottom: 8px; font-weight: bold;">CREDENZIALI ACCESSO UTENTE</small>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group" style="margin:0;">
+            <label>Username *</label>
+            <input type="text" id="player-username" placeholder="es. m.rossi" required />
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label>Password *</label>
+            <input type="password" id="player-password" placeholder="es. Password123!" required />
+          </div>
+        </div>
+      </div>
+
+      <!-- DATI ANAGRAFICI -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label>Nome *</label>
+          <input type="text" id="player-nome" placeholder="es. Mario" required />
+        </div>
+        <div class="form-group">
+          <label>Cognome *</label>
+          <input type="text" id="player-cognome" placeholder="es. Rossi" required />
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label>Ruolo / Posizione *</label>
+          <select id="player-ruolo" required>
+            <option value="POR">Portiere (POR)</option>
+            <option value="DIF">Difensore (DIF)</option>
+            <option value="CEN">Centrocampista (CEN)</option>
+            <option value="ATT">Attaccante (ATT)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Numero Maglia</label>
+          <input type="number" id="player-numero" placeholder="es. 10" min="1" max="99" value="10" required />
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label>Data di Nascita *</label>
+          <input type="date" id="player-data-nascita" required />
+        </div>
+        <div class="form-group">
+          <label>Nazionalità</label>
+          <input type="text" id="player-nazionalita" placeholder="es. Italiana" value="Italiana" />
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label>Piede Preferito</label>
+          <select id="player-piede">
+            <option value="Destro">Destro</option>
+            <option value="Sinistro">Sinistro</option>
+            <option value="Ambidestro">Ambidestro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Altezza (cm)</label>
+          <input type="number" id="player-altezza" placeholder="es. 180" value="180" />
+        </div>
+        <div class="form-group">
+          <label>Peso (kg)</label>
+          <input type="number" id="player-peso" placeholder="es. 75" value="75" />
+        </div>
+      </div>
+
+      <div class="modal-footer" style="margin-top: 15px;">
+        <button type="button" class="btn-ghost" onclick="closeModal('modal-giocatore')">Annulla</button>
+        <button type="submit" class="btn-primary">Salva Giocatore e Utente</button>
+      </div>
+
     </form>
   </div>
 </div>

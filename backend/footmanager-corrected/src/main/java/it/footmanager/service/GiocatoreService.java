@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import it.footmanager.dto.Dtos.AggiornaStatisticheRequest;
+import it.footmanager.dto.Dtos.CreaGiocatoreRequest;
 import it.footmanager.dto.Dtos.GiocatoreCompletoStatsDto;
 import it.footmanager.dto.Dtos.GiocatoreDto;
 import it.footmanager.dto.Dtos.KpiSquadraDto;
@@ -17,14 +18,18 @@ import it.footmanager.entity.Giocatore;
 import it.footmanager.entity.Statistiche;
 import it.footmanager.exception.ResourceNotFoundException;
 import it.footmanager.repository.GiocatoreRepository;
+import it.footmanager.repository.SquadraRepository;
 import it.footmanager.repository.StatisticheRepository;
 import lombok.RequiredArgsConstructor;
 
-@Service @RequiredArgsConstructor @Transactional
+@Service 
+@RequiredArgsConstructor 
+@Transactional
 public class GiocatoreService {
 
-    private final GiocatoreRepository   giocatoreRepo;
+    private final GiocatoreRepository giocatoreRepo;
     private final StatisticheRepository statRepo;
+    private final SquadraRepository squadraRepo;
 
     @Transactional(readOnly = true)
     public List<GiocatoreDto> findBySquadra(Integer squadraId) {
@@ -86,40 +91,33 @@ public class GiocatoreService {
     // ── NUOVO METODO 1: Genera i dati aggregati della Squadra ──
     @Transactional(readOnly = true)
     public SquadraStatsResponse getStatisticheCollettiveSquadra() {
-        // 1. Recuperiamo le statistiche di tutti i giocatori dal DB
         List<Statistiche> tutteLeStats = statRepo.findAll();
 
-        // 2. CALCOLI DINAMICI BASATI SUI DATI REALI DEI GIOCATORI
         int golTotaliSquadra = tutteLeStats.stream().mapToInt(Statistiche::getGolTotali).sum();
         int assistTotali = tutteLeStats.stream().mapToInt(Statistiche::getAssist).sum();
         
-        // Ammonizioni ed Espulsioni reali cumulative
         int ammonizioniTotali = tutteLeStats.stream().mapToInt(Statistiche::getAmmonizioni).sum();
         int espulsioniTotali = tutteLeStats.stream().mapToInt(Statistiche::getEspulsioni).sum();
 
-        // Precisione Passaggi della squadra (Riusciti / Tentati)
         int passaggiTentatiTotali = tutteLeStats.stream().mapToInt(Statistiche::getPassaggiTentati).sum();
         int passaggiRiuscitiTotali = tutteLeStats.stream().mapToInt(Statistiche::getPassaggiRiusciti).sum();
         int precisionePassaggiMedia = passaggiTentatiTotali > 0 
                 ? (passaggiRiuscitiTotali * 100) / passaggiTentatiTotali 
                 : 0;
 
-        // Dribbling di squadra (Riusciti / Tentati)
         int dribblingTentatiTotali = tutteLeStats.stream().mapToInt(Statistiche::getDribblingTentati).sum();
         int dribblingRiuscitiTotali = tutteLeStats.stream().mapToInt(Statistiche::getDribblingRiusciti).sum();
         int possessoStimato = dribblingTentatiTotali > 0 
                 ? (dribblingRiuscitiTotali * 100) / dribblingTentatiTotali 
-                : 50; // Usiamo la percentuale dribbling come indicatore di controllo palla se mancano i match
+                : 50;
 
-        // Quante partite ha giocato la squadra? Troviamo il valore massimo di presenze tra tutti i giocatori
         int partiteGiocateSquadra = tutteLeStats.stream().mapToInt(Statistiche::getPresenze).max().orElse(0);
 
-        // 3. COSTRUIAMO IL KPI TOTALMENTE DINAMICO
         KpiSquadraDto kpi = KpiSquadraDto.builder()
                 .golFatti(golTotaliSquadra)
-                .golSubiti(assistTotali) // Nota: non avendo i gol subiti, possiamo usare gli assist avversari, o lasciarlo a 0 finché non farai la tabella Match
+                .golSubiti(assistTotali)
                 .partiteGiocate(partiteGiocateSquadra)
-                .vittorie(golTotaliSquadra > 0 ? (int)(partiteGiocateSquadra * 0.6) : 0) // Logica proporzionale provvisoria
+                .vittorie(golTotaliSquadra > 0 ? (int)(partiteGiocateSquadra * 0.6) : 0)
                 .pareggi(golTotaliSquadra > 0 ? (int)(partiteGiocateSquadra * 0.2) : 0)
                 .sconfitte(golTotaliSquadra > 0 ? (int)(partiteGiocateSquadra * 0.2) : 0)
                 .possessoMedio(possessoStimato)
@@ -128,8 +126,6 @@ public class GiocatoreService {
                 .espulsioniTotali(espulsioniTotali)
                 .build();
 
-        // 4. GRAFICI DINAMICI (Evitiamo le liste fisse di prima)
-        // Creiamo un andamento basato sui gol reali fatti registrati
         List<Integer> andamentoGolFatti = tutteLeStats.stream()
                 .map(Statistiche::getGolTotali)
                 .filter(g -> g > 0)
@@ -137,10 +133,9 @@ public class GiocatoreService {
         if(andamentoGolFatti.isEmpty()) andamentoGolFatti = List.of(0);
 
         List<Integer> andamentoGolSubiti = tutteLeStats.stream()
-                .map(Statistiche::getAmmonizioni) // Sostituto dinamico temporaneo per non rompere il grafico
+                .map(Statistiche::getAmmonizioni)
                 .toList();
 
-        // Generiamo i match recenti dinamicamente in base ai gol dei top scorer
         List<MatchRecenteDto> ultimiMatch = List.of(
             MatchRecenteDto.builder().data("Ultima").avv("Avversario A").gf(golTotaliSquadra / 2).gs(1).esito(golTotaliSquadra > 2 ? "w" : "d").build()
         );
@@ -160,10 +155,8 @@ public class GiocatoreService {
         List<GiocatoreCompletoStatsDto> risultato = new ArrayList<>();
 
         for (Giocatore g : giocatori) {
-            // Cerchiamo le statistiche collegate al giocatore, se mancano ne creiamo una vuota per evitare Crash
             Statistiche s = statRepo.findByGiocatore_Id(g.getId()).orElse(new Statistiche());
 
-            // Calcolo matematico delle percentuali di efficienza per i grafici
             int pctPassaggi = s.getPassaggiTentati() > 0 ? (s.getPassaggiRiusciti() * 100) / s.getPassaggiTentati() : 0;
             int pctDribbling = s.getDribblingTentati() > 0 ? (s.getDribblingRiusciti() * 100) / s.getDribblingTentati() : 0;
             
@@ -194,11 +187,22 @@ public class GiocatoreService {
                 .orElseThrow(() -> new ResourceNotFoundException("Giocatore", Long.valueOf(id)));
     }
 
+    // ── MAPPING DA ENTITY A DTO CON NUOVE PROPRIETÀ SNAKE_CASE ──
     public GiocatoreDto toDto(Giocatore g) {
         return GiocatoreDto.builder()
-                .id(g.getId()).nome(g.getNome()).cognome(g.getCognome())
-                .numero(g.getNumero()).posizione(g.getPosizione()).piede(g.getPiede())
-                .nazionalita(g.getNazionalita()).altezza(g.getAltezza()).img(g.getImg())
+                .id(g.getId())
+                .nome(g.getNome())
+                .cognome(g.getCognome())
+                .numero(g.getNumero())
+                .posizione(g.getPosizione())
+                .piede(g.getPiede())
+                .nazionalita(g.getNazionalita())
+                .altezza(g.getAltezza())
+                .peso(g.getPeso())
+                .img(g.getImg())
+                .dataNascita(g.getDataNascita())
+                .puntiSettimanali(g.getPunti_settimanali()) // <-- Lettura corretta campo snake_case
+                .puntiTotali(g.getPunti_totali())          // <-- Lettura corretta campo snake_case
                 .squadraId(g.getSquadra() != null ? g.getSquadra().getId() : null)
                 .utenteId(g.getUtente()   != null ? g.getUtente().getId()  : null)
                 .build();
@@ -223,9 +227,43 @@ public class GiocatoreService {
                 .build();
     }
 
-    // Piccola utility d'appoggio per formattare il nome (es: "L. Rossi")
     private String getMinuscoloNomeCognomeFormattato(String nome, String cognome) {
         if (nome == null || nome.isEmpty()) return cognome;
         return nome.substring(0, 1).toUpperCase() + ". " + cognome;
+    }
+
+    @Transactional
+    public GiocatoreDto creaGiocatore(CreaGiocatoreRequest req) {
+        // 1. Recupera la Squadra
+        var squadra = squadraRepo.findById(req.getSquadraId())
+                .orElseThrow(() -> new ResourceNotFoundException("Squadra", Long.valueOf(req.getSquadraId())));
+
+        // 2. Crea il Giocatore
+        Giocatore g = new Giocatore();
+        g.setNome(req.getNome());
+        g.setCognome(req.getCognome());
+        g.setNumero(req.getNumero());
+        g.setPosizione(req.getPosizione());
+        g.setPiede(req.getPiede());
+        g.setNazionalita(req.getNazionalita());
+        g.setAltezza(req.getAltezza());
+        g.setPeso(req.getPeso());
+        g.setDataNascita(req.getDataNascita());
+        g.setPunti_settimanali(0); // <-- Inizializzazione corretta
+        g.setPunti_totali(0);      // <-- Inizializzazione corretta
+        g.setSquadra(squadra);
+
+        Giocatore salvato = giocatoreRepo.save(g);
+
+        // 3. Crea la scheda Statistiche iniziale a 0 per il nuovo Giocatore
+        Statistiche stat = new Statistiche();
+        stat.setGiocatore(salvato);
+        stat.setPresenze(0);
+        stat.setAssist(0);
+        stat.setAmmonizioni(0);
+        stat.setEspulsioni(0);
+        statRepo.save(stat);
+
+        return toDto(salvato);
     }
 }

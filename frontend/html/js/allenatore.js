@@ -6,7 +6,9 @@ let tuttiMessaggiDashboard = [];
 // ─── 1. INIZIALIZZAZIONE DELLA PAGINA ───
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Esegue il controllo sulla validità del login
-    verificaAutenticazione();
+    if (typeof verificaAutenticazione === 'function') {
+        verificaAutenticazione();
+    }
 
     // 2. Popola la sidebar con nome/ruolo dal localStorage
     const sbName = document.getElementById('sb-nome');
@@ -45,9 +47,18 @@ function setupFormListeners() {
             saveEvento();
         });
     }
+
+    // NUOVO: Listener per il form Giocatore
+    const playerForm = document.getElementById('dashboard-giocatore-form');
+    if (playerForm) {
+        playerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            saveGiocatore();
+        });
+    }
 }
 
-// ─── 2. RECUPERO DATI DAL BACKEND (Logica coordinata a rosa.js) ───
+// ─── 2. RECUPERO DATI DAL BACKEND ───
 async function caricaDatiDashboard() {
     try {
         const idSquadra = localStorage.getItem('idSquadra'); 
@@ -57,28 +68,31 @@ async function caricaDatiDashboard() {
             return;
         }
 
-        // Chiamate in parallelo per ottimizzare i tempi usando i tuoi endpoint reali basati su idSquadra
-        // Nota: se gli endpoint di eventi e messaggi sono leggermente diversi, basta allinearli qui sotto
+        const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : {};
+
+        // NOTA: Usiamo l'endpoint CORRETTO /api/eventi/calendario/ al posto di /api/eventi/squadra/
         const [resGiocatori, resEventi, resMessaggi] = await Promise.all([
-            fetch(`http://localhost:8080/api/giocatori/squadra/${idSquadra}`, { method: 'GET', headers: getAuthHeaders() }),
-            fetch(`http://localhost:8080/api/eventi/squadra/${idSquadra}`, { method: 'GET', headers: getAuthHeaders() }),
-            fetch(`http://localhost:8080/api/messaggi/squadra/${idSquadra}`, { method: 'GET', headers: getAuthHeaders() })
+            fetch(`http://localhost:8080/api/giocatori/squadra/${idSquadra}`, { method: 'GET', headers: headers }).catch(e => e),
+            fetch(`http://localhost:8080/api/eventi/calendario/${idSquadra}`, { method: 'GET', headers: headers }).catch(e => e),
+            fetch(`http://localhost:8080/api/messaggi/squadra/${idSquadra}`, { method: 'GET', headers: headers }).catch(e => e)
         ]);
 
-        // Controllo centralizzato della validità del token (se uno fallisce per 401/403, slogga)
         if (resGiocatori.status === 401 || resGiocatori.status === 403) {
             logout();
             return;
         }
 
-        // Parsing sicuro dei dati (se l'endpoint risponde correttamente, altrimenti array vuoto)
-        tuttiGiocatoriDashboard = resGiocatori.ok ? await resGiocatori.json() : [];
-        tuttiEventiDashboard = resEventi.ok ? await resEventi.json() : [];
-        tuttiMessaggiDashboard = resMessaggi.ok ? await resMessaggi.json() : [];
+        tuttiGiocatoriDashboard = (resGiocatori && resGiocatori.ok) ? await resGiocatori.json() : [];
+        tuttiEventiDashboard    = (resEventi && resEventi.ok) ? await resEventi.json() : [];
+        tuttiMessaggiDashboard  = (resMessaggi && resMessaggi.ok) ? await resMessaggi.json() : [];
 
-        console.log("Dati Dashboard Caricati:", { tuttiGiocatoriDashboard, tuttiEventiDashboard, tuttiMessaggiDashboard });
+        console.log(" Dati Dashboard Caricati con successo:", { 
+            giocatori: tuttiGiocatoriDashboard.length, 
+            eventi: tuttiEventiDashboard, 
+            messaggi: tuttiMessaggiDashboard.length 
+        });
 
-        // Eseguiamo il rendering grafico dei componenti a schermo
+        // Rendering grafico degli elementi
         renderizzaKPI();
         renderizzaTabellaRosa();
         renderizzaListaEventi();
@@ -92,43 +106,38 @@ async function caricaDatiDashboard() {
 // ─── 3. RENDERING GRAFICO DEI COMPONENTI ───
 
 function renderizzaKPI() {
-    // 1. Giocatori Totali ed Infortunati
-    const kpiGiocatori = document.getElementById('kpi-giocatori');
-    const kpiInfortunati = document.getElementById('kpi-infortunati');
-    if (kpiGiocatori) kpiGiocatori.textContent = tuttiGiocatoriDashboard.length;
-    
-    if (kpiInfortunati) {
-        // Controlla sia la stringa 'injured' (usata in rosa.js) che la stringa 'infortunato'
-        const infCount = tuttiGiocatoriDashboard.filter(g => 
-            g.stato?.toLowerCase() === 'injured' || g.stato?.toLowerCase() === 'infortunato'
-        ).length;
-        kpiInfortunati.textContent = `${infCount} infortunati`;
-    }
-
-    // 2. Prossimo Evento in programma
+    // 1. Prossimo Evento
     const kpiEvData = document.getElementById('kpi-prossimo-evento-data');
-    const kpiEvDet = document.getElementById('kpi-prossimo-evento-dettaglio');
-    
-    if (tuttiEventiDashboard.length > 0) {
-        // Ordina cronologicamente per mostrare il più recente in cima
-        const prossimi = [...tuttiEventiDashboard].sort((a, b) => new Date(a.dataInizio || a.data_inizio) - new Date(b.dataInizio || b.data_inizio));
+    const kpiEvDet  = document.getElementById('kpi-prossimo-evento-dettaglio');
+
+    if (tuttiEventiDashboard && tuttiEventiDashboard.length > 0) {
+        const prossimi = [...tuttiEventiDashboard].sort((a, b) => {
+            const dataA = new Date(a.dataOraInizio || a.dataInizio || 0);
+            const dataB = new Date(b.dataOraInizio || b.dataInizio || 0);
+            return dataA - dataB;
+        });
+
         const ev = prossimi[0];
-        const dataEv = new Date(ev.dataInizio || ev.data_inizio);
-        
-        if (kpiEvData) {
-            kpiEvData.textContent = dataEv.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric' });
+        const rawDate = ev.dataOraInizio || ev.dataInizio || ev.data_inizio;
+        const dataEv = rawDate ? new Date(rawDate) : null;
+
+        if (kpiEvData && dataEv && !isNaN(dataEv.getTime())) {
+            kpiEvData.textContent = dataEv.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
+        } else if (kpiEvData) {
+            kpiEvData.textContent = "—";
         }
+
         if (kpiEvDet) kpiEvDet.textContent = `${ev.titolo} – ${ev.luogo || 'Sede'}`;
     } else {
         if (kpiEvData) kpiEvData.textContent = "—";
-        if (kpiEvDet) kpiEvDet.textContent = "Nessun evento";
+        if (kpiEvDet)  kpiEvDet.textContent  = "Nessun evento";
     }
 
-    // 3. Conteggio Messaggi Inviati
+    // 2. Conteggio Messaggi Inviati
     const kpiMsg = document.getElementById('kpi-messaggi');
     if (kpiMsg) kpiMsg.textContent = tuttiMessaggiDashboard.length;
 
-    // 4. Calcolo Media Gol o Punti Totali della squadra
+    // 3. Calcolo Media Gol o Punti Totali della squadra
     const kpiMediaGol = document.getElementById('kpi-media-gol');
     if (kpiMediaGol && tuttiGiocatoriDashboard.length > 0) {
         const puntiTotaliSquadra = tuttiGiocatoriDashboard.reduce((sum, g) => sum + (g.puntiTotali || g.punti_totali || 0), 0);
@@ -142,49 +151,49 @@ function renderizzaTabellaRosa() {
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    if (tuttiGiocatoriDashboard.length === 0) {
+    if (!tuttiGiocatoriDashboard || tuttiGiocatoriDashboard.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px;">Nessun giocatore in rosa.</td></tr>`;
         return;
     }
 
-    // Mostriamo solo le prime 5 righe per non appesantire la dashboard (esattamente come il vecchio statico)
     tuttiGiocatoriDashboard.slice(0, 5).forEach(g => {
-    const iniziali = g.nome && g.cognome ? (g.nome[0] + g.cognome[0]).toUpperCase() : 'GP';
-    const puntiTotali = g.puntiTotali || g.punti_totali || 0;
-    const tr = document.createElement('tr');
-    
-    // 1. GESTIONE DINAMICA DEL COLORE DEL RUOLO
-    let ruoloClass; 
-    const pos = (g.posizione || '').toLowerCase();
-    
+        const iniziali = g.nome && g.cognome ? (g.nome[0] + g.cognome[0]).toUpperCase() : 'GP';
+        const puntiTotali = g.puntiTotali || g.punti_totali || 0;
+        const tr = document.createElement('tr');
+        
+        // GESTIONE DINAMICA DEL COLORE DEL RUOLO
+        let ruoloClass = 'pill-blue'; 
+        const pos = (g.posizione || '').toLowerCase();
+        if (pos.includes('portiere') || pos.includes('por')) ruoloClass = 'pill-amber';
+        else if (pos.includes('difensore') || pos.includes('dif')) ruoloClass = 'pill-green';
+        else if (pos.includes('attaccante') || pos.includes('att')) ruoloClass = 'pill-red';
 
-    // 2. GESTIONE DINAMICA DEL COLORE DELLO STATO
-    let statoClass = 'pill-green';
-    let statoTesto = 'Disponibile';
-    
-    if (g.stato?.toLowerCase() === 'injured' || g.stato?.toLowerCase() === 'infortunato') {
-        statoClass = 'pill-red';
-        statoTesto = 'Infortunato';
-    } else if (g.stato?.toLowerCase() === 'squalificato') {
-        statoClass = 'pill-amber';
-        statoTesto = 'Squalificato';
-    }
+        // GESTIONE DINAMICA DEL COLORE DELLO STATO
+        let statoClass = 'pill-green';
+        let statoTesto = 'Disponibile';
+        
+        if (g.stato?.toLowerCase() === 'injured' || g.stato?.toLowerCase() === 'infortunato') {
+            statoClass = 'pill-red';
+            statoTesto = 'Infortunato';
+        } else if (g.stato?.toLowerCase() === 'squalificato') {
+            statoClass = 'pill-amber';
+            statoTesto = 'Squalificato';
+        }
 
-    // Inseriamo la variabile ruoloClass all'interno dello span del ruolo
-    tr.innerHTML = `
-        <td>
-            <div class="player-name">
-                <div class="player-avatar">${iniziali}</div>
-                ${g.nome} ${g.cognome}
-            </div>
-        </td>
-        <td><span class="pill ${ruoloClass}">${g.posizione || 'N/D'}</span></td>
-        <td>${g.presenze || 0}</td>
-        <td>${puntiTotali} pt</td>
-        <td><span class="pill ${statoClass}">${statoTesto}</span></td>
-    `;
-    tbody.appendChild(tr);
-  });
+        tr.innerHTML = `
+            <td>
+                <div class="player-name">
+                    <div class="player-avatar">${iniziali}</div>
+                    ${g.nome} ${g.cognome}
+                </div>
+            </td>
+            <td><span class="pill ${ruoloClass}">${g.posizione || 'N/D'}</span></td>
+            <td>${g.presenze || 0}</td>
+            <td>${puntiTotali} pt</td>
+            <td><span class="pill ${statoClass}">${statoTesto}</span></td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
 function renderizzaListaEventi() {
@@ -192,21 +201,37 @@ function renderizzaListaEventi() {
     if (!container) return;
     container.innerHTML = '';
 
-    if (tuttiEventiDashboard.length === 0) {
+    if (!tuttiEventiDashboard || !Array.isArray(tuttiEventiDashboard) || tuttiEventiDashboard.length === 0) {
         container.innerHTML = `<div style="text-align: center; padding: 20px; color: #888;">Nessun evento in programma.</div>`;
         return;
     }
 
-    // Mostriamo i primi 4 eventi futuri
-    tuttiEventiDashboard.slice(0, 4).forEach(e => {
-        const dataEv = new Date(e.dataInizio || e.data_inizio);
-        const giorno = dataEv.getDate();
-        const mese = dataEv.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '');
-        const ora = dataEv.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    // Ordiniamo gli eventi in base alla data di inizio
+    const eventiOrdinati = [...tuttiEventiDashboard].sort((a, b) => {
+        const dataA = new Date(a.dataOraInizio || a.dataInizio || a.inizio || 0);
+        const dataB = new Date(b.dataOraInizio || b.dataInizio || b.inizio || 0);
+        return dataA - dataB;
+    });
+
+    eventiOrdinati.slice(0, 4).forEach(e => {
+        // Estrazione della data da qualsiasi formato del DTO Java
+        const rawDate = e.dataOraInizio || e.dataInizio || e.data_ora_inizio || e.inizio;
+        const dataEv = rawDate ? new Date(rawDate) : null;
+
+        let giorno = '–';
+        let mese = '–';
+        let ora = '–';
+
+        if (dataEv && !isNaN(dataEv.getTime())) {
+            giorno = dataEv.getDate();
+            mese = dataEv.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '');
+            ora = dataEv.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        }
 
         let stripeColor = 'stripe-green'; 
-        if (e.tipo?.toLowerCase() === 'partita') stripeColor = 'stripe-blue';
-        if (e.tipo?.toLowerCase() === 'riunione') stripeColor = 'stripe-amber';
+        const tipoLower = (e.tipo || '').toLowerCase();
+        if (tipoLower === 'partita') stripeColor = 'stripe-blue';
+        if (tipoLower === 'riunione') stripeColor = 'stripe-amber';
 
         const item = document.createElement('div');
         item.className = 'event-item';
@@ -217,8 +242,8 @@ function renderizzaListaEventi() {
             </div>
             <div class="event-stripe ${stripeColor}"></div>
             <div class="event-info">
-                <div class="event-title">${e.titolo}</div>
-                <div class="event-meta">${ora} – ${e.luogo || 'Campo'}</div>
+                <div class="event-title">${e.titolo || e.nome || 'Evento'}</div>
+                <div class="event-meta">${ora} – ${e.luogo || 'Sede'}</div>
             </div>
         `;
         container.appendChild(item);
@@ -230,12 +255,11 @@ function renderizzaListaMessaggi() {
     if (!container) return;
     container.innerHTML = '';
 
-    if (tuttiMessaggiDashboard.length === 0) {
+    if (!tuttiMessaggiDashboard || tuttiMessaggiDashboard.length === 0) {
         container.innerHTML = `<div style="text-align: center; padding: 20px; color: #888;">Nessun messaggio inviato di recente.</div>`;
         return;
     }
 
-    // Mostriamo gli ultimi 3 messaggi inviati
     tuttiMessaggiDashboard.slice(0, 3).forEach(m => {
         const div = document.createElement('div');
         div.className = 'msg-item';
@@ -245,39 +269,134 @@ function renderizzaListaMessaggi() {
                 <span class="msg-time">${m.dataInvio || m.data_invio || 'Recentemente'}</span>
             </div>
             <div class="msg-title" style="font-weight:600; font-size:0.9rem; margin: 4px 0;">${m.titolo || 'Comunicazione'}</div>
-            <div class="msg-text">${m.testo || m.messaggio}</div>
+            <div class="msg-text">${m.testo || m.messaggio || ''}</div>
         `;
         container.appendChild(div);
     });
 }
 
 // ─── 4. AZIONI FORM (POST VERSO IL BACKEND) ───
-
 async function saveEvento() {
     const idSquadra = localStorage.getItem('idSquadra');
     const titolo = document.getElementById('evt-title').value;
     const tipo = document.getElementById('evt-type').value;
-    const dataInizio = document.getElementById('evt-start').value;
+    const rawStart = document.getElementById('evt-start').value; 
+    const rawEnd = document.getElementById('evt-end').value; 
     const luogo = document.getElementById('evt-location').value;
 
-    const nuovoEvento = { titolo, tipo, dataInizio, luogo, idSquadra };
+    if (!idSquadra) {
+        alert("Errore: ID Squadra non trovato in sessione. Fai di nuovo il login.");
+        return;
+    }
+
+    if (!rawStart || !rawEnd) {
+        alert("Inserisci sia la data di inizio che la data di fine.");
+        return;
+    }
+
+    const dataOraInizio = rawStart.length === 16 ? `${rawStart}:00` : rawStart;
+    const dataOraFine = rawEnd.length === 16 ? `${rawEnd}:00` : rawEnd;
+    const idSquadraNum = parseInt(idSquadra, 10);
+
+    const nuovoEvento = { 
+        titolo: titolo, 
+        tipo: tipo, 
+        dataOraInizio: dataOraInizio,
+        dataOraFine: dataOraFine,
+        luogo: luogo, 
+        calendarioId: idSquadraNum,
+        squadraId: idSquadraNum,
+        idSquadra: idSquadraNum,
+        squadra: { id: idSquadraNum }
+    };
+
+    console.log("Payload inviato al backend:", nuovoEvento);
+
+    const headers = { 'Content-Type': 'application/json' };
+    const token = localStorage.getItem('token') || localStorage.getItem('jwt');
+    if (token) {
+        headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    }
 
     try {
         const response = await fetch('http://localhost:8080/api/eventi', {
             method: 'POST',
-            headers: getAuthHeaders(),
+            headers: headers,
             body: JSON.stringify(nuovoEvento)
         });
 
         if (response.ok) {
-            closeModal('modal-evento');
-            document.getElementById('dashboard-evento-form').reset();
-            caricaDatiDashboard(); // Aggiorna istantaneamente lo schermo
+            alert("Evento salvato con successo!");
+            if (typeof closeModal === 'function') closeModal('modal-evento');
+            document.getElementById('dashboard-evento-form')?.reset();
+            caricaDatiDashboard(); 
         } else {
-            alert('Errore nel salvataggio dell\'evento.');
+            const errorText = await response.text();
+            console.error("Dettagli errore dal backend Java:", errorText);
+            alert(`Errore nel salvataggio dell'evento (${response.status}). Guarda la console per i dettagli.`);
         }
     } catch (error) {
-        console.error('Errore durante il salvataggio dell\'evento:', error);
+        console.error("Errore di rete:", error);
+        alert("Impossibile contattare il server backend.");
+    }
+}
+
+async function saveGiocatore() {
+    const idSquadra = localStorage.getItem('idSquadra');
+    if (!idSquadra) {
+        alert("Errore: ID Squadra non trovato. Effettua il login.");
+        return;
+    }
+
+    const nome = document.getElementById('player-nome').value.trim();
+    const cognome = document.getElementById('player-cognome').value.trim();
+    const posizione = document.getElementById('player-ruolo').value;
+    const numero = parseInt(document.getElementById('player-numero').value, 10);
+    const dataNascita = document.getElementById('player-data-nascita')?.value || null;
+    const nazionalita = document.getElementById('player-nazionalita')?.value.trim() || "Italiana";
+    const piede = document.getElementById('player-piede')?.value || "Destro";
+    const altezza = parseInt(document.getElementById('player-altezza')?.value, 10) || null;
+    const peso = parseInt(document.getElementById('player-peso')?.value, 10) || null;
+
+    const payload = {
+        nome: nome,
+        cognome: cognome,
+        numero: isNaN(numero) ? 1 : numero,
+        posizione: posizione,
+        piede: piede,
+        nazionalita: nazionalita,
+        altezza: altezza,
+        peso: peso,
+        dataNascita: dataNascita,
+        squadraId: parseInt(idSquadra, 10)
+    };
+
+    const headers = { 'Content-Type': 'application/json' };
+    const token = localStorage.getItem('token') || localStorage.getItem('jwt');
+    if (token) {
+        headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    }
+
+    try {
+        const response = await fetch('http://localhost:8080/api/giocatori', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            alert("Giocatore aggiunto con successo!");
+            if (typeof closeModal === 'function') closeModal('modal-giocatore');
+            document.getElementById('dashboard-giocatore-form')?.reset();
+            if (typeof caricaDatiDashboard === 'function') caricaDatiDashboard();
+        } else {
+            const errorText = await response.text();
+            console.error("Errore salvataggio:", errorText);
+            alert("Impossibile salvare il giocatore.");
+        }
+    } catch (error) {
+        console.error("Errore di rete:", error);
+        alert("Server non raggiungibile.");
     }
 }
 
@@ -287,19 +406,37 @@ async function sendMsg() {
     const titolo = document.getElementById('msg-title').value;
     const testo = document.getElementById('msg-text').value.trim();
 
-    const nuovoMessaggio = { destinatario, titolo, testo, idSquadra };
+    if (!idSquadra) {
+        alert("Errore: ID Squadra non presente.");
+        return;
+    }
+
+    const nuovoMessaggio = { 
+        destinatario: destinatario, 
+        titolo: titolo, 
+        testo: testo, 
+        messaggio: testo,
+        idSquadra: Number(idSquadra),
+        squadraId: Number(idSquadra)
+    };
+
+    const headers = {
+        'Content-Type': 'application/json',
+        ...(typeof getAuthHeaders === 'function' ? getAuthHeaders() : {})
+    };
 
     try {
         const response = await fetch('http://localhost:8080/api/messaggi', {
             method: 'POST',
-            headers: getAuthHeaders(),
+            headers: headers,
             body: JSON.stringify(nuovoMessaggio)
         });
 
         if (response.ok) {
             document.getElementById('dashboard-msg-form').reset();
-            caricaDatiDashboard(); // Aggiorna istantaneamente lo schermo
+            caricaDatiDashboard(); 
         } else {
+            console.error('Errore invio messaggio:', response.status);
             alert('Impossibile inviare il messaggio.');
         }
     } catch (error) {

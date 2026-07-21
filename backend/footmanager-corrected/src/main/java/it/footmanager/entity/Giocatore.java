@@ -44,10 +44,10 @@ public class Giocatore {
     private Integer peso;
 
     @Column(name = "punti_settimanali")
-    private Integer punti_settimanali;
+    private Integer punti_settimanali = 0;
 
     @Column(name = "punti_totali")
-    private Integer punti_totali;
+    private Integer punti_totali = 0;
 
     @Column(name = "data_nascita")
     private LocalDate dataNascita;
