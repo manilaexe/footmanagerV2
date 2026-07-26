@@ -1,86 +1,374 @@
-// ─── 1. INIZIALIZZAZIONE DELLA PAGINA & SIDEBAR ───
+/* =========================================================
+   giocatore.js
+   ─ Carica i messaggi reali dal backend via GET /api/messaggi/miei
+   ─ Segna i messaggi come letti via PATCH /api/messaggi/{id}/letto
+   ─ Tutto il resto (quiz, timer) è invariato
+   ========================================================= */
+
+const API = 'http://localhost:8080';
+
+// ─── 1. INIT ──────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Controllo di sicurezza centralizzato (se presente in utils.js)
+    // Controllo autenticazione
     if (typeof verificaAutenticazione === 'function') {
         verificaAutenticazione();
     } else {
-        // Fallback locale se verificaAutenticazione non è caricata
-        const token = localStorage.getItem('token');
-        if (!token) {
+        if (!localStorage.getItem('token')) {
             window.location.href = '../login.html';
             return;
         }
     }
 
-    // 2. Popolamento e sincronizzazione immediata della Sidebar
-    function popolaSidebarGiocatore() {
-        const sbName = document.getElementById('sb-nome');
-        const sbRole = document.getElementById('sb-ruolo');
-        const sbAv   = document.getElementById('sb-avatar');
-
-        const nome        = localStorage.getItem('nomeReale');
-        const cognome     = localStorage.getItem('cognomeReale');
-        const ruoloReal   = localStorage.getItem('ruolo') || 'Giocatore';
-        const usernameReal = localStorage.getItem('username') || 'Utente';
-
-        // Gestione del Ruolo (es. GIOCATORE -> Giocatore)
-        if (sbRole && ruoloReal) {
-            sbRole.textContent = ruoloReal;
-        }
-
-        // Gestione di Nome, Cognome o Fallback su Username
-        if (sbName) {
-            if (nome) {
-                sbName.textContent = cognome ? `${nome} ${cognome}` : nome;
-                
-                // Generazione Avatar dalle iniziali reali
-                if (sbAv) {
-                    const inNome = nome.charAt(0);
-                    const inCognome = cognome ? cognome.charAt(0) : '';
-                    sbAv.textContent = (inNome + inCognome).toUpperCase();
-                }
-            } else {
-                // Fallback pulito se mancano i dati anagrafici reali
-                sbName.textContent = usernameReal;
-                if (sbAv) {
-                    sbAv.textContent = usernameReal.substring(0, 2).toUpperCase();
-                }
-            }
-        }
-    }
-
-    // Esegui subito il caricamento della grafica
-    popolaSidebarGiocatore();
-    // Micro-ritardo di sicurezza per prevenire sfarfallii del DOM asincrono
-    setTimeout(popolaSidebarGiocatore, 50);
+    popolaSidebar();
+    popolaTopbar();
+    caricaMessaggi();   // ← carica dal DB
+    caricaEventi();     // ← carica dal DB
 });
 
-/**
- * Funzione globale di logout collegata al bottone Esci della sidebar
+// ─── 2. SIDEBAR ───────────────────────────────────────────────────────────
+function popolaSidebar() {
+    const nome    = localStorage.getItem('nomeReale')    || '';
+    const cognome = localStorage.getItem('cognomeReale') || '';
+    const ruolo   = localStorage.getItem('ruolo')        || 'Giocatore';
+    const username = localStorage.getItem('username')    || 'Utente';
+
+    const sbName = document.getElementById('sb-nome');
+    const sbRole = document.getElementById('sb-ruolo');
+    const sbAv   = document.getElementById('sb-avatar');
+
+    if (sbName) sbName.textContent = nome ? (cognome ? `${nome} ${cognome}` : nome) : username;
+    if (sbRole) sbRole.textContent = ruolo;
+    if (sbAv) {
+        const n = nome || username;
+        const c = cognome || '';
+        sbAv.textContent = (n[0] || '').toUpperCase() + (c[0] || n[1] || '').toUpperCase();
+    }
+}
+
+// ─── 3. TOPBAR + PROFILO ──────────────────────────────────────────────────
+function popolaTopbar() {
+    const nome    = localStorage.getItem('nomeReale')    || '';
+    const cognome = localStorage.getItem('cognomeReale') || '';
+    const nomeCompleto = nome ? (cognome ? `${nome} ${cognome}` : nome) : 'Giocatore';
+
+    // Topbar welcome
+    const welcome = document.getElementById('topbar-welcome');
+    if (welcome) welcome.textContent = `Benvenuto, ${nome || 'Giocatore'} 👋`;
+
+    // Data odierna
+    const dataEl = document.getElementById('topbar-data');
+    if (dataEl) {
+        dataEl.textContent = new Date().toLocaleDateString('it-IT', {
+            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+        });
+    }
+
+    // Profilo hero
+    const picEl  = document.getElementById('profile-pic');
+    const nomeEl = document.getElementById('profile-nome');
+    if (picEl) {
+        const ini = (nome[0] || '').toUpperCase() + (cognome[0] || nome[1] || '').toUpperCase();
+        picEl.textContent = ini || '?';
+    }
+    if (nomeEl) nomeEl.textContent = nomeCompleto;
+}
+
+// ─── 4. CARICA MESSAGGI DAL BACKEND ───────────────────────────────────────
+/*
+ * Endpoint: GET /api/messaggi/miei
+ * Auth:     JWT nel header → il backend identifica il giocatore dal token
+ * Risposta: List<MessaggioDto>
+ *   { id, testo, dataOra, stato, nomeAllenatore, nomeGiocatore, giocatoreId }
+ *
+ * stato = "INVIATO" → non ancora letto dal giocatore
+ * stato = "LETTO"   → già letto
  */
+async function caricaMessaggi() {
+    const loader  = document.getElementById('msg-loading');
+    const listEl  = document.getElementById('msg-list-giocatore');
+    const emptyEl = document.getElementById('msg-empty');
+    const badge   = document.getElementById('msg-badge-nonletti');
+
+    // Mostra loader, nascondi gli altri
+    if (loader)  loader.style.display  = 'block';
+    if (listEl)  listEl.style.display  = 'none';
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    const headers = typeof getAuthHeaders === 'function'
+        ? getAuthHeaders()
+        : { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') };
+
+    try {
+        const res = await fetch(`${API}/api/messaggi/miei`, { headers });
+
+        if (res.status === 401) { logout(); return; }
+
+        if (!res.ok) {
+            console.error('Errore caricamento messaggi:', res.status);
+            if (loader) loader.textContent = 'Impossibile caricare i messaggi.';
+            return;
+        }
+
+        const messaggi = await res.json();
+
+        // Nascondi loader
+        if (loader) loader.style.display = 'none';
+
+        if (!messaggi || messaggi.length === 0) {
+            if (emptyEl) emptyEl.style.display = 'block';
+            if (badge)   badge.style.display   = 'none';
+            return;
+        }
+
+        // Conta non letti (stato === 'INVIATO' = non ancora letto dal giocatore)
+        const nonLetti = messaggi.filter(m => m.stato === 'INVIATO').length;
+        if (badge) {
+            if (nonLetti > 0) {
+                badge.textContent   = `${nonLetti} non ${nonLetti === 1 ? 'letto' : 'letti'}`;
+                badge.style.display = 'inline';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // Renderizza
+        renderizzaMessaggi(messaggi, listEl);
+        if (listEl) listEl.style.display = 'block';
+
+    } catch (err) {
+        console.error('Errore di rete messaggi:', err);
+        if (loader) loader.textContent = 'Server non raggiungibile.';
+    }
+}
+
+// ─── 5. RENDERIZZA LISTA MESSAGGI ─────────────────────────────────────────
+function renderizzaMessaggi(messaggi, container) {
+    if (!container) return;
+    container.innerHTML = '';
+
+    messaggi.forEach(m => {
+        const nonLetto = m.stato === 'INVIATO';
+
+        // Formatta data/ora
+        let dataStr = '—';
+        if (m.dataOra) {
+            const d    = new Date(m.dataOra);
+            const oggi = new Date();
+            const ieri = new Date(); ieri.setDate(ieri.getDate() - 1);
+            const ora  = d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+            if (d.toDateString() === oggi.toDateString())      dataStr = `Oggi ${ora}`;
+            else if (d.toDateString() === ieri.toDateString()) dataStr = `Ieri ${ora}`;
+            else dataStr = d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }) + ' ' + ora;
+        }
+
+        const mittente = m.nomeAllenatore || 'Allenatore';
+
+        // Costruisci il div usando le classi CSS già presenti in stylegiocatore.css:
+        // .msg-item, .msg-item.unread, .msg-head, .msg-from, .msg-time,
+        // .msg-text, .unread-dot
+        const div = document.createElement('div');
+        div.className = `msg-item${nonLetto ? ' unread' : ''}`;
+        div.style.cssText = 'margin:8px 12px;';
+        div.dataset.msgId = m.id;
+
+        div.innerHTML = `
+            <div class="msg-head">
+                <span class="msg-from">
+                    ${nonLetto ? '<span class="unread-dot"></span>' : ''}${esc(mittente)}
+                </span>
+                <span class="msg-time">${dataStr}</span>
+            </div>
+            <div class="msg-text" style="white-space:normal;overflow:visible;">
+                ${esc(m.testo)}
+            </div>`;
+
+        // Click → segna come letto
+        div.addEventListener('click', () => apriMessaggio(div, m.id));
+        container.appendChild(div);
+    });
+}
+
+// ─── 6. SEGNA MESSAGGIO COME LETTO ────────────────────────────────────────
+/*
+ * Endpoint: PATCH /api/messaggi/{id}/letto
+ * Cambia stato da "INVIATO" a "LETTO" nel DB.
+ * L'allenatore vedrà "✔✔ Letto" nella sua dashboard.
+ */
+async function apriMessaggio(el, idMessaggio) {
+    // Già letto → niente da fare
+    if (!el.classList.contains('unread')) return;
+
+    // Aggiorna UI subito (ottimistic update)
+    el.classList.remove('unread');
+    const dot = el.querySelector('.unread-dot');
+    if (dot) dot.remove();
+
+    // Aggiorna il badge non letti
+    aggiornaBadgeNonLetti(-1);
+
+    // Chiama il backend
+    const headers = typeof getAuthHeaders === 'function'
+        ? getAuthHeaders()
+        : { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') };
+
+    try {
+        const res = await fetch(`${API}/api/messaggi/${idMessaggio}/letto`, {
+            method:  'PATCH',
+            headers: headers
+        });
+        if (res.ok) {
+            console.log(`Messaggio #${idMessaggio} segnato come letto.`);
+        } else {
+            console.warn(`PATCH /letto → ${res.status}`);
+        }
+    } catch (err) {
+        console.error('Errore PATCH /letto:', err);
+    }
+}
+
+function aggiornaBadgeNonLetti(delta) {
+    const badge = document.getElementById('msg-badge-nonletti');
+    if (!badge) return;
+
+    // Conta i .msg-item.unread ancora nella lista
+    const rimasti = document.querySelectorAll('#msg-list-giocatore .msg-item.unread').length;
+    if (rimasti > 0) {
+        badge.textContent   = `${rimasti} non ${rimasti === 1 ? 'letto' : 'letti'}`;
+        badge.style.display = 'inline';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+// ─── 7. UTILITY ───────────────────────────────────────────────────────────
+function esc(s) {
+    return String(s || '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 function logout() {
     localStorage.clear();
     window.location.href = '../login.html';
 }
 
-// ─── 2. QUIZ TIMER & LOGICA DI GIOCO ───
+// ─── 8. CARICA EVENTI DAL BACKEND ─────────────────────────────────────────
+/*
+ * Endpoint: GET /api/eventi/calendario/{idCalendario}
+ * Auth:     JWT — accessibile a tutti i ruoli autenticati (SecurityConfig: .authenticated())
+ * idCalendario = idSquadra salvato al login (coincidono per questo progetto)
+ *
+ * Il giocatore può SOLO vedere gli eventi, non crearli né modificarli.
+ * Mostra i prossimi 4 eventi futuri, ordinati per data crescente.
+ */
+async function caricaEventi() {
+    const loader  = document.getElementById('eventi-loading');
+    const listEl  = document.getElementById('eventi-list');
+    const emptyEl = document.getElementById('eventi-empty');
+
+    if (loader)  loader.style.display  = 'block';
+    if (listEl)  listEl.style.display  = 'none';
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    const idCalendario = localStorage.getItem('idSquadra') || '1';
+    const headers = typeof getAuthHeaders === 'function'
+        ? getAuthHeaders()
+        : { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') };
+
+    try {
+        const res = await fetch(`${API}/api/eventi/calendario/${idCalendario}`, { headers });
+
+        if (res.status === 401) { logout(); return; }
+
+        if (!res.ok) {
+            console.error('Errore caricamento eventi:', res.status);
+            if (loader) loader.textContent = 'Impossibile caricare gli eventi.';
+            return;
+        }
+
+        const tutti = await res.json();
+        if (loader) loader.style.display = 'none';
+
+        // Filtra solo eventi futuri (o in corso oggi) e ordina per data
+        const ora  = new Date();
+        const futuri = (Array.isArray(tutti) ? tutti : [])
+            .filter(e => e.dataOraInizio && new Date(e.dataOraInizio) >= ora)
+            .sort((a, b) => new Date(a.dataOraInizio) - new Date(b.dataOraInizio));
+
+        if (!futuri.length) {
+            if (emptyEl) emptyEl.style.display = 'block';
+            return;
+        }
+
+        renderizzaEventi(futuri.slice(0, 4), listEl);
+        if (listEl) listEl.style.display = 'block';
+
+    } catch (err) {
+        console.error('Errore di rete eventi:', err);
+        if (loader) loader.textContent = 'Server non raggiungibile.';
+    }
+}
+
+function renderizzaEventi(eventi, container) {
+    if (!container) return;
+    container.innerHTML = '';
+
+    // Mappa tipo ENUM → classe stripe CSS già definita in stylegiocatore.css
+    const stripeClass = { PARTITA: 'stripe-blue', RIUNIONE: 'stripe-amber' };
+
+    eventi.forEach(e => {
+        const d = new Date(e.dataOraInizio);
+
+        const giorno = isNaN(d) ? '—' : d.getDate();
+        const mese   = isNaN(d) ? '—' : d.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '');
+        const ora    = isNaN(d) ? '—' : d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+
+        // Titolo: include il luogo se presente
+        const titolo  = esc(e.titolo || 'Evento');
+        const luogo   = e.luogo ? ` – ${esc(e.luogo)}` : '';
+        const metaTxt = e.dataOraFine
+            ? `${ora} – ${new Date(e.dataOraFine).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}${luogo}`
+            : `${ora}${luogo}`;
+
+        const tipo   = (e.tipo || '').toUpperCase();
+        const stripe = stripeClass[tipo] || 'stripe-green';
+
+        // Usa esattamente le classi CSS già presenti in stylegiocatore.css:
+        // .event-item, .event-date, .day, .mon, .event-stripe, .event-info, .title, .meta
+        const item = document.createElement('div');
+        item.className = 'event-item';
+        item.innerHTML = `
+            <div class="event-date">
+                <div class="day">${giorno}</div>
+                <div class="mon">${mese}</div>
+            </div>
+            <div class="event-stripe ${stripe}"></div>
+            <div class="event-info">
+                <div class="title">${titolo}</div>
+                <div class="meta">${metaTxt}</div>
+            </div>`;
+        container.appendChild(item);
+    });
+}
+
+// ─── 9. QUIZ TIMER & LOGICA (CODICE ORIGINALE INVARIATO) ──────────────────
 let secondsLeft = 40;
 let selectedOpt = null;
-const timerFill = document.getElementById('timer-fill');
-const timerVal  = document.getElementById('timer-val');
+const timerFill  = document.getElementById('timer-fill');
+const timerVal   = document.getElementById('timer-val');
 const btnConfirm = document.getElementById('btn-confirm');
-const CORRECT = 'A'; // Demo: la risposta 'A' è quella corretta
+const CORRECT    = 'A'; // Demo: la risposta 'A' è quella corretta
 
 const interval = setInterval(() => {
     secondsLeft--;
     if (timerVal) timerVal.textContent = secondsLeft;
-    
+
     if (timerFill) {
         const pct = (secondsLeft / 40) * 100;
         timerFill.style.width = pct + '%';
         if (secondsLeft <= 10) timerFill.classList.add('danger');
     }
-    
+
     if (secondsLeft <= 0) {
         clearInterval(interval);
         endQuiz(false);
@@ -88,101 +376,63 @@ const interval = setInterval(() => {
 }, 1000);
 
 function selectOpt(el, letter) {
-    if (btnConfirm.dataset.done) return;
+    if (btnConfirm && btnConfirm.dataset.done) return;
     document.querySelectorAll('.quiz-option').forEach(o => o.classList.remove('selected'));
     el.classList.add('selected');
     selectedOpt = letter;
-    btnConfirm.disabled = false;
+    if (btnConfirm) btnConfirm.disabled = false;
 }
 
 function confirmAnswer() {
-    if (!selectedOpt || btnConfirm.dataset.done) return;
+    if (!selectedOpt || (btnConfirm && btnConfirm.dataset.done)) return;
     clearInterval(interval);
-    btnConfirm.dataset.done = '1';
-    btnConfirm.disabled = true;
-    
-    const isCorrect = (selectedOpt === CORRECT);
-    endQuiz(isCorrect);
+    if (btnConfirm) { btnConfirm.dataset.done = '1'; btnConfirm.disabled = true; }
+    endQuiz(selectedOpt === CORRECT);
 }
 
 async function endQuiz(correct) {
     document.querySelectorAll('.quiz-option').forEach(o => {
-        const letter = o.querySelector('.option-letter').textContent;
-        if (letter === CORRECT) o.classList.add('correct');
-        else if (letter === selectedOpt && !correct) o.classList.add('wrong');
+        const letter = o.querySelector('.option-letter')?.textContent;
+        if (letter === CORRECT)                       o.classList.add('correct');
+        else if (letter === selectedOpt && !correct)  o.classList.add('wrong');
     });
-    
+
     if (timerFill) timerFill.style.width = '0%';
-    
-    btnConfirm.textContent = correct ? '✔ Corretto! +10 pt' : '✘ Risposta errata';
-    btnConfirm.style.background = correct ? '#4caf50' : '#ef4444';
-    btnConfirm.disabled = false;
-    btnConfirm.onclick = null;
 
-    // ── AGGIORNAMENTO SU DB TRAMITE BACKEND ──
+    if (btnConfirm) {
+        btnConfirm.textContent   = correct ? '✔ Corretto! +10 pt' : '✘ Risposta errata';
+        btnConfirm.style.background = correct ? '#4caf50' : '#ef4444';
+        btnConfirm.disabled = false;
+        btnConfirm.onclick  = null;
+    }
+
     try {
-        const idGiocatore = localStorage.getItem('idGiocatore'); 
-        
-        // Verifica se getAuthHeaders() è definita globalmente in utils.js, altrimenti genera l'header locale
-        const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : {
-            'Authorization': 'Bearer ' + localStorage.getItem('token'),
-            'Content-Type': 'application/json'
-        };
+        const headers = typeof getAuthHeaders === 'function'
+            ? getAuthHeaders()
+            : { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' };
 
-        const response = await fetch('http://localhost:8080/api/quiz/risposta', {
-            method: 'POST',
+        const response = await fetch(`${API}/api/quiz/risposta`, {
+            method:  'POST',
             headers: headers,
             body: JSON.stringify({
-                idGiocatore: idGiocatore,
-                esito: correct, 
+                idGiocatore:   localStorage.getItem('idGiocatore'),
+                esito:         correct,
                 tempoImpiegato: 40 - secondsLeft
             })
         });
 
-        if (response.ok) {
-            console.log('Risposta salvata con successo sul Database.');
-            if (correct) {
-                aggiornaPuntiSchermo(10);
-            }
-        } else {
-            console.error('Errore nel salvataggio della risposta del quiz sul server.');
-        }
-    } catch (error) {
-        console.error('Errore di rete durante il salvataggio del quiz:', error);
+        if (response.ok && correct) aggiornaPuntiSchermo(10);
+    } catch (err) {
+        console.error('Errore salvataggio quiz:', err);
     }
 }
 
 function aggiornaPuntiSchermo(puntiInPiu) {
-    const puntiTotEl = document.getElementById('punti-totali'); 
-    if (puntiTotEl) {
-        const puntiAttuali = parseInt(puntiTotEl.textContent) || 0;
-        puntiTotEl.textContent = puntiAttuali + puntiInPiu;
-    }
+    const el = document.querySelector('.points-box .pts');
+    if (el) el.textContent = (parseInt(el.textContent) || 0) + puntiInPiu;
 }
 
-// ─── 3. MESSAGGI: SEGNA COME LETTO ───
-async function openMsg(el, idMessaggio) {
-    el.classList.remove('unread');
-    const dot = el.querySelector('.unread-dot');
-    if (dot) dot.remove();
-
-    // ── NOTIFICA IL BACKEND DEL CAMBIO STATO ──
-    try {
-        const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : {
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
-        };
-
-        const response = await fetch(`http://localhost:8080/api/messaggi/${idMessaggio}/letto`, {
-            method: 'PATCH',
-            headers: headers
-        });
-
-        if (response.ok) {
-            console.log(`Messaggio ${idMessaggio} segnato come letto sul database.`);
-        } else {
-            console.error('Errore durante l\'aggiornamento dello stato del messaggio.');
-        }
-    } catch (error) {
-        console.error('Errore di rete durante l\'aggiornamento del messaggio:', error);
-    }
+// Compatibilità con i chiamanti HTML onclick="openMsg(this)" rimasti (se presenti)
+function openMsg(el, idMessaggio) {
+    apriMessaggio(el, idMessaggio);
 }

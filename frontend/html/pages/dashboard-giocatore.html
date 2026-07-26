@@ -42,17 +42,17 @@
   <!-- MAIN -->
   <div class="main">
     <div class="topbar">
-      <h1>Benvenuto, Lorenzo 👋</h1>
-      <div style="font-size:0.85rem;color:var(--muted)">Lunedì, 26 Maggio 2025</div>
+      <h1 id="topbar-welcome">Benvenuto 👋</h1>
+      <div style="font-size:0.85rem;color:var(--muted)" id="topbar-data">—</div>
     </div>
 
     <div class="content">
 
       <!-- PROFILO -->
       <div class="profile-hero">
-        <div class="profile-pic">LR</div>
+        <div class="profile-pic" id="profile-pic">?</div>
         <div class="profile-info">
-          <h2>Lorenzo Rossi</h2>
+          <h2 id="profile-nome">—</h2>
           <div class="profile-meta">
             <div class="meta-item">Posizione: <strong>Attaccante</strong></div>
             <div class="meta-item">Numero: <strong>#9</strong></div>
@@ -128,28 +128,21 @@
 
         <!-- MESSAGGI -->
         <div class="card">
-          <div class="card-header"><h2>Messaggi dall'allenatore</h2><span style="font-size:0.8rem;color:var(--green-l)">2 non letti</span></div>
-          <div class="card-body">
-            <div class="msg-item unread" onclick="openMsg(this)">
-              <div class="msg-head">
-                <span class="msg-from"><span class="unread-dot"></span>Mister Conti</span>
-                <span class="msg-time">Oggi 08:30</span>
-              </div>
-              <div class="msg-text">Domani allenamento anticipato alle 8:45. Portate il materiale completo.</div>
+          <div class="card-header">
+            <h2>Messaggi dall'allenatore</h2>
+            <!-- Il badge si aggiorna dinamicamente da giocatore.js -->
+            <span id="msg-badge-nonletti" style="font-size:0.8rem;color:var(--green-l);display:none"></span>
+          </div>
+          <div class="card-body" style="padding:0">
+            <!-- Loader visibile durante il fetch -->
+            <div id="msg-loading" style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.85rem">
+              Caricamento messaggi…
             </div>
-            <div class="msg-item unread" onclick="openMsg(this)">
-              <div class="msg-head">
-                <span class="msg-from"><span class="unread-dot"></span>Mister Conti</span>
-                <span class="msg-time">Ieri 16:00</span>
-              </div>
-              <div class="msg-text">Ottima prestazione sabato. Continua così.</div>
-            </div>
-            <div class="msg-item" onclick="openMsg(this)">
-              <div class="msg-head">
-                <span class="msg-from">Mister Conti</span>
-                <span class="msg-time">23 Mag</span>
-              </div>
-              <div class="msg-text">Convocazione per la partita di sabato contro il Fortitudo. Presentarsi alle 14:00.</div>
+            <!-- Lista iniettata da JS; inizialmente nascosta -->
+            <div id="msg-list-giocatore" style="display:none"></div>
+            <!-- Stato vuoto, mostrato solo se non ci sono messaggi -->
+            <div id="msg-empty" style="display:none;text-align:center;padding:1.5rem;color:var(--muted);font-size:0.85rem">
+              Nessun messaggio ricevuto.
             </div>
           </div>
         </div>
@@ -159,22 +152,10 @@
       <div class="grid-2">
         <div class="card">
           <div class="card-header"><h2>Prossimi eventi</h2></div>
-          <div class="card-body">
-            <div class="event-item">
-              <div class="event-date"><div class="day">29</div><div class="mon">Mag</div></div>
-              <div class="event-stripe stripe-green"></div>
-              <div class="event-info"><div class="title">Allenamento – Campo A</div><div class="meta">09:00</div></div>
-            </div>
-            <div class="event-item">
-              <div class="event-date"><div class="day">01</div><div class="mon">Giu</div></div>
-              <div class="event-stripe stripe-blue"></div>
-              <div class="event-info"><div class="title">Partita – vs Fortitudo</div><div class="meta">15:30 – Stadio Centrale</div></div>
-            </div>
-            <div class="event-item">
-              <div class="event-date"><div class="day">04</div><div class="mon">Giu</div></div>
-              <div class="event-stripe stripe-green"></div>
-              <div class="event-info"><div class="title">Allenamento tattico</div><div class="meta">10:00 – Campo B</div></div>
-            </div>
+          <div class="card-body" style="padding:0">
+            <div id="eventi-loading" style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.85rem">Caricamento eventi…</div>
+            <div id="eventi-list"  style="display:none;padding:12px"></div>
+            <div id="eventi-empty" style="display:none;text-align:center;padding:1.5rem;color:var(--muted);font-size:0.85rem">Nessun evento in programma.</div>
           </div>
         </div>
 
