@@ -60,7 +60,7 @@
         <div class="stat-card">
           <div class="stat-label">Giocatori in rosa</div>
           <div class="stat-value" id="kpi-giocatori">—</div>
-          <div class="stat-sub" id="kpi-infortunati">Caricamento...</div>
+          <div class="stat-sub">Organico totale</div>
         </div>
         <div class="stat-card info">
           <div class="stat-label">Prossimo evento</div>
@@ -98,13 +98,13 @@
                   <th>Pos</th>
                   <th>Presenze</th>
                   <th>Gol</th>
-                  <th>Stato</th>
+                  <th>Assist</th>
                 </tr>
               </thead>
               <!-- Agganciato a JS per iniettare i tr del DB -->
               <tbody id="dashboard-rosa-tbody">
                 <tr>
-                  <td colspan="5" style="text-align: center; padding: 20px; color: #888;">Caricamento rosa...</td>
+                  <td colspan="4" style="text-align: center; padding: 20px; color: #888;">Caricamento rosa...</td>
                 </tr>
               </tbody>
             </table>
@@ -216,7 +216,7 @@
     <form id="dashboard-giocatore-form">
       
       <!-- CREDENZIALI ACCOUNT UTENTE -->
-      <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 1fr solid #333;">
+      <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #333;">
         <small style="color: #aaa; display: block; margin-bottom: 8px; font-weight: bold;">CREDENZIALI ACCESSO UTENTE</small>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
           <div class="form-group" style="margin:0;">

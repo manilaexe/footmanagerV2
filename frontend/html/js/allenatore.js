@@ -9,7 +9,7 @@ let tuttiMessaggiDashboard  = [];
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof verificaAutenticazione === 'function') verificaAutenticazione();
 
-    // Popola sidebar con nome/ruolo dal localStorage (salvati da login.js)
+    // Popola sidebar con nome/ruolo dal localStorage
     const nome    = localStorage.getItem('nomeReale')    || localStorage.getItem('username') || 'Utente';
     const cognome = localStorage.getItem('cognomeReale') || '';
     const ruolo   = localStorage.getItem('ruolo')        || '';
@@ -40,40 +40,54 @@ function setupFormListeners() {
 // ─── 3. CARICA DATI DAL BACKEND ───────────────────────────────────────────
 async function caricaDatiDashboard() {
     const idSquadra = localStorage.getItem('idSquadra');
-    const headers   = typeof getAuthHeaders === 'function' ? getAuthHeaders() : {};
+    const token     = localStorage.getItem('token');
+    
+    const headers = typeof getAuthHeaders === 'function' 
+        ? getAuthHeaders() 
+        : { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-    if (!idSquadra) {
-        console.warn('idSquadra non trovato nel localStorage.');
-        return;
-    }
+    if (!idSquadra) return;
 
     try {
-        // Chiamate parallele: giocatori + eventi + messaggi INVIATI dall'allenatore
-        const [resGiocatori, resEventi, resMessaggi] = await Promise.all([
-            fetch(`http://localhost:8080/api/giocatori/squadra/${idSquadra}`,  { headers }).catch(() => null),
-            fetch(`http://localhost:8080/api/eventi/calendario/${idSquadra}`,  { headers }).catch(() => null),
-            // CORREZIONE: endpoint corretto per i messaggi inviati dall'allenatore
-            fetch('http://localhost:8080/api/messaggi/inviati',                { headers }).catch(() => null)
+        const [resGiocatori, resEventi, resMessaggi, resStatsGiocatori] = await Promise.all([
+            fetch(`http://localhost:8080/api/giocatori/squadra/${idSquadra}`, { headers }).catch(() => null),
+            fetch(`http://localhost:8080/api/eventi/calendario/${idSquadra}`, { headers }).catch(() => null),
+            fetch('http://localhost:8080/api/messaggi/inviati',               { headers }).catch(() => null),
+            fetch('http://localhost:8080/api/statistiche/giocatori',          { headers }).catch(() => null)
         ]);
 
-        if (resGiocatori && resGiocatori.status === 401) { logout(); return; }
+        let giocatori = (resGiocatori?.ok) ? await resGiocatori.json() : [];
+        const eventi   = (resEventi?.ok)    ? await resEventi.json()    : [];
+        const messaggi = (resMessaggi?.ok)  ? await resMessaggi.json()  : [];
+        const stats    = (resStatsGiocatori?.ok) ? await resStatsGiocatori.json() : [];
 
-        tuttiGiocatoriDashboard = (resGiocatori?.ok) ? await resGiocatori.json() : [];
-        tuttiEventiDashboard    = (resEventi?.ok)    ? await resEventi.json()    : [];
-        tuttiMessaggiDashboard  = (resMessaggi?.ok)  ? await resMessaggi.json()  : [];
+        if (Array.isArray(stats) && stats.length > 0) {
+            giocatori = giocatori.map(g => {
+                const s = stats.find(st => 
+                    st.id === g.id || 
+                    st.giocatoreId === g.id || 
+                    st.idGiocatore === g.id ||
+                    st.nome === g.nome ||
+                    (st.nome && st.nome.includes(g.cognome))
+                );
 
-        console.log('Dashboard dati:', {
-            giocatori: tuttiGiocatoriDashboard.length,
-            eventi:    tuttiEventiDashboard.length,
-            messaggi:  tuttiMessaggiDashboard.length
-        });
+                return {
+                    ...g,
+                    gol:      s?.gol   ?? s?.golTotali   ?? g.gol   ?? 0,
+                    assist:   s?.ass   ?? s?.assist      ?? g.assist ?? 0,
+                    presenze: s?.pres  ?? s?.presenze    ?? g.presenze ?? 0
+                };
+            });
+        }
+
+        tuttiGiocatoriDashboard = giocatori;
+        tuttiEventiDashboard    = eventi;
+        tuttiMessaggiDashboard  = messaggi;
 
         renderizzaKPI();
         renderizzaTabellaRosa();
         renderizzaListaEventi();
         renderizzaListaMessaggi();
-
-        // Popola il <select> destinatario con i giocatori reali dal DB
         popolaSelectDestinatario();
 
     } catch (err) {
@@ -82,25 +96,22 @@ async function caricaDatiDashboard() {
 }
 
 // ─── 4. POPOLA SELECT DESTINATARIO CON GIOCATORI REALI ───────────────────
-// Carica la lista dei giocatori della squadra e la inserisce nel <select>
-// in modo che ogni <option value="ID_numerico"> corrisponda a un giocatore reale.
 async function popolaSelectDestinatario() {
     const sel = document.getElementById('msg-dest');
     if (!sel) return;
 
-    // Se abbiamo già i giocatori in cache, usiamo quelli
     const giocatori = tuttiGiocatoriDashboard;
 
     if (!giocatori || giocatori.length === 0) {
-        // Fallback: carica dalla rotta dedicata se la cache è vuota
         try {
-            const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : {};
+            const token = localStorage.getItem('token');
+            const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Authorization': `Bearer ${token}` };
             const res = await fetch('http://localhost:8080/api/messaggi/giocatori-squadra', { headers });
             if (res.ok) {
                 const lista = await res.json();
                 sel.innerHTML = '<option value="">Seleziona giocatore…</option>'
                     + lista.map(g =>
-                        `<option value="${g.id}">${g.numero ? '#'+g.numero+' ' : ''}${g.nomeCompleto}${g.posizione ? ' ('+g.posizione+')' : ''}</option>`
+                        `<option value="${g.id}">${g.numero ? '#'+g.numero+' ' : ''}${g.nomeCompleto || (g.nome + ' ' + g.cognome)}${g.posizione ? ' ('+g.posizione+')' : ''}</option>`
                     ).join('');
             }
         } catch(e) {
@@ -109,7 +120,6 @@ async function popolaSelectDestinatario() {
         return;
     }
 
-    // Usa i dati già presenti in tuttiGiocatoriDashboard
     sel.innerHTML = '<option value="">Seleziona giocatore…</option>'
         + giocatori.map(g =>
             `<option value="${g.id}">#${g.numero || '?'} ${g.nome} ${g.cognome}${g.posizione ? ' ('+g.posizione+')' : ''}</option>`
@@ -140,19 +150,12 @@ function renderizzaKPI() {
 
     // Giocatori
     const kpiG = document.getElementById('kpi-giocatori');
-    if (kpiG)  kpiG.textContent = tuttiGiocatoriDashboard.length;
+    if (kpiG) kpiG.textContent = tuttiGiocatoriDashboard.length;
 
-    const kpiInf = document.getElementById('kpi-infortunati');
-    if (kpiInf) {
-        const n = tuttiGiocatoriDashboard.filter(g =>
-            ['injured','infortunato'].includes((g.stato||'').toLowerCase())).length;
-        kpiInf.textContent = `${n} infortunati`;
-    }
-
-    // Media punti
+    // Media gol
     const kpiGol = document.getElementById('kpi-media-gol');
     if (kpiGol && tuttiGiocatoriDashboard.length > 0) {
-        const tot = tuttiGiocatoriDashboard.reduce((s, g) => s + (g.puntiTotali || g.punti_totali || 0), 0);
+        const tot = tuttiGiocatoriDashboard.reduce((s, g) => s + (g.gol || 0), 0);
         kpiGol.textContent = (tot / tuttiGiocatoriDashboard.length).toFixed(1);
     }
 }
@@ -171,21 +174,17 @@ function renderizzaTabellaRosa() {
         const ini  = g.nome && g.cognome ? (g.nome[0] + g.cognome[0]).toUpperCase() : 'GP';
         const pos  = (g.posizione || '').toLowerCase();
         let posClass = 'pill-blue';
-        if (pos.includes('por'))          posClass = 'pill-amber';
-        else if (pos.includes('dif'))     posClass = 'pill-green';
-        else if (pos.includes('att'))     posClass = 'pill-red';
-
-        let statoClass = 'pill-green', statoTesto = 'Disponibile';
-        if (['injured','infortunato'].includes((g.stato||'').toLowerCase())) { statoClass = 'pill-red';   statoTesto = 'Infortunato'; }
-        else if ((g.stato||'').toLowerCase() === 'squalificato')             { statoClass = 'pill-amber'; statoTesto = 'Squalificato'; }
+        if (pos.includes('por'))      posClass = 'pill-amber';
+        else if (pos.includes('dif')) posClass = 'pill-green';
+        else if (pos.includes('att')) posClass = 'pill-red';
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><div class="player-name"><div class="player-avatar">${ini}</div>${g.nome} ${g.cognome}</div></td>
             <td><span class="pill ${posClass}">${g.posizione || 'N/D'}</span></td>
             <td>${g.presenze || 0}</td>
-            <td>${g.puntiTotali || g.punti_totali || 0} pt</td>
-            <td><span class="pill ${statoClass}">${statoTesto}</span></td>`;
+            <td>${g.gol || 0}</td>
+            <td>${g.assist || 0}</td>`;
         tbody.appendChild(tr);
     });
 }
@@ -224,8 +223,6 @@ function renderizzaListaEventi() {
         });
 }
 
-// CORREZIONE: renderizza i messaggi con i campi reali del MessaggioDto
-// MessaggioDto ha: id, testo, dataOra, stato, nomeAllenatore, nomeGiocatore, giocatoreId
 function renderizzaListaMessaggi() {
     const container = document.getElementById('dashboard-msg-list');
     if (!container) return;
@@ -237,7 +234,6 @@ function renderizzaListaMessaggi() {
     }
 
     tuttiMessaggiDashboard.slice(0, 3).forEach(m => {
-        // Formatta la data (dataOra è LocalDateTime → "2025-07-21T08:30:00")
         let dataFormattata = '—';
         if (m.dataOra) {
             const d = new Date(m.dataOra);
@@ -252,8 +248,7 @@ function renderizzaListaMessaggi() {
             }
         }
 
-        // stato: "INVIATO" → non ancora letto, "LETTO" → letto
-        const letto  = (m.stato || '').toUpperCase() === 'LETTO';
+        const letto      = (m.stato || '').toUpperCase() === 'LETTO';
         const statoClass = letto ? 'letto' : 'inviato';
         const statoTxt   = letto ? '✔✔ Letto' : '✔ Non ancora letto';
 
@@ -271,21 +266,12 @@ function renderizzaListaMessaggi() {
 }
 
 // ─── 6. INVIA MESSAGGIO → POST /api/messaggi ─────────────────────────────
-//
-// L'endpoint POST /api/messaggi si aspetta:
-//   { "giocatoreId": <Integer>, "testo": "<String>" }
-//
-// Il token JWT nell'header identifica l'allenatore autenticato lato backend.
-// NON serve mandare idAllenatore o idSquadra nel body.
-//
 async function sendMsg() {
     const selDest = document.getElementById('msg-dest');
     const testo   = (document.getElementById('msg-text')?.value || '').trim();
 
-    // Leggi il giocatoreId dal valore del select (deve essere il numeric DB id)
     const giocatoreId = selDest ? parseInt(selDest.value, 10) : NaN;
 
-    // Validazione
     if (!selDest || !selDest.value || isNaN(giocatoreId)) {
         mostraFeedbackMsg('Seleziona un giocatore destinatario.', false);
         return;
@@ -295,15 +281,15 @@ async function sendMsg() {
         return;
     }
 
-    // Payload corretto per il backend Spring Boot
     const payload = {
         giocatoreId: giocatoreId,
         testo:       testo
     };
 
+    const token = localStorage.getItem('token');
     const headers = typeof getAuthHeaders === 'function'
         ? getAuthHeaders()
-        : { 'Content-Type': 'application/json' };
+        : { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
     try {
         const btnInvia = document.querySelector('#dashboard-msg-form button[type="submit"]');
@@ -317,17 +303,13 @@ async function sendMsg() {
 
         if (response.ok) {
             const nuovoMsg = await response.json();
-            // Aggiorna la cache locale e ri-renderizza la lista senza ricaricare tutto
             tuttiMessaggiDashboard.unshift(nuovoMsg);
             renderizzaListaMessaggi();
 
-            // Aggiorna KPI messaggi
             const kpiMsg = document.getElementById('kpi-messaggi');
             if (kpiMsg) kpiMsg.textContent = tuttiMessaggiDashboard.length;
 
-            // Reset form
             document.getElementById('dashboard-msg-form').reset();
-            // Ripristina il placeholder nel select dopo il reset
             await popolaSelectDestinatario();
 
             mostraFeedbackMsg(`✔ Messaggio inviato a ${nuovoMsg.nomeGiocatore || 'giocatore'}!`, true);
@@ -345,7 +327,6 @@ async function sendMsg() {
     }
 }
 
-// Mostra feedback inline sotto il form messaggi
 function mostraFeedbackMsg(testo, successo) {
     let fb = document.getElementById('msg-feedback');
     if (!fb) {
@@ -358,7 +339,7 @@ function mostraFeedbackMsg(testo, successo) {
     fb.style.background = successo ? 'rgba(58,125,68,.18)' : 'rgba(239,68,68,.12)';
     fb.style.color      = successo ? 'var(--green-l, #4caf50)' : '#f87171';
     fb.style.border     = successo ? '1px solid rgba(76,175,80,.3)' : '1px solid rgba(239,68,68,.35)';
-    // Rimuovi dopo 4 secondi
+    
     clearTimeout(fb._timer);
     fb._timer = setTimeout(() => { if (fb.parentNode) fb.remove(); }, 4000);
 }
@@ -381,7 +362,8 @@ async function saveEvento() {
         calendarioId:  parseInt(idSquadra, 10)
     };
 
-    const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' };
+    const token = localStorage.getItem('token');
+    const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
     try {
         const res = await fetch('http://localhost:8080/api/eventi', {
@@ -421,7 +403,8 @@ async function saveGiocatore() {
         squadraId:   parseInt(idSquadra, 10)
     };
 
-    const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' };
+    const token = localStorage.getItem('token');
+    const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
     try {
         const res = await fetch('http://localhost:8080/api/giocatori', {
@@ -432,7 +415,7 @@ async function saveGiocatore() {
             tuttiGiocatoriDashboard.push(g);
             renderizzaTabellaRosa();
             renderizzaKPI();
-            popolaSelectDestinatario();   // aggiorna il select con il nuovo giocatore
+            popolaSelectDestinatario();
             closeModal('modal-giocatore');
             document.getElementById('dashboard-giocatore-form')?.reset();
         } else {

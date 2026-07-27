@@ -1,13 +1,12 @@
 // Variabile globale per salvare i giocatori scaricati e filtrarli in locale senza rifare chiamate al DB
 let tuttiGiocatori = [];
 let filtroRuolo = 'tutti';
-let filtroStato = 'tutti';
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Esegue il controllo sulla validità del login
     verificaAutenticazione();
 
-    // 2. Popola la sidebar con nome/ruolo dal localStorage (Stessa identica logica di calendario.js)
+    // 2. Popola la sidebar con nome/ruolo dal localStorage
     const sbName = document.getElementById('sb-nome');
     const sbRole = document.getElementById('sb-ruolo');
     const sbAv   = document.getElementById('sb-avatar');
@@ -38,7 +37,6 @@ function logout() {
 // --- 1. RECUPERO DATI DAL BACKEND ---
 async function caricaRosa() {
     try {
-        // Recupera l'id della squadra memorizzato nel localStorage durante il login
         const idSquadra = localStorage.getItem('idSquadra'); 
 
         if (!idSquadra) {
@@ -46,14 +44,13 @@ async function caricaRosa() {
             return;
         }
 
-        // Modifica l'endpoint aggiungendo /squadra/{idSquadra}
         const response = await fetch(`http://localhost:8080/api/giocatori/squadra/${idSquadra}`, {
             method: 'GET',
             headers: getAuthHeaders() // Funzione definita in utils.js
         });
 
         if (response.status === 401 || response.status === 403) {
-            logout(); // Se il token è scaduto/non valido, slogga l'utente (utils.js)
+            logout();
             return;
         }
 
@@ -61,7 +58,6 @@ async function caricaRosa() {
 
         tuttiGiocatori = await response.json();
         
-        // LOG DI CONTROLLO: Così vedi esattamente in console del browser come sono scritti i campi!
         console.log("Giocatori scaricati:", tuttiGiocatori);
 
         // Aggiorna i contatori del sommario in cima alla pagina
@@ -103,21 +99,11 @@ function renderizzaGiocatori(giocatori) {
     if (listBody) listBody.innerHTML = '';
 
     giocatori.forEach(g => {
-        // Se l'immagine manca nel DB, usiamo un placeholder generico
         const playerImg = g.img ? g.img : '../css/placeholder-player.png'; 
 
-        // Rileviamo dinamicamente l'ID corretto (g.idGiocatore o g.id)
         const idGiocatoreCorrente = g.idGiocatore || g.id;
         const puntiTotali = g.puntiTotali || g.punti_totali || 0;
         const puntiSettimanali = g.puntiSettimanali || g.punti_settimanali || 0;
-
-        // Gestione dinamica dello stato per attivare i colori corretti del pallino (.status-dot)
-        let statoDotClass = 'available';
-        if (g.stato === 'injured' || g.stato?.toLowerCase() === 'infortunato') {
-            statoDotClass = 'injured';
-        } else if (g.stato === 'suspended' || g.stato?.toLowerCase() === 'squalificato') {
-            statoDotClass = 'suspended';
-        }
 
         // Determina il colore del badge del ruolo (es. pos-att, pos-cen...)
         let posClass = 'pos-cen';
@@ -126,19 +112,16 @@ function renderizzaGiocatori(giocatori) {
         else if (posPura.includes('dif')) posClass = 'pos-dif';
         else if (posPura.includes('por')) posClass = 'pos-por';
 
-        // 3a. Generazione HTML per la Griglia (Grid View) - PERFETTAMENTE INTEGRATO CON IL TUO CSS
+        // 3a. Generazione HTML per la Griglia (Grid View)
         if (gridView) {
             const card = document.createElement('div');
             card.className = 'player-card';
-            // Aggiungiamo il click su tutta la card come suggerisce il tuo CSS (cursor: pointer)
             card.setAttribute('onclick', `mostraDettaglio(${idGiocatoreCorrente})`);
             
             card.innerHTML = `
                 <div class="player-card-top">
                     <div class="number">#${g.numero || '-'}</div>
-                    <div class="status-dot ${statoDotClass}"></div>
                     
-                    <!-- L'immagine del giocatore forzata dentro il cerchio 70x70px del tuo CSS -->
                     <div class="player-pic" style="overflow: hidden; padding: 0;">
                         <img src="${playerImg}" alt="${g.nome}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                     </div>
@@ -176,27 +159,15 @@ function renderizzaGiocatori(giocatori) {
             gridView.appendChild(card);
         }
 
-        // 3b. Generazione HTML per la Tabella (List View) - INTEGRATO CON .list-avatar DEL TUO CSS
+        // 3b. Generazione HTML per la Tabella (List View)
         if (listBody) {
             const tr = document.createElement('tr');
             tr.setAttribute('onclick', `mostraDettaglio(${idGiocatoreCorrente})`);
-            
-            // Assegna la classe pill corretta per la tabella
-            let pillStato = 'pill-green';
-            let testoStato = '✔ Disponibile';
-            if (statoDotClass === 'injured') {
-                pillStato = 'pill-red';
-                testoStato = '✘ Infort.';
-            } else if (statoDotClass === 'suspended') {
-                pillStato = 'pill-amber';
-                testoStato = '⚠️ Squal.';
-            }
 
             tr.innerHTML = `
                 <td><strong>#${g.numero || '-'}</strong></td>
                 <td>
                     <div class="player-name-cell">
-                        <!-- Usiamo il contenitore circolare .list-avatar già presente nel tuo CSS -->
                         <div class="list-avatar" style="overflow: hidden; padding: 0;">
                             <img src="${playerImg}" alt="${g.nome}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                         </div>
@@ -208,9 +179,6 @@ function renderizzaGiocatori(giocatori) {
                 <td>${g.presenze || 0}</td>
                 <td>${puntiTotali} pt</td>
                 <td>${puntiSettimanali} pt</td>
-                <td>
-                    <span class="pill ${pillStato}">${testoStato}</span>
-                </td>
                 <td class="tbl-actions">
                     <button class="btn-sm">👁️ Det.</button>
                 </td>
@@ -233,40 +201,19 @@ function filterPlayers() {
 
         let matchRuolo = true;
         if (filtroRuolo !== 'tutti') {
-            // Controllo sicuro e flessibile per la stringa del ruolo
             matchRuolo = g.posizione?.toLowerCase().startsWith(filtroRuolo.toLowerCase());
         }
 
-        let matchStato = true;
-        if (filtroStato === 'available') {
-            matchStato = g.stato !== 'injured';
-        } else if (filtroStato === 'injured') {
-            matchStato = g.stato === 'injured';
-        }
-
-        return matchRicerca && matchRuolo && matchStato;
+        return matchRicerca && matchRuolo;
     });
 
     renderizzaGiocatori(giocatoriFiltrati);
 }
 
-// Cambia il ruolo selezionato dai bottoni (Corretto l'aggiornamento visivo della classe active)
+// Cambia il ruolo selezionato dai bottoni
 function setFilter(ruolo, btn) {
     filtroRuolo = ruolo;
     
-    // Trova ed elimina la classe 'active' solo dai bottoni di questo specifico gruppo ruolo
-    const fratelli = btn.parentElement.querySelectorAll('.filter-btn');
-    fratelli.forEach(b => b.classList.remove('active'));
-    
-    btn.classList.add('active');
-    filterPlayers();
-}
-
-// Cambia lo stato selezionato (Corretto l'aggiornamento visivo della classe active)
-function setStatus(stato, btn) {
-    filtroStato = stato;
-    
-    // Trova ed elimina la classe 'active' solo dai bottoni di questo specifico gruppo stato
     const fratelli = btn.parentElement.querySelectorAll('.filter-btn');
     fratelli.forEach(b => b.classList.remove('active'));
     
@@ -296,7 +243,6 @@ function setView(viewType) {
 
 // --- 6. MODALE DETTAGLI DEL SINGOLO GIOCATORE ---
 function mostraDettaglio(idGiocatore) {
-    // Cerchiamo sia sotto 'id' che sotto 'idGiocatore'
     const giocatore = tuttiGiocatori.find(g => (g.idGiocatore === idGiocatore || g.id === idGiocatore));
     if (!giocatore) return;
 

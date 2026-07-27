@@ -34,13 +34,11 @@
 
     <div class="sidebar-footer">
       <div class="user-card">
-        <!-- ID allineati a calendario.html per il caricamento dinamico -->
         <div class="avatar" id="sb-avatar">?</div>
         <div class="user-info">
           <strong id="sb-nome">—</strong>
           <small id="sb-ruolo">—</small>
         </div>
-        <!-- Utilizza la funzione logout() definita in js -->
         <button class="btn-logout" onclick="logout()">Esci</button>
       </div>
     </div>
@@ -80,11 +78,6 @@
           <button class="filter-btn" onclick="setFilter('DIF',this)">DIF</button>
           <button class="filter-btn" onclick="setFilter('POR',this)">POR</button>
         </div>
-        <div class="filter-group">
-          <button class="filter-btn active" onclick="setStatus('tutti',this)">Tutti</button>
-          <button class="filter-btn" onclick="setStatus('available',this)">✔ Disponibili</button>
-          <button class="filter-btn" onclick="setStatus('injured',this)">✘ Infort.</button>
-        </div>
         <div class="view-toggle">
           <div class="view-btn active" id="btn-grid" onclick="setView('grid')" title="Griglia">⊞</div>
           <div class="view-btn" id="btn-list" onclick="setView('list')" title="Lista">☰</div>
@@ -97,7 +90,6 @@
       <!-- LIST VIEW -->
       <div id="view-list" style="background:var(--dark2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
         <table>
-          <!-- Cerca questa riga nel tuo rosa.html e sostituiscila -->
           <thead>
             <tr>
               <th>#</th>
@@ -105,9 +97,8 @@
               <th>Pos.</th>
               <th>Piede</th>
               <th>Pres.</th>
-              <th>Punti Tot.</th>       <!-- Modificato da "Gol" -->
-              <th>Punti Sett.</th>      <!-- Modificato da "Assist" -->
-              <th>Stato</th>
+              <th>Punti Tot.</th>
+              <th>Punti Sett.</th>
               <th>Azioni</th>
             </tr>
           </thead>
@@ -159,9 +150,7 @@
 </div>
 
   <!-- JS SCRIPTS -->
-  <!-- 1. Importiamo prima l'utility del Token -->
   <script src="js/utils.js"></script>
-  <!-- 2. Poi importiamo il file JS specifico della pagina -->
   <script src="js/rosa.js"></script>
 </body>
 </html>
