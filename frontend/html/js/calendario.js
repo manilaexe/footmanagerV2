@@ -50,6 +50,7 @@ let weekCursor = weekStartOf(new Date()); // âncora settimana (aggiornata da na
 let events     = [];                     // cache locale
 let detailId   = null;                   // id aperto nel modal dettaglio
 let curView    = 'month';
+let isReadOnly = false;                  // true per ruoli sola-lettura (GIOCATORE, DIRIGENZA)
 
 /* ─── MAPPA TIPO → STILE ─────────────────────────────────────── */
 /*
@@ -325,7 +326,7 @@ function renderMonth() {
       isWeekend && 'weekend',
     ].filter(Boolean).join(' ');
 
-    if (!other) cell.addEventListener('click', () => openAddModalOnDay(yr, mo, day));
+    if (!other && !isReadOnly) cell.addEventListener('click', () => openAddModalOnDay(yr, mo, day));
 
     let html = `<div class="day-num">${day}</div>`;
     const MAX = 3;
@@ -394,7 +395,7 @@ function renderWeek() {
       hl.className = 'hour-line-week';
       col.appendChild(hl);
     });
-    col.addEventListener('click', () => openAddModalOnDay(d.getFullYear(), d.getMonth(), d.getDate()));
+    if (!isReadOnly) col.addEventListener('click', () => openAddModalOnDay(d.getFullYear(), d.getMonth(), d.getDate()));
 
     eventsForDay(d.getFullYear(), d.getMonth(), d.getDate()).forEach(e => {
       const s = parseDate(e.dataOraInizio);
@@ -432,10 +433,13 @@ function renderList() {
     .sort((a,b) => parseDate(a.dataOraInizio) - parseDate(b.dataOraInizio));
 
   if (!monthEvs.length) {
+    const emptyHint = isReadOnly
+      ? 'Non ci sono eventi in programma.'
+      : 'Usa <strong>+ Nuovo Evento</strong> per aggiungerne uno.';
     container.innerHTML = `<div class="empty-state">
       <div style="font-size:2.5rem;margin-bottom:.75rem;opacity:.3">📅</div>
       <p>Nessun evento in <strong>${MONTHS_IT[viewMonth]}</strong>.<br/>
-      Usa <strong>+ Nuovo Evento</strong> per aggiungerne uno.</p>
+      ${emptyHint}</p>
     </div>`;
     return;
   }
@@ -469,10 +473,11 @@ function renderList() {
         </div>
       </div>
       <span class="pill ${t.pillClass}">${t.label}</span>
+      ${isReadOnly ? '' : `
       <div class="list-actions" onclick="event.stopPropagation()">
         <button class="btn-ghost btn-sm-cal" onclick="openEditModal(${e.id})">✏️</button>
         <button class="btn-ghost btn-sm-cal" onclick="confirmDelete(${e.id})" style="color:#f87171">🗑</button>
-      </div>`;
+      </div>`}`;
     row.addEventListener('click', () => openDetail(e.id));
     container.appendChild(row);
   });
@@ -502,6 +507,13 @@ function openDetail(id) {
         ${e.luogo ? `<div style="grid-column:1/-1"><div class="detail-lbl">Luogo</div><div class="detail-val">📍 ${esc(e.luogo)}</div></div>` : ''}
       </div>`;
   }
+
+  // Nasconde le azioni di modifica per i ruoli in sola lettura
+  const btnDelDetail  = document.querySelector('#modalDettaglio .btn-danger-fm');
+  const btnEditDetail = document.querySelector('#modalDettaglio .btn-primary');
+  if (btnDelDetail)  btnDelDetail.style.display  = isReadOnly ? 'none' : 'inline-block';
+  if (btnEditDetail) btnEditDetail.style.display = isReadOnly ? 'none' : 'inline-block';
+
   openModal('modalDettaglio');
 }
 
@@ -728,7 +740,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (sbAv)   sbAv.textContent   = (nome[0]||('')).toUpperCase() + (cognome[0]||nome[1]||'').toUpperCase();
 
   // Nasconde "Nuovo Evento" ai ruoli in sola lettura
-  if (ruolo === 'GIOCATORE' || ruolo === 'DIRIGENZA') {
+  isReadOnly = (ruolo === 'GIOCATORE' || ruolo === 'DIRIGENZA');
+  if (isReadOnly) {
     const btn = document.getElementById('btn-nuovo-evento');
     if (btn) btn.style.display = 'none';
   }
