@@ -4,7 +4,9 @@ let filtroRuolo = 'tutti';
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Esegue il controllo sulla validità del login
-    verificaAutenticazione();
+    if (typeof verificaAutenticazione === 'function') {
+        verificaAutenticazione();
+    }
 
     // 2. Popola la sidebar con nome/ruolo dal localStorage
     const sbName = document.getElementById('sb-nome');
@@ -22,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Imposta la vista di base (Griglia) all'avvio della pagina
     setView('grid');
 
-    // 3. Scarica la rosa dal backend
+    // 3. Scarica la rosa e le statistiche dal backend
     caricaRosa(); 
 });
 
@@ -34,31 +36,60 @@ function logout() {
     window.location.href = '/html/login.html';
 }
 
-// --- 1. RECUPERO DATI DAL BACKEND ---
+// --- 1. RECUPERO DATI DAL BACKEND (GIOCATORI + STATISTICHE) ---
 async function caricaRosa() {
     try {
         const idSquadra = localStorage.getItem('idSquadra'); 
+        const token     = localStorage.getItem('token');
 
         if (!idSquadra) {
-            console.error("Nessun ID squadra trovato nel localStorage. Assicurati di averlo salvato al login.");
+            console.error("Nessun ID squadra trovato nel localStorage.");
             return;
         }
 
-        const response = await fetch(`http://localhost:8080/api/giocatori/squadra/${idSquadra}`, {
-            method: 'GET',
-            headers: getAuthHeaders() // Funzione definita in utils.js
-        });
+        const headers = typeof getAuthHeaders === 'function' 
+            ? getAuthHeaders() 
+            : { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-        if (response.status === 401 || response.status === 403) {
+        // Scarichiamo sia la rosa sia le statistiche in parallelo
+        const [resGiocatori, resStats] = await Promise.all([
+            fetch(`http://localhost:8080/api/giocatori/squadra/${idSquadra}`, { headers }).catch(() => null),
+            fetch('http://localhost:8080/api/statistiche/giocatori',          { headers }).catch(() => null)
+        ]);
+
+        if (resGiocatori?.status === 401 || resGiocatori?.status === 403) {
             logout();
             return;
         }
 
-        if (!response.ok) throw new Error('Errore nel caricamento della rosa');
+        if (!resGiocatori || !resGiocatori.ok) throw new Error('Errore nel caricamento della rosa');
 
-        tuttiGiocatori = await response.json();
-        
-        console.log("Giocatori scaricati:", tuttiGiocatori);
+        let giocatori = await resGiocatori.json();
+        const stats   = (resStats?.ok) ? await resStats.json() : [];
+
+        // Unisci i dati delle statistiche a ciascun giocatore
+        if (Array.isArray(stats) && stats.length > 0) {
+            giocatori = giocatori.map(g => {
+                const s = stats.find(st => 
+                    st.id === g.id || 
+                    st.giocatoreId === g.id || 
+                    st.idGiocatore === g.id ||
+                    st.nome === g.nome ||
+                    (st.nome && st.nome.includes(g.cognome))
+                );
+
+                return {
+                    ...g,
+                    gol:      s?.gol   ?? s?.golTotali   ?? g.gol   ?? 0,
+                    assist:   s?.ass   ?? s?.assist      ?? g.assist ?? 0,
+                    presenze: s?.pres  ?? s?.presenze    ?? g.presenze ?? 0,
+                    puntiTotali: s?.puntiTotali ?? g.puntiTotali ?? g.punti_totali ?? 0,
+                    puntiSettimanali: s?.puntiSettimanali ?? g.puntiSettimanali ?? g.punti_settimanali ?? 0
+                };
+            });
+        }
+
+        tuttiGiocatori = giocatori;
 
         // Aggiorna i contatori del sommario in cima alla pagina
         aggiornaSommario(tuttiGiocatori);
@@ -74,10 +105,10 @@ async function caricaRosa() {
 // --- 2. AGGIORNAMENTO DINAMICO DEL SOMMARIO ---
 function aggiornaSommario(giocatori) {
     const tot = giocatori.length;
-    const att = giocatori.filter(g => g.posizione?.toLowerCase().includes('att')).length;
-    const cen = giocatori.filter(g => g.posizione?.toLowerCase().includes('cen')).length;
-    const dif = giocatori.filter(g => g.posizione?.toLowerCase().includes('dif')).length;
-    const por = giocatori.filter(g => g.posizione?.toLowerCase().includes('por')).length;
+    const att = giocatori.filter(g => (g.posizione || g.ruolo || '').toLowerCase().includes('att')).length;
+    const cen = giocatori.filter(g => (g.posizione || g.ruolo || '').toLowerCase().includes('cen')).length;
+    const dif = giocatori.filter(g => (g.posizione || g.ruolo || '').toLowerCase().includes('dif')).length;
+    const por = giocatori.filter(g => (g.posizione || g.ruolo || '').toLowerCase().includes('por')).length;
 
     const summaryCards = document.querySelectorAll('.summary-card .val');
     if (summaryCards.length >= 5) {
@@ -100,14 +131,12 @@ function renderizzaGiocatori(giocatori) {
 
     giocatori.forEach(g => {
         const playerImg = g.img ? g.img : '../css/placeholder-player.png'; 
-
         const idGiocatoreCorrente = g.idGiocatore || g.id;
-        const puntiTotali = g.puntiTotali || g.punti_totali || 0;
-        const puntiSettimanali = g.puntiSettimanali || g.punti_settimanali || 0;
+        const ruoloStr = g.posizione || g.ruolo || 'N/D';
 
-        // Determina il colore del badge del ruolo (es. pos-att, pos-cen...)
+        // Determina il colore del badge del ruolo
         let posClass = 'pos-cen';
-        const posPura = g.posizione?.toLowerCase() || '';
+        const posPura = ruoloStr.toLowerCase();
         if (posPura.includes('att')) posClass = 'pos-att';
         else if (posPura.includes('dif')) posClass = 'pos-dif';
         else if (posPura.includes('por')) posClass = 'pos-por';
@@ -123,11 +152,11 @@ function renderizzaGiocatori(giocatori) {
                     <div class="number">#${g.numero || '-'}</div>
                     
                     <div class="player-pic" style="overflow: hidden; padding: 0;">
-                        <img src="${playerImg}" alt="${g.nome}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                        <img src="${playerImg}" alt="${g.nome}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="this.src='../css/placeholder-player.png'">
                     </div>
                     
                     <div class="name">${g.nome} ${g.cognome}</div>
-                    <span class="pos-badge ${posClass}">${g.posizione || 'N/D'}</span>
+                    <span class="pos-badge ${posClass}">${ruoloStr}</span>
                 </div>
                 
                 <div class="player-card-body">
@@ -137,12 +166,12 @@ function renderizzaGiocatori(giocatori) {
                             <div class="l">Presenze</div>
                         </div>
                         <div class="mini-stat">
-                            <div class="v">${puntiTotali}</div>
-                            <div class="l">Pt Tot</div>
+                            <div class="v">${g.gol || 0}</div>
+                            <div class="l">Gol</div>
                         </div>
                         <div class="mini-stat">
-                            <div class="v">${puntiSettimanali}</div>
-                            <div class="l">Pt Sett</div>
+                            <div class="v">${g.assist || 0}</div>
+                            <div class="l">Assist</div>
                         </div>
                     </div>
                     
@@ -169,16 +198,16 @@ function renderizzaGiocatori(giocatori) {
                 <td>
                     <div class="player-name-cell">
                         <div class="list-avatar" style="overflow: hidden; padding: 0;">
-                            <img src="${playerImg}" alt="${g.nome}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                            <img src="${playerImg}" alt="${g.nome}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="this.src='../css/placeholder-player.png'">
                         </div>
                         <span>${g.nome} ${g.cognome}</span>
                     </div>
                 </td>
-                <td>${g.posizione || '-'}</td>
+                <td><span class="pos-badge ${posClass}">${ruoloStr}</span></td>
                 <td>${g.piede || '-'}</td>
                 <td>${g.presenze || 0}</td>
-                <td>${puntiTotali} pt</td>
-                <td>${puntiSettimanali} pt</td>
+                <td>${g.gol || 0}</td>
+                <td>${g.assist || 0}</td>
                 <td class="tbl-actions">
                     <button class="btn-sm">👁️ Det.</button>
                 </td>
@@ -190,18 +219,20 @@ function renderizzaGiocatori(giocatori) {
 
 // --- 4. GESTIONE FILTRI E RICERCA ---
 function filterPlayers() {
-    const searchVal = document.getElementById('search-input').value.toLowerCase();
+    const searchVal = (document.getElementById('search-input')?.value || '').toLowerCase();
 
     const giocatoriFiltrati = tuttiGiocatori.filter(g => {
+        const ruolo = (g.posizione || g.ruolo || '').toLowerCase();
+        
         const matchRicerca = 
             g.nome?.toLowerCase().includes(searchVal) ||
             g.cognome?.toLowerCase().includes(searchVal) ||
-            g.posizione?.toLowerCase().includes(searchVal) ||
+            ruolo.includes(searchVal) ||
             g.numero?.toString().includes(searchVal);
 
         let matchRuolo = true;
         if (filtroRuolo !== 'tutti') {
-            matchRuolo = g.posizione?.toLowerCase().startsWith(filtroRuolo.toLowerCase());
+            matchRuolo = ruolo.includes(filtroRuolo.toLowerCase());
         }
 
         return matchRicerca && matchRuolo;
@@ -214,10 +245,12 @@ function filterPlayers() {
 function setFilter(ruolo, btn) {
     filtroRuolo = ruolo;
     
-    const fratelli = btn.parentElement.querySelectorAll('.filter-btn');
-    fratelli.forEach(b => b.classList.remove('active'));
+    if (btn && btn.parentElement) {
+        const fratelli = btn.parentElement.querySelectorAll('.filter-btn');
+        fratelli.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
     
-    btn.classList.add('active');
     filterPlayers();
 }
 
@@ -247,15 +280,13 @@ function mostraDettaglio(idGiocatore) {
     if (!giocatore) return;
 
     const dataNascitaFormatted = giocatore.dataNascita || giocatore.data_nascita;
-    const puntiTotali = giocatore.puntiTotali || giocatore.punti_totali || 0;
-    const puntiSettimanali = giocatore.puntiSettimanali || giocatore.punti_settimanali || 0;
 
     const detailHero = document.getElementById('detail-hero');
     if (detailHero) {
         detailHero.innerHTML = `
             <div style="padding: 2rem; background: linear-gradient(135deg, var(--primary), var(--dark)); color: white; border-radius: var(--radius) var(--radius) 0 0;">
                 <h2 style="font-family:'Barlow Condensed', sans-serif; font-size: 2.5rem; text-transform: uppercase;">#${giocatore.numero || '-'} ${giocatore.nome} ${giocatore.cognome}</h2>
-                <p style="opacity: 0.9;">${giocatore.posizione || 'N/D'}</p>
+                <p style="opacity: 0.9;">${giocatore.posizione || giocatore.ruolo || 'N/D'}</p>
             </div>
         `;
     }
@@ -268,9 +299,12 @@ function mostraDettaglio(idGiocatore) {
                 <p><strong>Altezza:</strong> ${giocatore.altezza ? giocatore.altezza + ' cm' : 'N/D'}</p>
                 <p><strong>Peso:</strong> ${giocatore.peso ? giocatore.peso + ' kg' : 'N/D'}</p>
                 <p><strong>Nazionalità:</strong> ${giocatore.nazionalita || 'N/D'}</p>
-                <p><strong>Data di Nascita:</strong> ${dataNascitaFormatted ? new Date(dataNascitaFormatted).toLocaleDateString() : 'N/D'}</p>
-                <p><strong>Punti Totali:</strong> ${puntiTotali}</p>
-                <p><strong>Punti Settimanali:</strong> ${puntiSettimanali}</p>
+                <p><strong>Data di Nascita:</strong> ${dataNascitaFormatted ? new Date(dataNascitaFormatted).toLocaleDateString('it-IT') : 'N/D'}</p>
+                <hr style="grid-column: span 2; border: 0; border-top: 1px solid #eee; margin: 0.5rem 0;">
+                <p><strong>Presenze:</strong> ${giocatore.presenze || 0}</p>
+                <p><strong>Gol Totali:</strong> ${giocatore.gol || 0}</p>
+                <p><strong>Assist:</strong> ${giocatore.assist || 0}</p>
+                <p><strong>Punti Totali:</strong> ${giocatore.puntiTotali || 0}</p>
             </div>
         `;
     }
@@ -279,9 +313,11 @@ function mostraDettaglio(idGiocatore) {
 }
 
 function openModal(id) {
-    document.getElementById(id).style.display = 'flex';
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'flex';
 }
 
 function closeModal(id) {
-    document.getElementById(id).style.display = 'none';
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
 }
