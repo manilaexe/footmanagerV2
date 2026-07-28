@@ -373,30 +373,30 @@ DROP TABLE IF EXISTS `statistica_giocatore`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `statistica_giocatore` (
   `id_statistica_giocatore` int NOT NULL AUTO_INCREMENT,
-  `presenze` int DEFAULT '0',
-  `presenze_titolare` int DEFAULT '0',
-  `minuti_giocati` int DEFAULT '0',
-  `ammonizioni` int DEFAULT '0',
-  `espulsioni` int DEFAULT '0',
+  `presenze` int NOT NULL DEFAULT '0',
+  `presenze_titolare` int NOT NULL DEFAULT '0',
+  `minuti_giocati` int NOT NULL DEFAULT '0',
+  `ammonizioni` int NOT NULL DEFAULT '0',
+  `espulsioni` int NOT NULL DEFAULT '0',
   `id_giocatore` int NOT NULL,
-  `falli_commessi` int DEFAULT '0',
-  `falli_subiti` int DEFAULT '0',
-  `assist` int DEFAULT '0',
-  `duelli_aerei_vinti` int DEFAULT '0',
-  `duelli_aerei_persi` int DEFAULT '0',
-  `duelli_vinti` int DEFAULT '0',
-  `duelli_persi` int DEFAULT '0',
-  `passaggi_tentati` int DEFAULT '0',
-  `passaggi_riusciti` int DEFAULT '0',
-  `passaggi_chiave` int DEFAULT '0',
-  `dribling_tentati` int DEFAULT '0',
-  `dribling_riusciti` int DEFAULT '0',
-  `palloni_intercettati` int DEFAULT '0',
+  `falli_commessi` int NOT NULL DEFAULT '0',
+  `falli_subiti` int NOT NULL DEFAULT '0',
+  `assist` int NOT NULL DEFAULT '0',
+  `duelli_aerei_vinti` int NOT NULL DEFAULT '0',
+  `duelli_aerei_persi` int NOT NULL DEFAULT '0',
+  `duelli_vinti` int NOT NULL DEFAULT '0',
+  `duelli_persi` int NOT NULL DEFAULT '0',
+  `passaggi_tentati` int NOT NULL DEFAULT '0',
+  `passaggi_riusciti` int NOT NULL DEFAULT '0',
+  `passaggi_chiave` int NOT NULL DEFAULT '0',
+  `dribling_tentati` int NOT NULL DEFAULT '0',
+  `dribling_riusciti` int NOT NULL DEFAULT '0',
+  `palloni_intercettati` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id_statistica_giocatore`),
   UNIQUE KEY `id_giocatore` (`id_giocatore`),
   CONSTRAINT `fk_statistica_giocatore` FOREIGN KEY (`id_giocatore`) REFERENCES `giocatore` (`id_giocatore`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `chk_presenze_titolare` CHECK ((`presenze_titolare` <= `presenze`))
-) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -405,7 +405,7 @@ CREATE TABLE `statistica_giocatore` (
 
 LOCK TABLES `statistica_giocatore` WRITE;
 /*!40000 ALTER TABLE `statistica_giocatore` DISABLE KEYS */;
-INSERT INTO `statistica_giocatore` VALUES (1,0,0,0,0,0,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(2,0,0,0,0,0,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(3,0,0,0,0,0,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(4,0,0,0,0,0,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(5,0,0,0,0,0,5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(6,0,0,0,0,0,6,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(7,0,0,0,0,0,7,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(8,0,0,0,0,0,8,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(9,0,0,0,0,0,9,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(10,0,0,0,0,0,10,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(11,0,0,0,0,0,11,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(12,0,0,0,0,0,12,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(13,0,0,0,0,0,13,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(14,0,0,0,0,0,14,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(15,0,0,0,0,0,15,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(16,0,0,0,0,0,16,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(17,0,0,0,0,0,17,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(18,0,0,0,0,0,18,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(19,0,0,0,0,0,19,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(20,0,0,0,0,0,20,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(21,0,0,0,0,0,21,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(22,0,0,0,0,0,22,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(23,0,0,0,0,0,23,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(24,0,0,0,0,0,24,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(25,0,0,0,0,0,25,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL),(26,0,0,0,0,0,26,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL);
+INSERT INTO `statistica_giocatore` VALUES (1,30,25,2100,8,2,1,33,19,7,1,11,33,19,168,125,8,9,6,23),(2,23,22,1780,1,1,2,33,8,4,12,3,32,22,365,294,1,12,8,30),(3,32,18,1720,3,0,3,5,23,4,27,18,45,22,58,49,3,21,15,31),(4,5,4,340,9,2,4,2,18,0,5,10,10,12,243,156,3,26,16,16),(5,18,17,1380,3,2,5,33,34,6,17,6,0,0,98,73,3,13,8,7),(6,37,4,980,7,0,6,16,3,1,25,12,25,19,374,231,13,8,5,33),(7,20,14,1240,0,0,7,28,38,5,11,0,41,5,229,183,14,26,15,0),(8,17,1,400,2,2,8,17,27,0,13,19,24,16,149,116,4,23,17,9),(9,23,4,700,1,0,9,28,22,5,15,12,25,22,113,87,6,12,8,28),(10,25,19,1640,0,2,10,25,39,7,28,14,46,12,161,103,13,3,2,4),(11,38,18,1840,5,0,11,10,32,1,20,15,40,21,93,67,12,25,18,19),(12,11,7,640,7,2,12,23,21,7,26,16,17,9,261,211,13,14,8,20),(13,5,4,340,0,1,13,22,7,2,21,15,42,26,374,273,11,11,7,7),(14,3,1,120,1,1,14,33,10,6,6,13,33,11,400,269,9,8,5,4),(15,31,21,1880,0,2,15,33,12,0,7,1,29,24,164,146,0,6,2,12),(16,28,17,1580,9,2,16,33,13,1,1,12,46,23,130,101,6,8,3,1),(17,27,9,1080,6,0,17,31,21,2,1,5,10,7,262,232,2,1,0,11),(18,21,14,1260,8,1,18,11,9,3,4,12,38,26,117,75,4,1,0,23),(19,9,1,240,9,1,19,27,35,2,4,13,43,11,142,87,8,16,7,33),(20,17,5,640,2,0,20,11,34,3,24,12,37,25,429,285,3,18,9,20),(21,5,4,340,7,0,21,11,19,4,16,19,4,18,371,240,6,17,10,10),(22,27,15,1440,8,0,22,8,0,4,13,15,24,5,201,142,10,12,9,20),(23,38,6,1120,9,0,23,34,38,1,3,0,38,23,277,207,12,16,8,22),(24,19,9,920,0,2,24,14,2,1,27,17,36,27,238,183,7,18,12,22),(25,5,3,280,7,2,25,12,33,1,17,6,38,27,145,107,9,24,11,10),(26,4,1,140,1,1,26,26,0,0,2,7,29,24,187,127,4,19,10,3);
 /*!40000 ALTER TABLE `statistica_giocatore` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -418,18 +418,18 @@ DROP TABLE IF EXISTS `statistica_movimento`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `statistica_movimento` (
   `id_statistica_movimento` int NOT NULL,
-  `goal_rigore` int DEFAULT '0',
-  `goal_testa` int DEFAULT '0',
-  `goal_punizione` int DEFAULT '0',
-  `tiri_totali` int DEFAULT '0',
-  `tiri_in_porta` int DEFAULT '0',
-  `pali_traverse` int DEFAULT '0',
-  `big_chance_mancate` int DEFAULT '0',
-  `big_chance_create` int DEFAULT '0',
-  `cross_tentati` int DEFAULT '0',
-  `cross_riusciti` int DEFAULT '0',
-  `tackle` int DEFAULT '0',
-  `palloni_rubati` int DEFAULT '0',
+  `goal_rigore` int NOT NULL DEFAULT '0',
+  `goal_testa` int NOT NULL DEFAULT '0',
+  `goal_punizione` int NOT NULL DEFAULT '0',
+  `tiri_totali` int NOT NULL DEFAULT '0',
+  `tiri_in_porta` int NOT NULL DEFAULT '0',
+  `pali_traverse` int NOT NULL DEFAULT '0',
+  `big_chance_mancate` int NOT NULL DEFAULT '0',
+  `big_chance_create` int NOT NULL DEFAULT '0',
+  `cross_tentati` int NOT NULL DEFAULT '0',
+  `cross_riusciti` int NOT NULL DEFAULT '0',
+  `tackle` int NOT NULL DEFAULT '0',
+  `palloni_rubati` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id_statistica_movimento`),
   CONSTRAINT `fk_statistica_movimento` FOREIGN KEY (`id_statistica_movimento`) REFERENCES `giocatore` (`id_giocatore`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -441,7 +441,7 @@ CREATE TABLE `statistica_movimento` (
 
 LOCK TABLES `statistica_movimento` WRITE;
 /*!40000 ALTER TABLE `statistica_movimento` DISABLE KEYS */;
-INSERT INTO `statistica_movimento` VALUES (4,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(5,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(6,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(7,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(8,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(9,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(10,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(11,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(12,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(13,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(14,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(15,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(16,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(17,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(18,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(19,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(20,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(21,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(22,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(23,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(24,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(25,0,0,0,0,0,0,0,0,0,0,NULL,NULL),(26,0,0,0,0,0,0,0,0,0,0,NULL,NULL);
+INSERT INTO `statistica_movimento` VALUES (4,0,4,0,15,10,2,7,1,14,3,0,8),(5,2,4,0,46,28,1,6,7,2,0,4,7),(6,2,2,1,11,3,2,8,4,20,2,11,4),(7,0,4,1,58,26,0,1,1,7,1,14,8),(8,0,1,2,42,20,2,9,5,1,0,19,21),(9,1,0,0,46,20,3,8,2,23,2,12,3),(10,2,1,0,45,20,3,5,3,10,2,3,13),(11,0,2,1,21,8,1,5,7,7,1,32,8),(12,1,3,0,11,7,3,5,4,22,3,1,11),(13,3,2,0,10,4,2,8,2,14,3,18,24),(14,0,3,1,29,14,2,5,9,29,3,9,2),(15,2,0,1,50,32,1,8,2,21,5,36,3),(16,0,0,1,54,19,3,8,8,13,3,17,23),(17,3,3,0,24,9,3,1,2,20,5,39,12),(18,1,2,1,29,20,2,6,3,27,4,11,6),(19,2,3,0,20,13,0,0,0,24,6,14,24),(20,2,1,0,47,14,0,3,0,15,2,38,22),(21,2,1,1,32,10,0,0,2,1,0,37,10),(22,1,4,2,17,6,3,6,9,20,4,39,2),(23,1,2,2,35,19,1,7,9,13,2,14,19),(24,1,2,2,49,29,2,4,1,13,3,21,10),(25,0,1,1,22,12,2,9,5,22,3,30,4),(26,3,4,1,36,18,0,4,5,15,3,20,4);
 /*!40000 ALTER TABLE `statistica_movimento` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -454,11 +454,11 @@ DROP TABLE IF EXISTS `statistica_portiere`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `statistica_portiere` (
   `id_giocatore` int NOT NULL,
-  `parate` int DEFAULT '0',
-  `clean_sheet` int DEFAULT '0',
-  `goal_subiti` int DEFAULT '0',
-  `rigori_parati` int DEFAULT '0',
-  `rigori_subiti` int DEFAULT '0',
+  `parate` int NOT NULL DEFAULT '0',
+  `clean_sheet` int NOT NULL DEFAULT '0',
+  `goal_subiti` int NOT NULL DEFAULT '0',
+  `rigori_parati` int NOT NULL DEFAULT '0',
+  `rigori_subiti` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id_giocatore`),
   CONSTRAINT `fk_statistica_portiere` FOREIGN KEY (`id_giocatore`) REFERENCES `giocatore` (`id_giocatore`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -470,7 +470,7 @@ CREATE TABLE `statistica_portiere` (
 
 LOCK TABLES `statistica_portiere` WRITE;
 /*!40000 ALTER TABLE `statistica_portiere` DISABLE KEYS */;
-INSERT INTO `statistica_portiere` VALUES (1,0,0,0,0,0),(2,0,0,0,0,0),(3,0,0,0,0,0);
+INSERT INTO `statistica_portiere` VALUES (1,33,12,13,0,1),(2,20,12,41,0,3),(3,91,9,24,2,2);
 /*!40000 ALTER TABLE `statistica_portiere` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -512,4 +512,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-07-28  9:49:52
+-- Dump completed on 2026-07-28 15:39:41
