@@ -62,7 +62,25 @@ public class Giocatore {
     @JsonIgnore
     private Utente utente;
 
+    // ── STATISTICHE (schema separato in 3 tabelle) ─────────────────────────
+    // Comuni a tutti i giocatori, portieri inclusi.
     @OneToOne(mappedBy = "giocatore", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
-    private Statistiche statistiche;
+    private StatisticaGiocatore statisticaGiocatore;
+
+    // Presente solo se il giocatore NON è portiere.
+    @OneToOne(mappedBy = "giocatore", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private StatisticaMovimento statisticaMovimento;
+
+    // Presente solo se il giocatore è portiere.
+    @OneToOne(mappedBy = "giocatore", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private StatisticaPortiere statisticaPortiere;
+
+    /** true se il ruolo del giocatore è "Portiere" (case-insensitive) */
+    @Transient
+    public boolean isPortiere() {
+        return posizione != null && posizione.equalsIgnoreCase("Portiere");
+    }
 }

@@ -13,14 +13,17 @@ public interface GiocatoreRepository extends JpaRepository<Giocatore, Integer> {
     // Forziamo il JOIN FETCH dell'utente per evitare problemi con il caricamento Lazy
     @Query("SELECT g FROM Giocatore g JOIN FETCH g.utente u WHERE u.id = :utenteId")
     Optional<Giocatore> findByUtente_Id(@Param("utenteId") Integer utenteId);
-    
+
     List<Giocatore> findBySquadra_Id(Integer squadraId);
 
-    // Top marcatori per la squadra (somma gol da Statistiche)
+    // Top marcatori per la squadra (somma gol da StatisticaMovimento).
+    // I gol sono ora nella tabella statistica_movimento, non più in statistiche;
+    // i portieri non hanno riga in statistica_movimento, quindi il JOIN (non LEFT JOIN)
+    // li esclude automaticamente dalla classifica marcatori — comportamento corretto.
     @Query("""
-        SELECT g FROM Giocatore g JOIN FETCH g.utente JOIN g.statistiche s
+        SELECT g FROM Giocatore g JOIN FETCH g.utente JOIN g.statisticaMovimento sm
         WHERE g.squadra.id = :squadraId
-        ORDER BY (s.goalRigore + s.goalTesta + s.goalPunizione) DESC
+        ORDER BY (sm.goalRigore + sm.goalTesta + sm.goalPunizione) DESC
         """)
     List<Giocatore> topMarcatori(@Param("squadraId") Integer squadraId);
 

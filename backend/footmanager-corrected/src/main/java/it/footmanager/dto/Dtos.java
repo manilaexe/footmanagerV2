@@ -61,38 +61,65 @@ public class Dtos {
     }
 
     // ── Statistiche ───────────────────────────────────────────────────────
+    // Il DB ora divide le statistiche in 3 tabelle:
+    //   statistica_giocatore  → dati comuni a tutti (sempre presenti)
+    //   statistica_movimento  → solo per chi NON è portiere (gol, tiri, cross...)
+    //   statistica_portiere   → solo per i portieri (parate, clean sheet...)
+    // Questo DTO li appiattisce in un'unica risposta: i campi non pertinenti
+    // al ruolo del giocatore restano a 0. Il flag "portiere" dice al frontend
+    // quale blocco (movimento vs portiere) mostrare.
     @Data @Builder
     public static class StatisticheDto {
         private Integer giocatoreId;
+        private boolean portiere;   // true se il giocatore è un portiere
+
+        // ── Comuni (statistica_giocatore) ──
         private int presenze;          private int presenzeTitolare; private int minutiGiocati;
-        private int goalRigore;        private int goalTesta;        private int goalPunizione;
-        private int golTotali;
-        private int assist;            private int tiriTotali;       private int tiriInPorta;
-        private int paliTraverse;      private int bigChanceMancate; private int bigChanceCreate;
+        private int assist;
         private int passaggiTentati;   private int passaggiRiusciti; private int passaggiChiave;
-        private int crossTentati;      private int crossRiusciti;
         private int dribblingTentati;  private int dribblingRiusciti;
         private int duelliVinti;       private int duelliPersi;
         private int duelliAereiVinti;  private int duelliAereiPersi;
-        private int palloniRubati;     private int palloniIntercettati; private int tackle;
+        private int palloniIntercettati;
         private int falliCommessi;     private int falliSubiti;
         private int ammonizioni;       private int espulsioni;
+
+        // ── Movimento (statistica_movimento) — valorizzati solo se !portiere ──
+        private int goalRigore;        private int goalTesta;        private int goalPunizione;
+        private int golTotali;
+        private int tiriTotali;        private int tiriInPorta;
+        private int paliTraverse;      private int bigChanceMancate; private int bigChanceCreate;
+        private int crossTentati;      private int crossRiusciti;
+        private int tackle;            private int palloniRubati;
+
+        // ── Portiere (statistica_portiere) — valorizzati solo se portiere ──
+        private int parate;            private int cleanSheet;
+        private int goalSubiti;        private int rigoriParati;     private int rigoriSubiti;
     }
 
     @Data
     public static class AggiornaStatisticheRequest {
+        // ── Comuni ──
         private Integer presenze;          private Integer presenzeTitolare; private Integer minutiGiocati;
-        private Integer goalRigore;        private Integer goalTesta;        private Integer goalPunizione;
-        private Integer assist;            private Integer tiriTotali;       private Integer tiriInPorta;
-        private Integer paliTraverse;      private Integer bigChanceMancate; private Integer bigChanceCreate;
+        private Integer assist;
         private Integer passaggiTentati;   private Integer passaggiRiusciti; private Integer passaggiChiave;
-        private Integer crossTentati;      private Integer crossRiusciti;
         private Integer dribblingTentati;  private Integer dribblingRiusciti;
         private Integer duelliVinti;       private Integer duelliPersi;
         private Integer duelliAereiVinti;  private Integer duelliAereiPersi;
-        private Integer palloniRubati;     private Integer palloniIntercettati; private Integer tackle;
+        private Integer palloniIntercettati;
         private Integer falliCommessi;     private Integer falliSubiti;
         private Integer ammonizioni;       private Integer espulsioni;
+
+        // ── Movimento (ignorati se il giocatore è portiere) ──
+        private Integer goalRigore;        private Integer goalTesta;        private Integer goalPunizione;
+        private Integer tiriTotali;        private Integer tiriInPorta;
+        private Integer paliTraverse;      private Integer bigChanceMancate; private Integer bigChanceCreate;
+        private Integer crossTentati;      private Integer crossRiusciti;
+        private Integer tackle;            private Integer palloniRubati;
+
+        // ── Portiere (ignorati se il giocatore non è portiere) ──
+        private Integer parate;            private Integer cleanSheet;
+        private Integer goalSubiti;        private Integer rigoriParati;     private Integer rigoriSubiti;
     }
 
     // ── Evento ────────────────────────────────────────────────────────────
@@ -228,15 +255,19 @@ public class Dtos {
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class GiocatoreCompletoStatsDto {
         private String nome;
+        private boolean portiere;
         private int pres;
-        private int gol;
+        private int gol;         // 0 per i portieri
         private int ass;
-        private int tiri;
+        private int tiri;        // 0 per i portieri
         private int pass;       // Percentuale passaggi riusciti
         private int drib;       // Percentuale dribbling réussiti
         private int duelli;     // Percentuale duelli vinti
         private int intercetti;
         private int amm;
         private int esp;
+        // Valorizzati solo se portiere = true
+        private int parate;
+        private int cleanSheet;
     }
 }

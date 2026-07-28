@@ -18,7 +18,10 @@ public class UtenteService {
     private final SquadraRepository     squadraRepo;
     private final GiocatoreRepository   giocatoreRepo;
     private final AllenatoreRepository  allenatoreRepo;
-    private final StatisticheRepository statRepo;
+    private final StatisticaGiocatoreRepository statRepo;   // solo la riga COMUNE va creata qui:
+    // in fase di registrazione utente non conosciamo ancora la posizione
+    // (portiere o meno), quindi la riga movimento/portiere viene creata
+    // più tardi da GiocatoreService.creaGiocatore() o in modo lazy.
     private final PasswordEncoder       encoder;
 
     @Transactional(readOnly = true)
@@ -54,7 +57,7 @@ public class UtenteService {
                 g.setNome(req.getNome() != null ? req.getNome() : "");
                 g.setCognome(req.getCognome() != null ? req.getCognome() : "");
                 giocatoreRepo.save(g);
-                Statistiche s = new Statistiche();
+                StatisticaGiocatore s = new StatisticaGiocatore();
                 s.setGiocatore(g);
                 statRepo.save(s);
             }
