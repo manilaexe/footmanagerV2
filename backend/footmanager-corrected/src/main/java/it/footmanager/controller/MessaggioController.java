@@ -85,9 +85,13 @@ public class MessaggioController {
     }
 
     // ── PATCH /api/messaggi/{id}/letto ────────────────────────────────────
-    // Segna il messaggio come letto (chiamato dalla view giocatore).
+    // Segna il messaggio come letto (chiamato dalla view giocatore, al click).
+    // Il giocatore può segnare come letto solo i messaggi indirizzati a lui.
     @PatchMapping("/{id}/letto")
-    public MessaggioDto segnaLetto(@PathVariable Integer id) {
-        return svc.segnaLetto(id);
+    @PreAuthorize("hasRole('GIOCATORE')")
+    public MessaggioDto segnaLetto(@PathVariable Integer id, @AuthenticationPrincipal UserDetails ud) {
+        Integer uid = utenteRepo.findByUsername(ud.getUsername()).orElseThrow().getId();
+        Integer gid = giocatoreRepo.findByUtente_Id(uid).orElseThrow().getId();
+        return svc.segnaLetto(id, gid);
     }
 }

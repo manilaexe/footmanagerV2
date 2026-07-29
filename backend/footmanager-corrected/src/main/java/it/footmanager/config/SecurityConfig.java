@@ -111,9 +111,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/eventi/**")                      .hasAnyRole("STAFF","ALLENATORE","IT")
 
                 // ── Messaggi ──────────────────────────────────────────
-                .requestMatchers(HttpMethod.GET, "/api/messaggi/**")    .authenticated()
-                .requestMatchers(HttpMethod.POST,"/api/messaggi")       .hasAnyRole("STAFF","ALLENATORE","IT")
-                .requestMatchers("/api/messaggi/**")                    .hasAnyRole("STAFF","ALLENATORE","IT")
+                .requestMatchers(HttpMethod.GET,   "/api/messaggi/**")       .authenticated()
+                .requestMatchers(HttpMethod.POST,  "/api/messaggi")          .hasAnyRole("STAFF","ALLENATORE","IT")
+                .requestMatchers(HttpMethod.PATCH, "/api/messaggi/*/letto")  .hasRole("GIOCATORE")
+                .requestMatchers("/api/messaggi/**")                        .hasAnyRole("STAFF","ALLENATORE","IT")
 
                 // ── Quiz ──────────────────────────────────────────────
                 .requestMatchers(HttpMethod.GET, "/api/quiz/**")        .hasAnyRole("GIOCATORE","STAFF","IT")

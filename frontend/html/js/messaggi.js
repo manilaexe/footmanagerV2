@@ -3,6 +3,7 @@
 // ==========================================
 let tuttiMessaggi = [];
 let tuttiGiocatori = [];
+let selectDestinatariPopolato = false;
 
 // ==========================================
 // 1. INIZIALIZZAZIONE DELLA PAGINA
@@ -21,6 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Assegna gli eventi ai form/pulsanti
     setupListeners();
+
+    // Ricarica automaticamente i messaggi ogni 15 secondi, così se un giocatore
+    // apre un messaggio lo stato "Letto" compare senza dover ricaricare la pagina.
+    setInterval(caricaDatiMessaggi, 15000);
 });
 
 // ==========================================
@@ -64,8 +69,13 @@ async function caricaDatiMessaggi() {
         tuttiMessaggi = (resMessaggi && resMessaggi.ok) ? await resMessaggi.json() : [];
         tuttiGiocatori = (resGiocatori && resGiocatori.ok) ? await resGiocatori.json() : [];
 
-        // Renderizza la UI
-        popolaSelectDestinatari();
+        // Renderizza la UI. Il <select> destinatari viene popolato solo al primo
+        // caricamento: nei refresh automatici successivi non lo tocchiamo, per non
+        // perdere la selezione dell'allenatore mentre sta scrivendo un messaggio.
+        if (!selectDestinatariPopolato) {
+            popolaSelectDestinatari();
+            selectDestinatariPopolato = true;
+        }
         renderizzaListaMessaggi();
         renderizzaKPI();
 

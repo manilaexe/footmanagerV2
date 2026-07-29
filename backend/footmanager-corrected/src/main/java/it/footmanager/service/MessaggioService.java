@@ -56,9 +56,16 @@ public class MessaggioService {
     }
 
     // ── Segna il messaggio come letto ─────────────────────────────────────
-    public MessaggioDto segnaLetto(Integer id) {
+    // giocatoreId è quello del giocatore autenticato che ha fatto la richiesta:
+    // si può segnare come letto solo un messaggio indirizzato a sé stessi.
+    public MessaggioDto segnaLetto(Integer id, Integer giocatoreId) {
         Messaggio m = mesRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Messaggio", Long.valueOf(id)));
+
+        if (m.getGiocatore() == null || !m.getGiocatore().getId().equals(giocatoreId)) {
+            throw new ResourceNotFoundException("Messaggio", Long.valueOf(id));
+        }
+
         m.setStato("LETTO");
         return toDto(mesRepo.save(m));
     }
