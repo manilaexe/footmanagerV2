@@ -161,6 +161,14 @@ public class Dtos {
         @NotBlank private String  testo;
     }
 
+    // Richiesta per inviare lo stesso messaggio a tutti i giocatori di un ruolo
+    // (es. "Portiere", "Difensore", "Centrocampista", "Attaccante") della propria squadra.
+    @Data
+    public static class InviaMessaggioRuoloRequest {
+        @NotBlank private String ruolo;
+        @NotBlank private String testo;
+    }
+
     /**
      * DTO leggero usato per popolare il <select> destinatari nel form
      * di composizione messaggi — restituito da GET /api/messaggi/giocatori-squadra

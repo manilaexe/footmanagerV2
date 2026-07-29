@@ -55,6 +55,35 @@ public class MessaggioService {
         return toDto(mesRepo.save(m));
     }
 
+    // ── Invia lo stesso messaggio a tutti i giocatori di un ruolo ─────────
+    // (es. tutti i "Portiere", tutti gli "Attaccante"...) della squadra
+    // dell'allenatore. Viene creata una riga Messaggio per ogni giocatore,
+    // così ognuno ha il proprio stato di lettura indipendente.
+    public List<MessaggioDto> inviaPerRuolo(InviaMessaggioRuoloRequest req, String usernameAllenatore) {
+        Integer uid = utenteRepo.findByUsername(usernameAllenatore)
+                .orElseThrow(() -> new ResourceNotFoundException("Utente: " + usernameAllenatore))
+                .getId();
+        Allenatore all = allenatoreRepo.findByUtente_Id(uid)
+                .orElseThrow(() -> new ResourceNotFoundException("Allenatore: " + usernameAllenatore));
+
+        List<Giocatore> destinatari = giocatoreRepo.findBySquadra_IdAndPosizione(
+                all.getSquadra().getId(), req.getRuolo());
+
+        if (destinatari.isEmpty()) {
+            throw new ResourceNotFoundException("Nessun giocatore trovato con ruolo: " + req.getRuolo());
+        }
+
+        return destinatari.stream()
+                .map(g -> {
+                    Messaggio m = new Messaggio();
+                    m.setTesto(req.getTesto());
+                    m.setAllenatore(all);
+                    m.setGiocatore(g);
+                    return toDto(mesRepo.save(m));
+                })
+                .toList();
+    }
+
     // ── Segna il messaggio come letto ─────────────────────────────────────
     // giocatoreId è quello del giocatore autenticato che ha fatto la richiesta:
     // si può segnare come letto solo un messaggio indirizzato a sé stessi.

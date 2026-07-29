@@ -132,14 +132,13 @@
                         <div class="compose-box">
                             <label>Destinatario</label>
                             <select id="destinatario">
-                                <option>Tutta la squadra</option>
-                                <option>Attaccanti</option>
-                                <option>Centrocampisti</option>
-                                <option>Difensori</option>
-                                <option>Portieri</option>
-                                <option>Staff Tecnico</option>
-                                <option>L. Rossi</option>
-                                <option>M. Bianchi</option>
+                                <option value="">-- Seleziona destinatario --</option>
+                                <optgroup label="Per ruolo">
+                                    <option value="ruolo:Portiere">Tutti i portieri</option>
+                                    <option value="ruolo:Difensore">Tutti i difensori</option>
+                                    <option value="ruolo:Centrocampista">Tutti i centrocampisti</option>
+                                    <option value="ruolo:Attaccante">Tutti gli attaccanti</option>
+                                </optgroup>
                             </select>
                             <label>Oggetto</label>
                             <input type="text" placeholder="Oggetto del messaggio">
@@ -162,11 +161,13 @@
         <div class="form-group">
             <label>Destinatario</label>
             <select>
-                <option>Tutta la squadra</option>
-                <option>Attaccanti</option>
-                <option>Centrocampisti</option>
-                <option>Difensori</option>
-                <option>Portieri</option>
+                <option value="">-- Seleziona destinatario --</option>
+                <optgroup label="Per ruolo">
+                    <option value="ruolo:Portiere">Tutti i portieri</option>
+                    <option value="ruolo:Difensore">Tutti i difensori</option>
+                    <option value="ruolo:Centrocampista">Tutti i centrocampisti</option>
+                    <option value="ruolo:Attaccante">Tutti gli attaccanti</option>
+                </optgroup>
             </select>
         </div>
         <div class="form-group">

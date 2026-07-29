@@ -16,6 +16,10 @@ public interface GiocatoreRepository extends JpaRepository<Giocatore, Integer> {
 
     List<Giocatore> findBySquadra_Id(Integer squadraId);
 
+    // Giocatori di una squadra filtrati per ruolo (es. "Portiere", "Difensore"...).
+    // Usato per l'invio di messaggi raggruppati per ruolo.
+    List<Giocatore> findBySquadra_IdAndPosizione(Integer squadraId, String posizione);
+
     // Top marcatori per la squadra (somma gol da StatisticaMovimento).
     // I gol sono ora nella tabella statistica_movimento, non più in statistiche;
     // i portieri non hanno riga in statistica_movimento, quindi il JOIN (non LEFT JOIN)

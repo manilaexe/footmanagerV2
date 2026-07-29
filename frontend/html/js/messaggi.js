@@ -87,18 +87,43 @@ async function caricaDatiMessaggi() {
 // ==========================================
 // 4. POPOLA SELECT DESTINATARI CON I GIOCATORI REALI
 // ==========================================
+// Ogni <select> destinatario propone due gruppi di opzioni:
+//  - "Per ruolo"          → value = "ruolo:Portiere" / "ruolo:Difensore" / ...
+//  - "Singolo giocatore"  → value = "giocatore:<id>"
+// sendMsg() legge il prefisso per capire quale endpoint chiamare.
+const RUOLI_SQUADRA = [
+    { valore: 'Portiere',       etichetta: 'Tutti i portieri' },
+    { valore: 'Difensore',      etichetta: 'Tutti i difensori' },
+    { valore: 'Centrocampista', etichetta: 'Tutti i centrocampisti' },
+    { valore: 'Attaccante',     etichetta: 'Tutti gli attaccanti' }
+];
+
 function popolaSelectDestinatari() {
     const selectPrincipale = document.getElementById('destinatario');
     const selectModal = document.querySelector('#modal-messaggio select');
 
     if (!tuttiGiocatori || tuttiGiocatori.length === 0) return;
 
-    let optionsHtml = '<option value="">-- Seleziona Giocatore --</option>';
+    let optionsHtml = '<option value="">-- Seleziona destinatario --</option>';
+
+    // Gruppo "per ruolo": solo i ruoli effettivamente presenti in rosa, col conteggio
+    optionsHtml += '<optgroup label="Per ruolo">';
+    RUOLI_SQUADRA.forEach(r => {
+        const count = tuttiGiocatori.filter(g => g.posizione === r.valore).length;
+        if (count > 0) {
+            optionsHtml += `<option value="ruolo:${r.valore}">${r.etichetta} (${count})</option>`;
+        }
+    });
+    optionsHtml += '</optgroup>';
+
+    // Gruppo "singolo giocatore"
+    optionsHtml += '<optgroup label="Singolo giocatore">';
     tuttiGiocatori.forEach(g => {
         const num = g.numero ? `#${g.numero} ` : '';
         const pos = g.posizione ? ` (${g.posizione})` : '';
-        optionsHtml += `<option value="${g.id}">${num}${g.nome} ${g.cognome}${pos}</option>`;
+        optionsHtml += `<option value="giocatore:${g.id}">${num}${g.nome} ${g.cognome}${pos}</option>`;
     });
+    optionsHtml += '</optgroup>';
 
     if (selectPrincipale) selectPrincipale.innerHTML = optionsHtml;
     if (selectModal) selectModal.innerHTML = optionsHtml;
@@ -176,12 +201,12 @@ function renderizzaKPI() {
 }
 
 // ==========================================
-// 7. INVIA MESSAGGIO (POST /api/messaggi)
+// 7. INVIA MESSAGGIO (POST /api/messaggi oppure /api/messaggi/ruolo)
 // ==========================================
 async function sendMsg() {
     // Determina se il messaggio viene dal Form principale o dalla Modal
     const isModalOpen = document.getElementById('modal-messaggio')?.classList.contains('open');
-    
+
     let selectEl, textareaEl;
 
     if (isModalOpen) {
@@ -192,11 +217,11 @@ async function sendMsg() {
         textareaEl = document.querySelector('.compose-box textarea');
     }
 
-    const giocatoreId = selectEl ? parseInt(selectEl.value, 10) : NaN;
+    const valoreSelezionato = selectEl ? selectEl.value : '';
     const testo = textareaEl ? textareaEl.value.trim() : '';
 
-    if (isNaN(giocatoreId) || !giocatoreId) {
-        alert('Seleziona un giocatore valido come destinatario.');
+    if (!valoreSelezionato) {
+        alert('Seleziona un destinatario (un giocatore oppure un ruolo).');
         return;
     }
 
@@ -205,10 +230,23 @@ async function sendMsg() {
         return;
     }
 
-    const payload = {
-        giocatoreId: giocatoreId,
-        testo: testo
-    };
+    // Il valore dell'opzione indica se inviare a un singolo giocatore o a un ruolo intero:
+    // "giocatore:<id>" oppure "ruolo:<Portiere|Difensore|Centrocampista|Attaccante>"
+    const [tipo, valore] = valoreSelezionato.split(':');
+
+    if (tipo === 'ruolo') {
+        await inviaMessaggioPerRuolo(valore, testo, isModalOpen, selectEl, textareaEl);
+    } else {
+        await inviaMessaggioSingolo(parseInt(valore, 10), testo, isModalOpen, selectEl, textareaEl);
+    }
+}
+
+// ── Invio a un singolo giocatore ───────────────────────────────────────────
+async function inviaMessaggioSingolo(giocatoreId, testo, isModalOpen, selectEl, textareaEl) {
+    if (isNaN(giocatoreId) || !giocatoreId) {
+        alert('Seleziona un giocatore valido come destinatario.');
+        return;
+    }
 
     const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' };
 
@@ -216,28 +254,15 @@ async function sendMsg() {
         const response = await fetch('http://localhost:8080/api/messaggi', {
             method: 'POST',
             headers: headers,
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ giocatoreId, testo })
         });
 
         if (response.ok) {
             const nuovoMessaggio = await response.json();
-
-            // Aggiungi in cima alla lista locale
             tuttiMessaggi.unshift(nuovoMessaggio);
-
-            // Aggiorna la vista
             renderizzaListaMessaggi();
             renderizzaKPI();
-
-            // Reset dei campi
-            if (textareaEl) textareaEl.value = '';
-            if (selectEl) selectEl.value = '';
-
-            // Chiudi modal se aperta
-            if (isModalOpen) {
-                closeModal('modal-messaggio');
-            }
-
+            resetFormInvio(isModalOpen, selectEl, textareaEl);
             alert('✔ Messaggio inviato con successo!');
         } else {
             const errorTxt = await response.text();
@@ -247,6 +272,43 @@ async function sendMsg() {
         console.error('Errore di rete durante l’invio:', err);
         alert('Impossibile raggiungere il server. Verifica la connessione.');
     }
+}
+
+// ── Invio a tutti i giocatori di un ruolo ──────────────────────────────────
+// Crea un messaggio indipendente per ogni giocatore del ruolo scelto, così
+// ognuno ha il proprio stato di lettura (letto/non letto) separato.
+async function inviaMessaggioPerRuolo(ruolo, testo, isModalOpen, selectEl, textareaEl) {
+    const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' };
+
+    try {
+        const response = await fetch('http://localhost:8080/api/messaggi/ruolo', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({ ruolo, testo })
+        });
+
+        if (response.ok) {
+            const nuoviMessaggi = await response.json(); // array, uno per giocatore del ruolo
+            tuttiMessaggi = [...nuoviMessaggi, ...tuttiMessaggi];
+            renderizzaListaMessaggi();
+            renderizzaKPI();
+            resetFormInvio(isModalOpen, selectEl, textareaEl);
+            alert(`✔ Messaggio inviato a ${nuoviMessaggi.length} giocatori (ruolo: ${ruolo}).`);
+        } else {
+            const errorTxt = await response.text();
+            alert(`Errore invio messaggio (${response.status}): ${errorTxt}`);
+        }
+    } catch (err) {
+        console.error('Errore di rete durante l’invio per ruolo:', err);
+        alert('Impossibile raggiungere il server. Verifica la connessione.');
+    }
+}
+
+// ── Reset campi form/modal dopo un invio riuscito ──────────────────────────
+function resetFormInvio(isModalOpen, selectEl, textareaEl) {
+    if (textareaEl) textareaEl.value = '';
+    if (selectEl) selectEl.value = '';
+    if (isModalOpen) closeModal('modal-messaggio');
 }
 
 // ==========================================

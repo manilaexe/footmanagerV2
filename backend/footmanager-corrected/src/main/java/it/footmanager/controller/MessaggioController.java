@@ -84,6 +84,19 @@ public class MessaggioController {
                 .body(svc.invia(req, ud.getUsername()));
     }
 
+    // ── POST /api/messaggi/ruolo ───────────────────────────────────────────
+    // Invia lo stesso messaggio a tutti i giocatori di un ruolo (es. tutti i
+    // portieri, tutti gli attaccanti...) della squadra dell'allenatore.
+    // Body: { "ruolo": "Attaccante", "testo": "..." }
+    @PostMapping("/ruolo")
+    @PreAuthorize("hasAnyRole('STAFF','ALLENATORE','IT')")
+    public ResponseEntity<List<MessaggioDto>> inviaPerRuolo(
+            @Valid @RequestBody InviaMessaggioRuoloRequest req,
+            @AuthenticationPrincipal UserDetails ud) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(svc.inviaPerRuolo(req, ud.getUsername()));
+    }
+
     // ── PATCH /api/messaggi/{id}/letto ────────────────────────────────────
     // Segna il messaggio come letto (chiamato dalla view giocatore, al click).
     // Il giocatore può segnare come letto solo i messaggi indirizzati a lui.
