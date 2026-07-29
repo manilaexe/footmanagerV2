@@ -160,8 +160,9 @@ tbody tr.highlight td{background:rgba(58,125,68,.08);font-weight:600;}
 .compare-row .bar-wrap{height:6px;background:var(--dark3);border-radius:3px;margin-top:3px;}
 .compare-left  .bar-wrap .bar-inner{height:6px;border-radius:3px;background:var(--green-l);float:right;}
 .compare-right .bar-wrap .bar-inner{height:6px;border-radius:3px;background:var(--blue);}
-.compare-center{display:flex;flex-direction:column;gap:18px;align-items:center;}
-.compare-center .cat-lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);text-align:center;line-height:1;margin-top:10px;}
+.compare-center{display: flex;flex-direction: column;gap: 30px;align-items: center;}
+.compare-center .cat-lbl{font-size: .7rem;text-transform: uppercase;letter-spacing: .6px;color: var(--muted);text-align: center;line-height: 1;margin-top: 0;}
+.compare-center .cat-lbl:first-child {margin-top: 100px;}
 
 /* CANDELE – form chart */
 .form-dots{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
