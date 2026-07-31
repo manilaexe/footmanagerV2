@@ -50,7 +50,7 @@
         <div class="topbar">
             <h1>Messaggi</h1>
             <div class="topbar-right">
-                <button class="btn-primary" onclick="openModal('modal-messaggio')">+ Nuovo Messaggio</button>
+                <button class="btn-primary" id="btn-nuovo-messaggio" onclick="openModal('modal-messaggio')">+ Nuovo Messaggio</button>
             </div>
         </div>
 
@@ -76,12 +76,12 @@
             </div>
 
             <!-- LISTA + COMPOSIZIONE -->
-            <div class="grid-2">
+            <div class="grid-2" id="msg-grid">
 
                 <!-- LISTA -->
                 <div class="card">
                     <div class="card-header">
-                        <h2>Messaggi inviati</h2>
+                        <h2 id="msg-list-title">Messaggi inviati</h2>
                     </div>
                     <div class="card-body">
                         <div class="msg-list">
@@ -122,9 +122,9 @@
                     </div>
                 </div>
 
-                <!-- COMPOSIZIONE -->
+                <!-- COMPOSIZIONE (visibile solo ad allenatore/staff, nascosta ai giocatori via JS) -->
 
-                <div class="card">
+                <div class="card" id="compose-card">
                     <div class="card-header">
                         <h2>Nuovo Messaggio</h2>
                     </div>

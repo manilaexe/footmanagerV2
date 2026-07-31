@@ -4,28 +4,39 @@
 let tuttiMessaggi = [];
 let tuttiGiocatori = [];
 let selectDestinatariPopolato = false;
+let isReadOnly = false;   // true per il ruolo GIOCATORE: può solo leggere, non inviare
 
 // ==========================================
 // 1. INIZIALIZZAZIONE DELLA PAGINA
 // ==========================================
+// Pagina unica gestita in base al ruolo (stesso principio di calendario.js):
+//  - ALLENATORE/STAFF/IT → vista "Messaggi inviati" + form di composizione
+//  - GIOCATORE            → vista "I miei messaggi", sola lettura, click per segnare come letto
 document.addEventListener('DOMContentLoaded', () => {
     // Verifica che l'utente sia autenticato (funzione da utils.js)
     if (typeof verificaAutenticazione === 'function') {
         verificaAutenticazione();
     }
 
-    // Popola le info dell'allenatore nella sidebar
+    // Popola le info dell'utente nella sidebar (nome/ruolo/avatar)
     popolaInfoUtente();
 
-    // Carica i dati dal backend
-    caricaDatiMessaggi();
+    const ruolo = localStorage.getItem('ruolo') || '';
+    isReadOnly = (ruolo === 'GIOCATORE');
 
-    // Assegna gli eventi ai form/pulsanti
-    setupListeners();
-
-    // Ricarica automaticamente i messaggi ogni 15 secondi, così se un giocatore
-    // apre un messaggio lo stato "Letto" compare senza dover ricaricare la pagina.
-    setInterval(caricaDatiMessaggi, 15000);
+    if (isReadOnly) {
+        impostaUIPerGiocatore();
+        caricaMessaggiRicevuti();
+        // Ricontrolla ogni 15s se sono arrivati nuovi messaggi dall'allenatore
+        setInterval(caricaMessaggiRicevuti, 15000);
+    } else {
+        // Carica i dati dal backend (comportamento originale per allenatore/staff)
+        caricaDatiMessaggi();
+        setupListeners();
+        // Ricarica automaticamente i messaggi ogni 15 secondi, così se un giocatore
+        // apre un messaggio lo stato "Letto" compare senza dover ricaricare la pagina.
+        setInterval(caricaDatiMessaggi, 15000);
+    }
 });
 
 // ==========================================
@@ -48,7 +59,152 @@ function popolaInfoUtente() {
 }
 
 // ==========================================
-// 3. CARICAMENTO DATI DAL DB (SPRING BOOT)
+// 3bis. VISTA GIOCATORE (SOLA LETTURA)
+// ==========================================
+
+// Nasconde tutto ciò che serve per scrivere messaggi: pulsante "Nuovo Messaggio",
+// intera card di composizione, e riadatta il layout della griglia a una colonna.
+// (il backend blocca comunque queste azioni anche se richiamate a mano: questo
+//  serve solo a non mostrare all'utente opzioni che non può usare)
+function impostaUIPerGiocatore() {
+    const btnNuovo = document.getElementById('btn-nuovo-messaggio');
+    if (btnNuovo) btnNuovo.style.display = 'none';
+
+    const composeCard = document.getElementById('compose-card');
+    if (composeCard) composeCard.style.display = 'none';
+
+    const grid = document.getElementById('msg-grid');
+    if (grid) grid.style.gridTemplateColumns = '1fr';
+
+    const listTitle = document.getElementById('msg-list-title');
+    if (listTitle) listTitle.textContent = 'I miei messaggi';
+
+    // Rietichetta le KPI (che restano le stesse 3 card, cambia solo il significato)
+    const statCards = document.querySelectorAll('.stats-grid .stat-card');
+    if (statCards.length >= 3) {
+        const lbl0 = statCards[0].querySelector('.stat-label');
+        const lbl1 = statCards[1].querySelector('.stat-label');
+        const lbl2 = statCards[2].querySelector('.stat-label');
+        if (lbl0) lbl0.textContent = 'Messaggi ricevuti';
+        if (lbl1) lbl1.textContent = 'Da leggere';
+        if (lbl2) lbl2.textContent = 'Ultimo ricevuto';
+    }
+}
+
+// GET /api/messaggi/miei → solo i messaggi indirizzati al giocatore autenticato
+// (il backend identifica il giocatore dal token, non serve passare nessun id)
+async function caricaMessaggiRicevuti() {
+    const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' };
+
+    try {
+        const res = await fetch('http://localhost:8080/api/messaggi/miei', { headers });
+
+        if (res.status === 401) {
+            logout();
+            return;
+        }
+
+        tuttiMessaggi = res.ok ? await res.json() : [];
+        renderizzaListaMessaggiGiocatore();
+        renderizzaKPIGiocatore();
+
+    } catch (error) {
+        console.error('Errore durante il caricamento dei messaggi ricevuti:', error);
+    }
+}
+
+// Renderizza l'elenco dei messaggi ricevuti: i non letti sono evidenziati e
+// cliccabili, al click vengono segnati come letti (PATCH sul backend).
+function renderizzaListaMessaggiGiocatore() {
+    const msgListContainer = document.querySelector('.msg-list');
+    if (!msgListContainer) return;
+
+    msgListContainer.innerHTML = '';
+
+    if (!tuttiMessaggi || tuttiMessaggi.length === 0) {
+        msgListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: var(--muted);">Nessun messaggio ricevuto.</div>`;
+        return;
+    }
+
+    tuttiMessaggi.forEach(m => {
+        const dataOraFormatted = formattaDataOra(m.dataOra);
+        const letto = (m.stato || '').toUpperCase() === 'LETTO';
+        const mittente = m.nomeAllenatore || 'Allenatore';
+
+        const msgItem = document.createElement('div');
+        msgItem.className = 'msg-item';
+        msgItem.dataset.msgId = m.id;
+        if (!letto) msgItem.style.cursor = 'pointer';
+
+        msgItem.innerHTML = `
+            <div class="msg-header">
+                <span class="msg-to" style="${letto ? '' : 'font-weight:700;color:var(--text);'}">${letto ? '' : '● '}Da: ${mittente}</span>
+                <span class="msg-time">${dataOraFormatted}</span>
+            </div>
+            <div class="msg-text" style="${letto ? '' : 'font-weight:600;'}">${m.testo || ''}</div>
+            <div class="msg-status ${letto ? 'letto' : 'inviato'}">${letto ? '✔✔ Letto' : '● Non letto — clicca per aprire'}</div>
+        `;
+
+        if (!letto) {
+            msgItem.addEventListener('click', () => segnaMessaggioComeLetto(m.id));
+        }
+
+        msgListContainer.appendChild(msgItem);
+    });
+}
+
+// PATCH /api/messaggi/{id}/letto — segna il messaggio come letto.
+// Aggiornamento ottimistico della UI, poi conferma dal backend.
+async function segnaMessaggioComeLetto(idMessaggio) {
+    const idx = tuttiMessaggi.findIndex(m => m.id === idMessaggio);
+    if (idx > -1) tuttiMessaggi[idx].stato = 'LETTO';
+    renderizzaListaMessaggiGiocatore();
+    renderizzaKPIGiocatore();
+
+    const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' };
+
+    try {
+        const res = await fetch(`http://localhost:8080/api/messaggi/${idMessaggio}/letto`, {
+            method: 'PATCH',
+            headers: headers
+        });
+        if (!res.ok) console.warn(`PATCH /letto → ${res.status}`);
+    } catch (err) {
+        console.error('Errore PATCH /letto:', err);
+    }
+}
+
+// KPI per la vista giocatore: totale ricevuti, da leggere, ultimo ricevuto
+function renderizzaKPIGiocatore() {
+    const statCards = document.querySelectorAll('.stats-grid .stat-card');
+    if (statCards.length < 3) return;
+
+    const totVal = statCards[0].querySelector('.stat-value');
+    if (totVal) totVal.textContent = tuttiMessaggi.length;
+
+    const nonLetti = tuttiMessaggi.filter(m => (m.stato || '').toUpperCase() !== 'LETTO');
+    const nonLettiVal = statCards[1].querySelector('.stat-value');
+    const nonLettiSub = statCards[1].querySelector('.stat-sub');
+    if (nonLettiVal) nonLettiVal.textContent = nonLetti.length;
+    if (nonLettiSub) nonLettiSub.textContent = nonLetti.length === 1 ? '1 messaggio da leggere' : `${nonLetti.length} messaggi da leggere`;
+
+    const ultimoVal = statCards[2].querySelector('.stat-value');
+    const ultimoSub = statCards[2].querySelector('.stat-sub');
+    if (tuttiMessaggi.length > 0 && ultimoVal && ultimoSub) {
+        const ultimo = tuttiMessaggi[0];
+        if (ultimo.dataOra) {
+            const d = new Date(ultimo.dataOra);
+            ultimoVal.textContent = d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
+            ultimoSub.textContent = d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        }
+    } else if (ultimoVal && ultimoSub) {
+        ultimoVal.textContent = '—';
+        ultimoSub.textContent = 'Nessun messaggio';
+    }
+}
+
+// ==========================================
+// 3. CARICAMENTO DATI DAL DB (SPRING BOOT) — vista allenatore/staff
 // ==========================================
 async function caricaDatiMessaggi() {
     const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' };
