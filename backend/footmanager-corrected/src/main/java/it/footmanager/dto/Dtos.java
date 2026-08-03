@@ -250,6 +250,26 @@ public class Dtos {
         private String  iconaBase64;   // null se il giocatore non ha ancora icona caricata
     }
 
+    // Richiesta di creazione/modifica badge (pannello STAFF/IT).
+    // L'icona, se fornita, arriva come stringa Base64 e viene decodificata in BLOB.
+    @Data
+    public static class CreaBadgeRequest {
+        @NotBlank private String nomeBadge;
+        private int    sogliaPunti;
+        private String iconaBase64;
+    }
+
+    // Badge ottenuto da un giocatore specifico, con data di ottenimento
+    // (usato sia dalla vista Classifica del giocatore che dal pannello IT)
+    @Data @Builder
+    public static class GiocatoreBadgeDto {
+        private Integer       giocatoreId;
+        private String        giocatoreNomeCompleto;
+        private Integer       badgeId;
+        private String        nomeBadge;
+        private LocalDateTime dataOttenimento;
+    }
+
     // ── Classifica ────────────────────────────────────────────────────────
     @Data @Builder
     public static class ClassificaItemDto {
