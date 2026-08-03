@@ -27,7 +27,7 @@ html, body { height: 100%; font-family: 'Barlow', sans-serif; background: var(--
 .nav-item .ico { width: 18px; text-align: center; }
 .sidebar-footer { margin-top: auto; padding: 1rem 1.25rem 0; border-top: 1px solid var(--border); }
 .user-card { display: flex; align-items: center; gap: 10px; padding: 0.75rem 0; }
-.avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.9rem; }
+.avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.9rem; overflow: hidden; }
 .user-info { flex: 1; min-width: 0; }
 .user-info strong { display: block; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .user-info small { font-size: 0.75rem; color: var(--muted); }
@@ -56,7 +56,7 @@ html, body { height: 100%; font-family: 'Barlow', sans-serif; background: var(--
     background: var(--green); border: 3px solid rgba(76,175,80,0.4);
     display: flex; align-items: center; justify-content: center;
     font-family: 'Barlow Condensed', sans-serif; font-size: 2rem; font-weight: 800;
-    flex-shrink: 0; z-index: 1;
+    flex-shrink: 0; z-index: 1; overflow: hidden;
 }
 .profile-info { z-index: 1; }
 .profile-info h2 { font-family: 'Barlow Condensed', sans-serif; font-size: 2rem; font-weight: 800; text-transform: uppercase; line-height: 1; }

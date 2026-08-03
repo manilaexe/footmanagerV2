@@ -2,7 +2,8 @@
    giocatore.js
    ─ Carica i messaggi reali dal backend via GET /api/messaggi/miei
    ─ Segna i messaggi come letti via PATCH /api/messaggi/{id}/letto
-   ─ Tutto il resto (quiz, timer) è invariato
+   ─ Carica gli eventi dal backend via GET /api/eventi/calendario/{id}
+   ─ Gamification: quiz del giorno via GET/POST /api/quiz/oggi(/risposta)
    ========================================================= */
 
 const API = 'http://localhost:8080';
@@ -21,8 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     popolaSidebar();
     popolaTopbar();
-    caricaMessaggi();   // ← carica dal DB
-    caricaEventi();     // ← carica dal DB
+    caricaMessaggi();          // ← carica dal DB
+    caricaEventi();            // ← carica dal DB
+    caricaQuizGiornaliero();   // ← gamification: quiz del primo accesso del giorno
 });
 
 // ─── 2. SIDEBAR ───────────────────────────────────────────────────────────
@@ -351,85 +353,244 @@ function renderizzaEventi(eventi, container) {
     });
 }
 
-// ─── 9. QUIZ TIMER & LOGICA (CODICE ORIGINALE INVARIATO) ──────────────────
-let secondsLeft = 40;
-let selectedOpt = null;
-const timerFill  = document.getElementById('timer-fill');
-const timerVal   = document.getElementById('timer-val');
-const btnConfirm = document.getElementById('btn-confirm');
-const CORRECT    = 'A'; // Demo: la risposta 'A' è quella corretta
+// ─── 9. GAMIFICATION: QUIZ DEL GIORNO ──────────────────────────────────────
+/*
+ * Endpoint: GET /api/quiz/oggi
+ * Auth:     JWT — il backend identifica il giocatore dal token
+ * Risposta: QuizGiornalieroDto
+ *   { id, domanda, opzioni[], puntiValore, giaRisposto,
+ *     rispostaCorretta (bool|null), rispostaScelta, soluzioneTesto }
+ *
+ * La domanda è la stessa per tutti i giocatori nella stessa giornata
+ * (rotazione lato server) e cambia il giorno successivo. Un solo
+ * tentativo al giorno per giocatore: se ha già risposto oggi, il backend
+ * restituisce direttamente l'esito invece delle opzioni da scegliere.
+ */
+const QUIZ_TIMEOUT_SEC = 40;
+let quizTimerInterval  = null;
+let quizSecondsLeft    = QUIZ_TIMEOUT_SEC;
+let quizOpzioneScelta  = null;
+let quizIdCorrente     = null;
+let quizAvviato        = false; // evita doppio invio
 
-const interval = setInterval(() => {
-    secondsLeft--;
-    if (timerVal) timerVal.textContent = secondsLeft;
+async function caricaQuizGiornaliero() {
+    const body    = document.getElementById('quiz-body');
+    const subt    = document.getElementById('quiz-subtitle');
+    const ptsBadge = document.getElementById('quiz-pts-badge');
+    if (!body) return; // pagina senza quiz-card
 
-    if (timerFill) {
-        const pct = (secondsLeft / 40) * 100;
-        timerFill.style.width = pct + '%';
-        if (secondsLeft <= 10) timerFill.classList.add('danger');
+    const headers = typeof getAuthHeaders === 'function'
+        ? getAuthHeaders()
+        : { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') };
+
+    try {
+        const res = await fetch(`${API}/api/quiz/oggi`, { headers });
+
+        if (res.status === 401) { logout(); return; }
+
+        if (!res.ok) {
+            body.innerHTML = `<div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.85rem">
+                Quiz non disponibile al momento.</div>`;
+            if (subt) subt.textContent = '—';
+            return;
+        }
+
+        const quiz = await res.json();
+        quizIdCorrente = quiz.id;
+
+        if (ptsBadge) ptsBadge.textContent = `+${quiz.puntiValore} punti se corretto`;
+
+        if (quiz.giaRisposto) {
+            renderizzaQuizGiaFatto(quiz, body, subt);
+        } else {
+            renderizzaQuizDaCompilare(quiz, body, subt);
+        }
+
+    } catch (err) {
+        console.error('Errore caricamento quiz del giorno:', err);
+        body.innerHTML = `<div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.85rem">
+            Server non raggiungibile.</div>`;
     }
+}
 
-    if (secondsLeft <= 0) {
-        clearInterval(interval);
-        endQuiz(false);
-    }
-}, 1000);
+// Stato: il giocatore ha già risposto oggi → mostra solo l'esito, niente opzioni
+function renderizzaQuizGiaFatto(quiz, body, subt) {
+    if (subt) subt.textContent = 'Hai già risposto oggi — torna domani per una nuova domanda';
+
+    const esito = quiz.rispostaCorretta === true;
+    const colore = esito ? '#4caf50' : '#f87171';
+    const icona  = esito ? '✔' : '✘';
+    const testo  = esito ? 'Risposta corretta!' : 'Risposta errata';
+
+    body.innerHTML = `
+        <div class="quiz-question">${esc(quiz.domanda)}</div>
+        <div style="text-align:center;padding:1.25rem;border-radius:10px;background:rgba(255,255,255,0.03);margin-bottom:0.5rem">
+            <div style="font-size:2rem;color:${colore};margin-bottom:6px">${icona}</div>
+            <div style="font-weight:600;color:${colore};margin-bottom:4px">${testo}</div>
+            <div style="font-size:0.82rem;color:var(--muted)">
+                La risposta corretta era: <strong style="color:var(--text)">${esc(quiz.soluzioneTesto || '')}</strong>
+            </div>
+        </div>`;
+}
+
+// Stato: quiz da compilare — timer + opzioni reali dal backend
+function renderizzaQuizDaCompilare(quiz, body, subt) {
+    if (subt) subt.textContent = `Rispondi entro ${QUIZ_TIMEOUT_SEC} secondi`;
+
+    const lettere = ['A', 'B', 'C'];
+    const opzioniHtml = (quiz.opzioni || []).map((testo, i) => `
+        <div class="quiz-option" data-opt="${esc(testo)}" onclick="selectOpt(this,'${lettere[i]}')">
+            <div class="option-letter">${lettere[i]}</div>${esc(testo)}
+        </div>`).join('');
+
+    body.innerHTML = `
+        <div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
+        <div class="quiz-question" id="quiz-q">${esc(quiz.domanda)}</div>
+        <div class="quiz-options" id="quiz-opts">${opzioniHtml}</div>
+        <div class="quiz-footer">
+            <div class="timer-text">Tempo rimasto: <span id="timer-val">${QUIZ_TIMEOUT_SEC}</span>s</div>
+            <button class="btn-primary" id="btn-confirm" onclick="confirmAnswer()" disabled>Conferma</button>
+        </div>`;
+
+    avviaTimerQuiz();
+}
+
+function avviaTimerQuiz() {
+    quizSecondsLeft = QUIZ_TIMEOUT_SEC;
+    quizOpzioneScelta = null;
+    quizAvviato = false;
+    if (quizTimerInterval) clearInterval(quizTimerInterval);
+
+    const timerFill = document.getElementById('timer-fill');
+    const timerVal  = document.getElementById('timer-val');
+
+    quizTimerInterval = setInterval(() => {
+        quizSecondsLeft--;
+        if (timerVal) timerVal.textContent = quizSecondsLeft;
+
+        if (timerFill) {
+            const pct = (quizSecondsLeft / QUIZ_TIMEOUT_SEC) * 100;
+            timerFill.style.width = pct + '%';
+            if (quizSecondsLeft <= 10) timerFill.classList.add('danger');
+        }
+
+        if (quizSecondsLeft <= 0) {
+            clearInterval(quizTimerInterval);
+            // Tempo scaduto senza risposta selezionata: invia comunque per
+            // registrare il tentativo (risposta vuota → conteggiata errata).
+            inviaRispostaQuiz('');
+        }
+    }, 1000);
+}
 
 function selectOpt(el, letter) {
-    if (btnConfirm && btnConfirm.dataset.done) return;
+    const btnConfirm = document.getElementById('btn-confirm');
+    if (quizAvviato) return;
     document.querySelectorAll('.quiz-option').forEach(o => o.classList.remove('selected'));
     el.classList.add('selected');
-    selectedOpt = letter;
+    quizOpzioneScelta = el.dataset.opt;
     if (btnConfirm) btnConfirm.disabled = false;
 }
 
 function confirmAnswer() {
-    if (!selectedOpt || (btnConfirm && btnConfirm.dataset.done)) return;
-    clearInterval(interval);
-    if (btnConfirm) { btnConfirm.dataset.done = '1'; btnConfirm.disabled = true; }
-    endQuiz(selectedOpt === CORRECT);
+    if (!quizOpzioneScelta || quizAvviato) return;
+    clearInterval(quizTimerInterval);
+    inviaRispostaQuiz(quizOpzioneScelta);
 }
 
-async function endQuiz(correct) {
-    document.querySelectorAll('.quiz-option').forEach(o => {
-        const letter = o.querySelector('.option-letter')?.textContent;
-        if (letter === CORRECT)                       o.classList.add('correct');
-        else if (letter === selectedOpt && !correct)  o.classList.add('wrong');
-    });
+/*
+ * Endpoint: POST /api/quiz/oggi/risposta
+ * Body:     { rispostaScelta, secondiImpiegati }
+ * Il backend deduce da solo QUALE quiz è quello di oggi — non si manda
+ * il quizId dal client, per evitare che si possa rispondere a piacere.
+ */
+async function inviaRispostaQuiz(rispostaScelta) {
+    if (quizAvviato) return;
+    quizAvviato = true;
 
+    const btnConfirm = document.getElementById('btn-confirm');
+    if (btnConfirm) { btnConfirm.disabled = true; btnConfirm.textContent = 'Invio…'; }
+
+    const secondiImpiegati = QUIZ_TIMEOUT_SEC - Math.max(0, quizSecondsLeft);
+
+    const headers = typeof getAuthHeaders === 'function'
+        ? getAuthHeaders()
+        : { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' };
+
+    try {
+        const res = await fetch(`${API}/api/quiz/oggi/risposta`, {
+            method:  'POST',
+            headers: headers,
+            body: JSON.stringify({ rispostaScelta, secondiImpiegati })
+        });
+
+        if (res.status === 401) { logout(); return; }
+
+        if (!res.ok) {
+            // Es. "hai già risposto oggi" per doppio click/tab multipli: ricarica lo stato reale
+            await caricaQuizGiornaliero();
+            return;
+        }
+
+        const esito = await res.json();
+        mostraEsitoQuiz(esito);
+
+        if (esito.corretta) {
+            aggiornaPuntiSchermo(esito.puntiTotali);
+            if (esito.nuoviBadge && esito.nuoviBadge.length) mostraNuoviBadge(esito.nuoviBadge);
+        }
+
+    } catch (err) {
+        console.error('Errore invio risposta quiz:', err);
+        if (btnConfirm) { btnConfirm.disabled = false; btnConfirm.textContent = 'Conferma'; }
+        quizAvviato = false;
+    }
+}
+
+// Colora le opzioni mostrando quale era corretta e quale (eventualmente) sbagliata
+function mostraEsitoQuiz(esito) {
+    const timerFill = document.getElementById('timer-fill');
     if (timerFill) timerFill.style.width = '0%';
 
+    document.querySelectorAll('.quiz-option').forEach(o => {
+        const testo = o.dataset.opt;
+        if (testo === esito.rispostaCorretta) {
+            o.classList.add('correct');
+        } else if (testo === quizOpzioneScelta && !esito.corretta) {
+            o.classList.add('wrong');
+        }
+    });
+
+    const btnConfirm = document.getElementById('btn-confirm');
     if (btnConfirm) {
-        btnConfirm.textContent   = correct ? '✔ Corretto! +10 pt' : '✘ Risposta errata';
-        btnConfirm.style.background = correct ? '#4caf50' : '#ef4444';
-        btnConfirm.disabled = false;
+        btnConfirm.textContent = esito.corretta
+            ? `✔ Corretto! +${esito.puntiAssegnati} pt`
+            : '✘ Risposta errata';
+        btnConfirm.style.background = esito.corretta ? '#4caf50' : '#ef4444';
+        btnConfirm.disabled = true;
         btnConfirm.onclick  = null;
     }
 
-    try {
-        const headers = typeof getAuthHeaders === 'function'
-            ? getAuthHeaders()
-            : { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' };
-
-        const response = await fetch(`${API}/api/quiz/risposta`, {
-            method:  'POST',
-            headers: headers,
-            body: JSON.stringify({
-                idGiocatore:   localStorage.getItem('idGiocatore'),
-                esito:         correct,
-                tempoImpiegato: 40 - secondsLeft
-            })
-        });
-
-        if (response.ok && correct) aggiornaPuntiSchermo(10);
-    } catch (err) {
-        console.error('Errore salvataggio quiz:', err);
-    }
+    const subt = document.getElementById('quiz-subtitle');
+    if (subt) subt.textContent = 'Hai già risposto oggi — torna domani per una nuova domanda';
 }
 
-function aggiornaPuntiSchermo(puntiInPiu) {
-    const el = document.querySelector('.points-box .pts');
-    if (el) el.textContent = (parseInt(el.textContent) || 0) + puntiInPiu;
+// Aggiorna il totale punti mostrato nel profilo con il valore reale dal backend
+function aggiornaPuntiSchermo(nuovoTotale) {
+    const el = document.getElementById('profile-punti-totali');
+    if (el && typeof nuovoTotale === 'number') el.textContent = nuovoTotale;
+}
+
+// Mostra i badge appena sbloccati (se ce ne sono) accanto ai punti
+function mostraNuoviBadge(badges) {
+    const container = document.getElementById('profile-badge-list');
+    if (!container) return;
+    badges.forEach(b => {
+        const el = document.createElement('div');
+        el.className = 'badge-icon';
+        el.textContent = `🎖 ${b.nomeBadge}`;
+        container.appendChild(el);
+    });
 }
 
 // Compatibilità con i chiamanti HTML onclick="openMsg(this)" rimasti (se presenti)

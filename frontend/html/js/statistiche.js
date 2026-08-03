@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         sbRole.textContent = ruolo;
     }
     
-    if (sbAv) sbAv.textContent = (nome[0]||('')).toUpperCase() + (cognome[0]||nome[1]||'').toUpperCase();
+    if (sbAv) renderAvatar(sbAv, (nome[0]||('')).toUpperCase() + (cognome[0]||nome[1]||'').toUpperCase());
 
     // 3. Mostra lo stato iniziale di caricamento o azzeramento dei grafici
     aggiornaInterfacciaCaricamento();

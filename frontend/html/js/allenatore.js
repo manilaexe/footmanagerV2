@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sbAv   = document.getElementById('sb-avatar');
     if (sbName) sbName.textContent = cognome ? `${nome} ${cognome}` : nome;
     if (sbRole) sbRole.textContent = ruolo;
-    if (sbAv)   sbAv.textContent   = (nome[0] || '').toUpperCase() + (cognome[0] || nome[1] || '').toUpperCase();
+    if (sbAv)   renderAvatar(sbAv, (nome[0] || '').toUpperCase() + (cognome[0] || nome[1] || '').toUpperCase());
 
     setupFormListeners();
     caricaDatiDashboard();

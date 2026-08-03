@@ -182,13 +182,17 @@ public class Dtos {
     }
 
     // ── Quiz (risposta_corretta + opzione_b + opzione_c) ─────────────────
+    // DTO "legacy" usato dagli endpoint generici (lista completa, admin/staff).
+    // Espone anche rispostaCorretta: NON va usato per il flusso giocatore,
+    // altrimenti la risposta giusta arriverebbe già nel payload iniziale.
     @Data @Builder
     public static class QuizDto {
         private Integer id;
         private String  domanda;
-        private String  rispostaCorretta;
-        private String  opzione2;   // mappa su opzione_b
-        private String  opzione3;   // mappa su opzione_c
+        private String  rispostaCorretta;   // testo risolto, non la lettera grezza del DB
+        private String  opzioneA;           // mappa su opzione_a
+        private String  opzione2;           // mappa su opzione_b
+        private String  opzione3;           // mappa su opzione_c
         private int     puntiValore;
         private boolean giaRisposto;
     }
@@ -205,6 +209,36 @@ public class Dtos {
         private boolean        corretta;
         private int            puntiAssegnati;
         private List<BadgeDto> nuoviBadge;
+        // Aggiunti per il flusso "quiz del giorno":
+        private String         rispostaCorretta;   // testo dell'opzione giusta, per il feedback
+        private Integer        puntiTotali;         // nuovo totale del giocatore dopo l'assegnazione
+        private Integer        puntiSettimanali;    // nuovo totale settimanale del giocatore
+    }
+
+    // ── Gamification: QUIZ DEL GIORNO ─────────────────────────────────────
+    // Esposto al giocatore SENZA rivelare quale opzione sia corretta finché
+    // non ha risposto. Le opzioni sono mescolate in modo deterministico
+    // (stesso ordine per tutta la giornata, diverso ogni giorno).
+    @Data @Builder
+    public static class QuizGiornalieroDto {
+        private Integer      id;
+        private String       domanda;
+        private List<String> opzioni;           // mescolate, senza indicare quale è corretta
+        private int          puntiValore;
+        private boolean      giaRisposto;
+        // Valorizzati SOLO se giaRisposto = true (per mostrare l'esito al reload):
+        private Boolean      rispostaCorretta;   // true/false se aveva risposto giusto/sbagliato
+        private String       rispostaScelta;     // cosa aveva scelto il giocatore
+        private String       soluzioneTesto;     // testo dell'opzione corretta
+    }
+
+    // Richiesta semplificata: il giocatore NON specifica quale quiz sta
+    // rispondendo — lo deduce sempre il server dalla data odierna, per
+    // evitare che si possa rispondere a un quizId arbitrario (cheat).
+    @Data
+    public static class RispondiQuizGiornalieroRequest {
+        @NotBlank private String rispostaScelta;
+        @Min(0)   private int    secondiImpiegati;
     }
 
     // ── Badge (icona è BLOB -> esposta come Base64 String nel DTO) ───────

@@ -55,11 +55,16 @@ public class AuthController {
         String cognomeReale = "";
 
         // 3. Andiamo a cercare nelle relative tabelle di ruolo
+        Integer idGiocatore = null;
+        Integer idAllenatore = null;
+        String imgProfilo = null;
+
         if (ruolo != null && ruolo.toUpperCase().contains("ALLENATORE")) {
             Optional<Allenatore> allenatoreOpt = allenatoreRepository.findByUtente_Id(utente.getId());
             if (allenatoreOpt.isPresent()) {
                 nomeReale = allenatoreOpt.get().getNome();
                 cognomeReale = allenatoreOpt.get().getCognome();
+                idAllenatore = allenatoreOpt.get().getId();
             }
         } else if (ruolo != null && (ruolo.toUpperCase().contains("GIOCATORE") || ruolo.isEmpty())) {
             // Usiamo il metodo custom del repository che fa il JOIN FETCH dell'utente
@@ -67,6 +72,8 @@ public class AuthController {
             if (giocatoreOpt.isPresent()) {
                 nomeReale = giocatoreOpt.get().getNome();
                 cognomeReale = giocatoreOpt.get().getCognome();
+                idGiocatore = giocatoreOpt.get().getId();
+                imgProfilo = giocatoreOpt.get().getImg();
             }
         }
 
@@ -81,6 +88,9 @@ public class AuthController {
         responseBody.put("utenteId", utente.getId());
         responseBody.put("nome", nomeReale);
         responseBody.put("cognome", cognomeReale);
+        responseBody.put("idGiocatore", idGiocatore);
+        responseBody.put("idAllenatore", idAllenatore);
+        responseBody.put("img", imgProfilo); // es. "uploads/di_gregorio.png", null se non impostata
 
         return ResponseEntity.ok(responseBody);
     }

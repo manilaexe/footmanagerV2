@@ -18,6 +18,23 @@ public class QuizController {
     private final GiocatoreRepository giocatoreRepo;
     private final UtenteRepository    utenteRepo;
 
+    // ── GAMIFICATION: quiz del giorno ───────────────────────────────────────
+    // GET  /api/quiz/oggi           → la domanda assegnata per oggi (o l'esito se già risposto)
+    // POST /api/quiz/oggi/risposta  → invia la risposta al quiz di oggi
+    @GetMapping("/oggi")
+    @PreAuthorize("hasRole('GIOCATORE')")
+    public QuizGiornalieroDto quizDiOggi(@AuthenticationPrincipal UserDetails ud) {
+        return svc.quizDiOggi(getGiocatoreId(ud));
+    }
+
+    @PostMapping("/oggi/risposta")
+    @PreAuthorize("hasRole('GIOCATORE')")
+    public RispostaQuizResponse rispondiOggi(@Valid @RequestBody RispondiQuizGiornalieroRequest req,
+                                              @AuthenticationPrincipal UserDetails ud) {
+        return svc.rispondiOggi(req, getGiocatoreId(ud));
+    }
+
+    // ── Endpoint legacy (lista completa, uso admin/staff) ───────────────────
     @GetMapping
     @PreAuthorize("hasAnyRole('GIOCATORE','STAFF','IT')")
     public List<QuizDto> tutti(@AuthenticationPrincipal UserDetails ud) {
