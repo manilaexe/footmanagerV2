@@ -393,4 +393,21 @@ public class Dtos {
         private long numeroMessaggi;
         private long numeroEventi;
     }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // SQUADRE — CRUD riservato a STAFF/IT (pannello di gestione club)
+    // ══════════════════════════════════════════════════════════════════════
+    @Data @Builder
+    public static class SquadraDto {
+        private Integer id;
+        private String  nome;
+        private String  categoria;
+        private int     numeroGiocatori;   // calcolato, non persistito
+    }
+
+    @Data
+    public static class CreaSquadraRequest {
+        @NotBlank private String nome;
+        private String categoria;
+    }
 }

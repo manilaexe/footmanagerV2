@@ -102,6 +102,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/giocatori/**")   .hasAnyRole("STAFF","ALLENATORE","DIRIGENZA","IT")
                 .requestMatchers("/api/giocatori/**")                   .hasAnyRole("STAFF","ALLENATORE","IT")
 
+                // ── Squadre ───────────────────────────────────────────
+                .requestMatchers(HttpMethod.GET, "/api/squadre/**")     .authenticated()
+                .requestMatchers("/api/squadre/**")                     .hasAnyRole("STAFF","IT")
+
                 // ── Statistiche ───────────────────────────────────────
                 .requestMatchers(HttpMethod.GET, "/api/statistiche/**") .authenticated()
                 .requestMatchers("/api/statistiche/**")                 .hasAnyRole("STAFF","ALLENATORE","IT")
@@ -122,13 +126,6 @@ public class SecurityConfig {
                 // Gamification: quiz del giorno — solo il giocatore può rispondere
                 .requestMatchers(HttpMethod.POST,"/api/quiz/oggi/risposta")  .hasRole("GIOCATORE")
                 .requestMatchers("/api/quiz/**")                             .hasAnyRole("STAFF","ALLENATORE","IT")
-
-                // ── Badge / gamification ───────────────────────────────
-                // Lettura (elenco badge, badge di un giocatore) aperta a
-                // chiunque sia autenticato: serve sia al giocatore per la
-                // propria vista Classifica, sia allo staff per i pannelli.
-                .requestMatchers(HttpMethod.GET, "/api/badge/**")      .authenticated()
-                .requestMatchers("/api/badge/**")                      .hasAnyRole("STAFF","IT")
 
                 // ── Classifica ────────────────────────────────────────
                 .requestMatchers("/api/classifica/**")                  .authenticated()
