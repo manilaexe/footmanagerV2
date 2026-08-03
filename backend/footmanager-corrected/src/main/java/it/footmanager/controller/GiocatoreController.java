@@ -4,6 +4,8 @@ import it.footmanager.dto.Dtos.*;
 import it.footmanager.service.GiocatoreService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -13,6 +15,15 @@ import java.util.List;
 public class GiocatoreController {
 
     private final GiocatoreService svc;
+
+    // ── GET /api/giocatori/me ──────────────────────────────────────────────
+    // Profilo del giocatore autenticato (usato dalla card in alto della
+    // dashboard giocatore). Il giocatore è sempre risolto dal token JWT,
+    // non da un id passato dal client.
+    @GetMapping("/me")
+    public GiocatoreDto me(@AuthenticationPrincipal UserDetails ud) {
+        return svc.findMyProfile(ud.getUsername());
+    }
 
     @GetMapping("/squadra/{squadraId}")
     public List<GiocatoreDto> bySquadra(@PathVariable Integer squadraId) { 

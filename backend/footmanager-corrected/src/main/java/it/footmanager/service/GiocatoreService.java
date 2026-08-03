@@ -24,6 +24,7 @@ import it.footmanager.repository.SquadraRepository;
 import it.footmanager.repository.StatisticaGiocatoreRepository;
 import it.footmanager.repository.StatisticaMovimentoRepository;
 import it.footmanager.repository.StatisticaPortiereRepository;
+import it.footmanager.repository.UtenteRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -36,6 +37,21 @@ public class GiocatoreService {
     private final StatisticaMovimentoRepository  statMovimentoRepo;
     private final StatisticaPortiereRepository   statPortiereRepo;
     private final SquadraRepository              squadraRepo;
+    private final UtenteRepository               utenteRepo;
+
+    // ── PROFILO "ME" ─────────────────────────────────────────────────────────
+    // Usato dalla dashboard giocatore per popolare la card in alto (profile-hero)
+    // con i dati reali del giocatore autenticato, senza esporre un lookup per id
+    // arbitrario: il giocatore viene sempre risolto dal token, mai passato dal client.
+    @Transactional(readOnly = true)
+    public GiocatoreDto findMyProfile(String username) {
+        Integer uid = utenteRepo.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Utente: " + username))
+                .getId();
+        Giocatore g = giocatoreRepo.findByUtente_Id(uid)
+                .orElseThrow(() -> new ResourceNotFoundException("Giocatore per utente: " + username));
+        return toDto(g);
+    }
 
     @Transactional(readOnly = true)
     public List<GiocatoreDto> findBySquadra(Integer squadraId) {

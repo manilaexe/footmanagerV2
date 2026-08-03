@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     popolaSidebar();
     popolaTopbar();
+    caricaProfiloGiocatore(); // ← dati reali del profilo (posizione, numero, punti...) in alto
     caricaMessaggi();          // ← carica dal DB
     caricaEventi();            // ← carica dal DB
     caricaQuizGiornaliero();   // ← gamification: quiz del primo accesso del giorno
@@ -73,6 +74,52 @@ function popolaTopbar() {
         picEl.textContent = ini || '?';
     }
     if (nomeEl) nomeEl.textContent = nomeCompleto;
+}
+
+// ─── 3bis. PROFILO REALE (card in alto) ────────────────────────────────────
+/*
+ * Endpoint: GET /api/giocatori/me
+ * Auth:     JWT — il backend identifica il giocatore dal token, non da un id
+ *           passato dal client.
+ * Risposta: GiocatoreDto
+ *   { id, nome, cognome, numero, posizione, piede, nazionalita, altezza,
+ *     peso, puntiTotali, puntiSettimanali, ... }
+ *
+ * Sostituisce i valori demo hardcoded nella card "profile-hero" con i dati
+ * reali del giocatore (posizione, numero, piede, nazionalità, altezza, punti).
+ */
+async function caricaProfiloGiocatore() {
+    const headers = typeof getAuthHeaders === 'function'
+        ? getAuthHeaders()
+        : { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') };
+
+    try {
+        const res = await fetch(`${API}/api/giocatori/me`, { headers });
+        if (res.status === 401) { logout(); return; }
+        if (!res.ok) { console.error('Errore caricamento profilo:', res.status); return; }
+
+        const g = await res.json();
+        renderizzaProfilo(g);
+
+    } catch (err) {
+        console.error('Errore di rete profilo:', err);
+    }
+}
+
+function renderizzaProfilo(g) {
+    if (!g) return;
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+    set('profile-posizione',   g.posizione   || 'N/D');
+    set('profile-numero',      g.numero ? `#${g.numero}` : 'N/D');
+    set('profile-piede',       g.piede       || 'N/D');
+    set('profile-nazionalita', g.nazionalita || 'N/D');
+    set('profile-altezza',     g.altezza ? `${g.altezza} cm` : 'N/D');
+    set('profile-punti-totali', g.puntiTotali ?? 0);
+
+    // Aggiorna anche localStorage: utile se manca (es. token generato prima
+    // di questa modifica) o se il valore era rimasto disallineato.
+    if (g.id) localStorage.setItem('idGiocatore', g.id);
 }
 
 // ─── 4. CARICA MESSAGGI DAL BACKEND ───────────────────────────────────────

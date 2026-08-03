@@ -99,6 +99,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE,"/api/utenti/**")    .hasAnyRole("STAFF","IT")
 
                 // ── Giocatori ─────────────────────────────────────────
+                .requestMatchers(HttpMethod.GET, "/api/giocatori/me")   .hasRole("GIOCATORE")
                 .requestMatchers(HttpMethod.GET, "/api/giocatori/**")   .hasAnyRole("STAFF","ALLENATORE","DIRIGENZA","IT")
                 .requestMatchers("/api/giocatori/**")                   .hasAnyRole("STAFF","ALLENATORE","IT")
 
