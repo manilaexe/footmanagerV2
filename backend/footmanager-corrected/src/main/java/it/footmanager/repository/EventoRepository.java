@@ -16,4 +16,9 @@ public interface EventoRepository extends JpaRepository<Evento, Integer> {
     List<Evento> findByCalendarioAndPeriodo(@Param("cid") Integer calId,
                                              @Param("da")  LocalDateTime da,
                                              @Param("a")   LocalDateTime a);
+
+    // Usata dalla dashboard aggregata per mostrare i prossimi eventi in arrivo
+    // (esclude quelli già passati, a differenza della query "tutti" esistente).
+    List<Evento> findByCalendario_IdAndDataOraInizioAfterOrderByDataOraInizioAsc(
+            Integer calendarioId, LocalDateTime dopo);
 }

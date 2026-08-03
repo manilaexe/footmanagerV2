@@ -312,4 +312,65 @@ public class Dtos {
         private int parate;
         private int cleanSheet;
     }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // DASHBOARD AGGREGATA — un DTO per ruolo, un'unica chiamata invece di
+    // 5-6 richieste separate per riempire la pagina "Dashboard".
+    // ══════════════════════════════════════════════════════════════════════
+
+    // Riga sintetica di rosa mostrata nella preview della dashboard allenatore
+    // (la tabella completa resta sulla pagina "Rosa" dedicata).
+    @Data @Builder
+    public static class RosaRigaDto {
+        private Integer id;
+        private String  nome;
+        private String  cognome;
+        private String  posizione;
+        private int     presenze;
+        private int     minutiGiocati;
+    }
+
+    @Data @Builder
+    public static class DashboardAllenatoreDto {
+        private int                numeroGiocatori;
+        private EventoDto          prossimoEvento;      // null se non ce ne sono
+        private int                messaggiInviati;
+        private List<RosaRigaDto>  rosa;                // preview, primi N giocatori
+        private List<EventoDto>    prossimiEventi;       // preview
+        private List<MessaggioDto> ultimiMessaggi;       // preview
+    }
+
+    @Data @Builder
+    public static class DashboardGiocatoreDto {
+        private GiocatoreDto             giocatore;
+        // Riusa il DTO del sistema "quiz del giorno" già esistente: non rivela
+        // mai la risposta corretta finché il giocatore non ha risposto oggi.
+        private QuizGiornalieroDto       quizDelGiorno;
+        private StatisticheDto           statistiche;
+        private List<MessaggioDto>       messaggiDallAllenatore;   // preview
+        private List<EventoDto>          prossimiEventi;           // preview
+        private List<ClassificaItemDto>  classificaSettimanale;
+        private List<BadgeDto>           badgeOttenuti;
+    }
+
+    @Data @Builder
+    public static class DashboardDirigenzaDto {
+        private int                     numeroGiocatori;
+        private SquadraStatsResponse    performanceSquadra;
+        private List<ClassificaItemDto> classificaInterna;
+        private EventoDto               prossimoEvento;   // null se non ce ne sono
+        private List<EventoDto>         prossimiEventi;   // preview
+    }
+
+    @Data @Builder
+    public static class DashboardItDto {
+        private long numeroUtenti;
+        private long numeroGiocatori;
+        private long numeroAllenatori;
+        private long numeroSquadre;
+        private long numeroQuiz;
+        private long numeroBadge;
+        private long numeroMessaggi;
+        private long numeroEventi;
+    }
 }

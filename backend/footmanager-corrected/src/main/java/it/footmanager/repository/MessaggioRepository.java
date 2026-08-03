@@ -10,4 +10,7 @@ public interface MessaggioRepository extends JpaRepository<Messaggio, Integer> {
     List<Messaggio> findByGiocatore_IdOrderByDataOraDesc(Integer giocatoreId);
     List<Messaggio> findByAllenatore_IdOrderByDataOraDesc(Integer allenatoreId);
     long countByGiocatore_IdAndStato(Integer giocatoreId, String stato);
+
+    // Usata dalla dashboard aggregata per il KPI "messaggi inviati"
+    long countByAllenatore_Id(Integer allenatoreId);
 }
