@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.List;
 
 @Service @RequiredArgsConstructor @Transactional
@@ -20,6 +21,37 @@ public class EventoService {
     public List<EventoDto> findByCalendario(Integer calendarioId) {
         return eventoRepo.findByCalendario_IdOrderByDataOraInizioAsc(calendarioId)
                 .stream().map(this::toDto).toList();
+    }
+
+    // Blocco riassuntivo in alto della pagina Calendario. "mese" facoltativo
+    // (formato yyyy-MM): se assente si usa il mese corrente.
+    @Transactional(readOnly = true)
+    public CalendarioRiepilogoDto riepilogo(Integer calendarioId, YearMonth mese) {
+        YearMonth ym = mese != null ? mese : YearMonth.now();
+        LocalDateTime inizioMese = ym.atDay(1).atStartOfDay();
+        LocalDateTime fineMese   = ym.atEndOfMonth().atTime(23, 59, 59);
+
+        List<Evento> eventiMese = eventoRepo.findByCalendarioAndPeriodo(calendarioId, inizioMese, fineMese);
+
+        int numPartite     = (int) eventiMese.stream().filter(e -> "PARTITA".equalsIgnoreCase(e.getTipo())).count();
+        int numAllenamenti = (int) eventiMese.stream().filter(e -> "ALLENAMENTO".equalsIgnoreCase(e.getTipo())).count();
+        int numRiunioni    = (int) eventiMese.stream().filter(e -> "RIUNIONE".equalsIgnoreCase(e.getTipo())).count();
+        int numAltro       = (int) eventiMese.stream().filter(e -> "ALTRO".equalsIgnoreCase(e.getTipo())).count();
+
+        List<EventoDto> prossimi = eventoRepo
+                .findByCalendario_IdAndDataOraInizioAfterOrderByDataOraInizioAsc(calendarioId, LocalDateTime.now())
+                .stream().limit(5).map(this::toDto).toList();
+
+        List<Evento> prossimePartite = eventoRepo.findByCalendario_IdAndTipoAndDataOraInizioAfterOrderByDataOraInizioAsc(
+                calendarioId, "PARTITA", LocalDateTime.now());
+
+        return CalendarioRiepilogoDto.builder()
+                .eventiDelMese(eventiMese.size())
+                .numPartite(numPartite).numAllenamenti(numAllenamenti)
+                .numRiunioni(numRiunioni).numAltro(numAltro)
+                .prossimiEventi(prossimi)
+                .prossimaPartita(prossimePartite.isEmpty() ? null : toDto(prossimePartite.get(0)))
+                .build();
     }
 
     // Usata dalla dashboard aggregata: solo eventi non ancora passati.
@@ -49,7 +81,7 @@ public class EventoService {
 
     public void elimina(Integer id) { eventoRepo.deleteById(id); }
 
-    // Reso pubblico: riusato da DashboardService per convertire gli eventi
+    // Pubblico: riusato da DashboardService per convertire gli eventi
     // futuri senza duplicare la logica di mapping.
     public EventoDto toDto(Evento e) {
         return EventoDto.builder().id(e.getId()).titolo(e.getTitolo()).tipo(e.getTipo())

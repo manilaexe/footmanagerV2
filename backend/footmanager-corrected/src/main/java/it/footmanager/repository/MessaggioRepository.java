@@ -13,4 +13,8 @@ public interface MessaggioRepository extends JpaRepository<Messaggio, Integer> {
 
     // Usata dalla dashboard aggregata per il KPI "messaggi inviati"
     long countByAllenatore_Id(Integer allenatoreId);
+
+    // Usata dal riepilogo messaggi: quanti dei messaggi inviati dall'allenatore
+    // non sono ancora stati letti dal destinatario.
+    long countByAllenatore_IdAndStato(Integer allenatoreId, String stato);
 }

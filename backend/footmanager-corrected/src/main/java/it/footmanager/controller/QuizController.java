@@ -6,6 +6,8 @@ import it.footmanager.repository.UtenteRepository;
 import it.footmanager.service.QuizService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -57,6 +59,35 @@ public class QuizController {
     @GetMapping("/classifica/{squadraId}")
     public List<ClassificaItemDto> classifica(@PathVariable Integer squadraId) {
         return svc.classifica(squadraId);
+    }
+
+    // ── PANNELLO ADMIN (STAFF/IT) — CRUD domande quiz ───────────────────────
+    // Unico punto dell'app da cui aggiungere/correggere/eliminare una domanda
+    // senza scrivere query SQL a mano. La risposta corretta va sempre passata
+    // come lettera 'A'/'B'/'C' (vedi CreaQuizRequest), mai come testo.
+    @GetMapping("/admin")
+    @PreAuthorize("hasAnyRole('STAFF','IT')")
+    public List<QuizAdminDto> tuttiAdmin() {
+        return svc.tuttiAdmin();
+    }
+
+    @PostMapping("/admin")
+    @PreAuthorize("hasAnyRole('STAFF','IT')")
+    public ResponseEntity<QuizAdminDto> creaAdmin(@Valid @RequestBody CreaQuizRequest req) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(svc.creaAdmin(req));
+    }
+
+    @PutMapping("/admin/{id}")
+    @PreAuthorize("hasAnyRole('STAFF','IT')")
+    public QuizAdminDto aggiornaAdmin(@PathVariable Integer id, @Valid @RequestBody CreaQuizRequest req) {
+        return svc.aggiornaAdmin(id, req);
+    }
+
+    @DeleteMapping("/admin/{id}")
+    @PreAuthorize("hasAnyRole('STAFF','IT')")
+    public ResponseEntity<Void> eliminaAdmin(@PathVariable Integer id) {
+        svc.eliminaAdmin(id);
+        return ResponseEntity.noContent().build();
     }
 
     private Integer getGiocatoreId(UserDetails ud) {

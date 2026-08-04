@@ -263,4 +263,58 @@ public class QuizService {
                 .opzione2(q.getOpzione2()).opzione3(q.getOpzione3())
                 .puntiValore(q.getPuntiValore()).giaRisposto(giaRisposto).build();
     }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // PANNELLO ADMIN (STAFF/IT) — CRUD domande quiz.
+    // Oggi l'unico modo per aggiungere/correggere/eliminare una domanda è una
+    // query SQL a mano; questi metodi permettono di farlo dall'app. Scrivono
+    // sempre la LETTERA (A/B/C) in risposta_corretta, mai il testo — è lo
+    // stesso formato già usato da quizDiOggi()/rispondiOggi() qui sopra, così
+    // una domanda creata da qui funziona subito con la gamification esistente.
+    // ═══════════════════════════════════════════════════════════════════════
+
+    @Transactional(readOnly = true)
+    public List<QuizAdminDto> tuttiAdmin() {
+        return quizRepo.findAllByOrderByIdAsc().stream().map(this::toAdminDto).toList();
+    }
+
+    public QuizAdminDto creaAdmin(CreaQuizRequest req) {
+        Quiz q = new Quiz();
+        applicaRequestAdmin(q, req);
+        return toAdminDto(quizRepo.save(q));
+    }
+
+    public QuizAdminDto aggiornaAdmin(Integer id, CreaQuizRequest req) {
+        Quiz q = quizRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Quiz", Long.valueOf(id)));
+        applicaRequestAdmin(q, req);
+        return toAdminDto(quizRepo.save(q));
+    }
+
+    // L'eliminazione di una domanda ancora "in rotazione" per il quiz del
+    // giorno è consentita: trovaQuizDelGiorno() ricalcola la rotazione sulla
+    // lista rimanente al prossimo accesso, non tiene riferimenti stantii.
+    public void eliminaAdmin(Integer id) {
+        if (!quizRepo.existsById(id))
+            throw new ResourceNotFoundException("Quiz", Long.valueOf(id));
+        quizRepo.deleteById(id);
+    }
+
+    private void applicaRequestAdmin(Quiz q, CreaQuizRequest req) {
+        q.setDomanda(req.getDomanda());
+        q.setOpzioneA(req.getOpzioneA());
+        q.setOpzione2(req.getOpzioneB());
+        q.setOpzione3(req.getOpzioneC());
+        q.setRisposta_corretta(req.getRispostaCorretta().trim().toUpperCase());
+        q.setPuntiValore(req.getPuntiValore());
+    }
+
+    private QuizAdminDto toAdminDto(Quiz q) {
+        return QuizAdminDto.builder()
+                .id(q.getId()).domanda(q.getDomanda())
+                .opzioneA(q.getOpzioneA()).opzioneB(q.getOpzione2()).opzioneC(q.getOpzione3())
+                .rispostaCorretta(q.getRisposta_corretta())
+                .puntiValore(q.getPuntiValore())
+                .build();
+    }
 }

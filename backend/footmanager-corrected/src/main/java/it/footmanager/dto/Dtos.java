@@ -197,6 +197,40 @@ public class Dtos {
         private boolean giaRisposto;
     }
 
+    // ── Quiz — vista amministrazione (pannello STAFF/IT) ──────────────────
+    // A differenza di QuizDto/QuizGiornalieroDto (che nascondono la risposta
+    // corretta al giocatore prima che risponda), qui viene sempre esposta —
+    // serve per gestire le domande, non per giocare. La risposta corretta è
+    // la LETTERA 'A'/'B'/'C' (coerente con lo schema reale gamification.sql),
+    // non il testo risolto.
+    @Data @Builder
+    public static class QuizAdminDto {
+        private Integer id;
+        private String  domanda;
+        private String  opzioneA;
+        private String  opzioneB;
+        private String  opzioneC;
+        private String  rispostaCorretta;   // 'A' | 'B' | 'C'
+        private int     puntiValore;
+    }
+
+    // Richiesta di creazione/modifica di una domanda dal pannello admin.
+    // rispostaCorretta è la LETTERA che indica quale opzione è quella giusta,
+    // NON il testo — se si scrivesse il testo qui si romperebbe il quiz del
+    // giorno per i giocatori (Quiz.getTestoRispostaCorretta() si aspetta
+    // sempre una lettera in questa colonna).
+    @Data
+    public static class CreaQuizRequest {
+        @NotBlank private String domanda;
+        @NotBlank private String opzioneA;
+        @NotBlank private String opzioneB;
+        @NotBlank private String opzioneC;
+        @NotBlank
+        @Pattern(regexp = "(?i)^[ABC]$", message = "La risposta corretta deve essere 'A', 'B' o 'C'")
+        private String rispostaCorretta;
+        @Min(0) private int puntiValore;
+    }
+
     @Data
     public static class RispostaQuizRequest {
         @NotNull  private Integer quizId;
@@ -423,5 +457,20 @@ public class Dtos {
         private String  cognome;
         private Integer squadraId;
         private Integer utenteId;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // Riepilogo per il blocco in alto della pagina Calendario: eventi del
+    // mese (con scomposizione per tipo), prossimi eventi, prossima partita.
+    // ══════════════════════════════════════════════════════════════════════
+    @Data @Builder
+    public static class CalendarioRiepilogoDto {
+        private int eventiDelMese;
+        private int numPartite;
+        private int numAllenamenti;
+        private int numRiunioni;
+        private int numAltro;
+        private List<EventoDto> prossimiEventi;   // prossimi 5, non limitati al mese corrente
+        private EventoDto       prossimaPartita;  // null se nessuna partita futura pianificata
     }
 }

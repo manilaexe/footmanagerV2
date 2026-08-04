@@ -35,6 +35,27 @@ public class MessaggioController {
         return svc.msgInviatiDaAllenatore(aid);
     }
 
+    // ── GET /api/messaggi/inviati/non-letti ───────────────────────────────
+    // Numero di messaggi inviati dall'allenatore che il destinatario non ha
+    // ancora letto (blocco in alto della pagina Messaggi lato allenatore).
+    @GetMapping("/inviati/non-letti")
+    @PreAuthorize("hasAnyRole('ALLENATORE','STAFF','IT')")
+    public long inviatiNonLetti(@AuthenticationPrincipal UserDetails ud) {
+        Integer uid = utenteRepo.findByUsername(ud.getUsername()).orElseThrow().getId();
+        Integer aid = allenatoreRepo.findByUtente_Id(uid).orElseThrow().getId();
+        return svc.inviatiNonLetti(aid);
+    }
+
+    // ── GET /api/messaggi/inviati/ultimo ──────────────────────────────────
+    // Data/ora dell'ultimo messaggio inviato (blocco in alto pagina Messaggi).
+    @GetMapping("/inviati/ultimo")
+    @PreAuthorize("hasAnyRole('ALLENATORE','STAFF','IT')")
+    public MessaggioDto ultimoInviato(@AuthenticationPrincipal UserDetails ud) {
+        Integer uid = utenteRepo.findByUsername(ud.getUsername()).orElseThrow().getId();
+        Integer aid = allenatoreRepo.findByUtente_Id(uid).orElseThrow().getId();
+        return svc.ultimoInviato(aid);
+    }
+
     // ── GET /api/messaggi/giocatori-squadra ───────────────────────────────
     // Restituisce la lista leggera dei giocatori della squadra dell'allenatore.
     // Usata per popolare il <select> destinatario nel form di composizione.

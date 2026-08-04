@@ -37,6 +37,18 @@ public class MessaggioService {
         return mesRepo.countByGiocatore_IdAndStato(giocatoreId, "INVIATO");
     }
 
+    // ── Contatori per il blocco in alto della pagina Messaggi (allenatore) ─
+    @Transactional(readOnly = true)
+    public long inviatiNonLetti(Integer allenatoreId) {
+        return mesRepo.countByAllenatore_IdAndStato(allenatoreId, "INVIATO");
+    }
+
+    @Transactional(readOnly = true)
+    public MessaggioDto ultimoInviato(Integer allenatoreId) {
+        List<Messaggio> lista = mesRepo.findByAllenatore_IdOrderByDataOraDesc(allenatoreId);
+        return lista.isEmpty() ? null : toDto(lista.get(0));
+    }
+
     // ── Invia un messaggio a un singolo giocatore ─────────────────────────
     public MessaggioDto invia(InviaMessaggioRequest req, String usernameAllenatore) {
         Integer uid = utenteRepo.findByUsername(usernameAllenatore)
