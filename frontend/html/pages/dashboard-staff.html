@@ -37,7 +37,7 @@
     <div class="topbar">
       <h1>Pannello Staff</h1>
       <div class="topbar-right">
-        <button class="btn-outline" onclick="switchTab('quiz')">+ Aggiungi Quiz</button>
+        <button class="btn-outline" onclick="switchTab('quiz'); apriModalNuovaDomanda()">+ Aggiungi Quiz</button>
         <button class="btn-primary" onclick="openModal('modal-utente')">+ Nuovo Utente</button>
       </div>
     </div>
@@ -100,13 +100,11 @@
       <!-- TAB QUIZ -->
       <div class="tab-panel" id="tab-quiz">
         <div class="table-card">
-          <div class="table-card-header"><h2>Domande Quiz</h2><button class="btn-primary" onclick="openModal('modal-quiz')">+ Nuova domanda</button></div>
+          <div class="table-card-header"><h2>Domande Quiz</h2><button class="btn-primary" onclick="apriModalNuovaDomanda()">+ Nuova domanda</button></div>
           <table>
             <thead><tr><th>#</th><th>Domanda</th><th>Risposta corretta</th><th>Punti</th><th>Azioni</th></tr></thead>
-            <tbody>
-              <tr><td>1</td><td>Anno di fondazione del Bologna FC</td><td>1909</td><td>10</td><td><div class="actions"><button class="btn-sm">✏️</button><button class="btn-sm danger">🗑</button></div></td></tr>
-              <tr><td>2</td><td>Quante volte il Bologna ha vinto lo scudetto?</td><td>7</td><td>10</td><td><div class="actions"><button class="btn-sm">✏️</button><button class="btn-sm danger">🗑</button></div></td></tr>
-              <tr><td>3</td><td>Soprannome storico del Bologna FC</td><td>Vaca</td><td>15</td><td><div class="actions"><button class="btn-sm">✏️</button><button class="btn-sm danger">🗑</button></div></td></tr>
+            <tbody id="quiz-tbody">
+              <tr><td colspan="5" style="text-align:center;color:var(--muted);">Caricamento domande...</td></tr>
             </tbody>
           </table>
         </div>
@@ -161,17 +159,40 @@
 <!-- MODAL NUOVO QUIZ -->
 <div class="modal-overlay" id="modal-quiz">
   <div class="modal">
-    <h3>Nuova Domanda Quiz</h3>
+    <h3 id="modal-quiz-titolo">Nuova Domanda Quiz</h3>
+    <!-- id nascosto: vuoto = creazione, popolato = modifica -->
+    <input type="hidden" id="quiz-id-editing" value="" />
     <div class="form-grid" style="grid-template-columns:1fr">
-      <div class="form-group"><label>Domanda</label><input type="text" placeholder="Inserisci la domanda..." /></div>
-      <div class="form-group"><label>Risposta corretta</label><input type="text" placeholder="Opzione A (corretta)" /></div>
-      <div class="form-group"><label>Opzione 2</label><input type="text" placeholder="Opzione B" /></div>
-      <div class="form-group"><label>Opzione 3</label><input type="text" placeholder="Opzione C" /></div>
-      <div class="form-group"><label>Punti assegnati</label><input type="number" value="10" /></div>
+      <div class="form-group"><label>Domanda</label><input type="text" id="quiz-domanda" placeholder="Inserisci la domanda..." /></div>
+
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;">
+          <input type="radio" name="quiz-corretta" value="A" checked style="width:auto;" />
+          Opzione A
+        </label>
+        <input type="text" id="quiz-opzione-a" placeholder="Testo opzione A" />
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;">
+          <input type="radio" name="quiz-corretta" value="B" style="width:auto;" />
+          Opzione B
+        </label>
+        <input type="text" id="quiz-opzione-b" placeholder="Testo opzione B" />
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;">
+          <input type="radio" name="quiz-corretta" value="C" style="width:auto;" />
+          Opzione C
+        </label>
+        <input type="text" id="quiz-opzione-c" placeholder="Testo opzione C" />
+      </div>
+      <small style="color:var(--muted);margin-top:-8px;">Seleziona il radio accanto all'opzione che è la risposta corretta.</small>
+
+      <div class="form-group"><label>Punti assegnati</label><input type="number" id="quiz-punti" value="10" min="0" /></div>
     </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeModal('modal-quiz')">Annulla</button>
-      <button class="btn-primary" onclick="closeModal('modal-quiz');alert('Domanda salvata!')">Salva Domanda</button>
+      <button class="btn-primary" onclick="salvaDomandaQuiz()">Salva Domanda</button>
     </div>
   </div>
 </div>
@@ -191,6 +212,7 @@
   </div>
 </div>
 
+<script src="/html/js/utils.js"></script>
 <script src="/html/js/staff.js"></script>
 
 </body>
