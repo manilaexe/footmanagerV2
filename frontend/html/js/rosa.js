@@ -16,7 +16,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const nome    = localStorage.getItem('nomeReale')    || localStorage.getItem('username') || 'Utente';
     const cognome = localStorage.getItem('cognomeReale') || '';
     const ruolo   = localStorage.getItem('ruolo')        || '';
-    
+
+    // I giocatori non devono poter vedere la rosa: vengono rimandati alla loro dashboard
+    if (ruolo === 'GIOCATORE') {
+        window.location.href = '/html/pages/dashboard-giocatore.html';
+        return;
+    }
+
     if (sbName) sbName.textContent = cognome ? `${nome} ${cognome}` : nome;
     if (sbRole) sbRole.textContent = ruolo;
     if (sbAv)   renderAvatar(sbAv, (nome[0]||('')).toUpperCase() + (cognome[0]||nome[1]||'').toUpperCase());

@@ -65,5 +65,31 @@ function impostaLinkDashboard() {
     }
 }
 
-// Esegue la correzione automaticamente appena la pagina è pronta
+// Adatta le voci della sidebar in base al ruolo, così la sidebar non "salta" più
+// da una pagina all'altra: i giocatori non devono vedere "Rosa", ma devono
+// ritrovare sempre "Quiz del giorno" e "Classifica" (presenti nella loro dashboard)
+// anche quando sono su calendario/statistiche/messaggi.
+function adattaSidebarPerRuolo() {
+    const ruolo = localStorage.getItem('ruolo');
+    if (ruolo !== 'GIOCATORE') return;
+
+    const nav = document.querySelector('.sidebar .nav-section');
+    if (!nav) return;
+
+    // Nasconde "Rosa": i giocatori non devono poterla vedere
+    const linkRosa = nav.querySelector('a[href$="rosa.html"]');
+    if (linkRosa) linkRosa.remove();
+
+    // Aggiunge "Quiz del giorno" e "Classifica" se non già presenti in questa pagina
+    const giaPresenti = [...nav.querySelectorAll('a')]
+        .some(a => a.textContent.includes('Quiz del giorno'));
+    if (!giaPresenti) {
+        nav.insertAdjacentHTML('beforeend', `
+            <a class="nav-item" href="/html/pages/dashboard-giocatore.html#quiz-card"><span class="ico">🎮</span> Quiz del giorno</a>
+            <a class="nav-item" href="/html/pages/dashboard-giocatore.html#classifica-card"><span class="ico">🏆</span> Classifica</a>`);
+    }
+}
+
+// Esegue entrambe le correzioni automaticamente appena la pagina è pronta
 document.addEventListener('DOMContentLoaded', impostaLinkDashboard);
+document.addEventListener('DOMContentLoaded', adattaSidebarPerRuolo);
