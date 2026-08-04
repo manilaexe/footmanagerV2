@@ -104,6 +104,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE,"/api/utenti/**")    .hasAnyRole("STAFF","IT")
 
                 // ── Giocatori ─────────────────────────────────────────
+                // /me deve restare accessibile a QUALSIASI ruolo autenticato: è così
+                // che un GIOCATORE carica il proprio profilo (posizione, numero, ecc.)
+                // nella propria dashboard. Va prima della regola generale, altrimenti
+                // riceverebbe 403 sui propri stessi dati (stesso motivo di /api/utenti/me/**).
+                .requestMatchers(HttpMethod.GET, "/api/giocatori/me")   .authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/giocatori/**")   .hasAnyRole("STAFF","ALLENATORE","DIRIGENZA","IT")
                 .requestMatchers("/api/giocatori/**")                   .hasAnyRole("STAFF","ALLENATORE","IT")
 

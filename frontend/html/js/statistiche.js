@@ -5,6 +5,8 @@ const token = localStorage.getItem('token'); // Recuperato al login
 // Array dinamici che verranno popolati dalle chiamate API
 let PLAYERS = [];
 let MATCHES = [];
+let ruoloUtente = '';     // ruolo dell'utente loggato (per adattare la vista)
+let mioNomeStat = '';     // nome nel formato "N. Cognome" usato dal backend, per riconoscere il proprio giocatore
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Esegue il controllo sulla validità del login
@@ -27,6 +29,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     if (sbAv) renderAvatar(sbAv, (nome[0]||('')).toUpperCase() + (cognome[0]||nome[1]||'').toUpperCase());
+
+    // Salviamo ruolo e nome "N. Cognome" (stesso formato usato dal backend) per poter
+    // riconoscere il proprio giocatore nell'elenco e adattare la pagina di conseguenza
+    ruoloUtente = ruolo;
+    mioNomeStat = nome ? `${nome.charAt(0).toUpperCase()}. ${cognome}` : '';
+    if (ruoloUtente === 'GIOCATORE') nascondiSezioniSquadra();
 
     // 3. Mostra lo stato iniziale di caricamento o azzeramento dei grafici
     aggiornaInterfacciaCaricamento();
@@ -190,6 +198,35 @@ function aggiornaInterfacciaCaricamento() {
     document.getElementById('player-selector').innerHTML = "Caricamento giocatori...";
 }
 
+// I giocatori devono vedere solo le proprie statistiche: nascondiamo tutto ciò che
+// riguarda la squadra o gli altri compagni (KPI squadra, tab Squadra/Confronto,
+// grafico gol di squadra, possesso/disciplina, classifica marcatori) e mostriamo
+// direttamente la scheda individuale.
+function nascondiSezioniSquadra() {
+    const nascondi = (id) => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
+
+    nascondi('card-line-chart');
+    nascondi('grid-possesso-disciplina');
+    nascondi('card-classifica-marcatori');
+    const kpiStrip = document.querySelector('.kpi-strip');
+    if (kpiStrip) kpiStrip.style.display = 'none';
+
+    // Nasconde le tab "Squadra" e "Confronto" (mantenendo Individuale e Forma)
+    const tabOrder = ['squadra', 'individuale', 'confronto', 'forma'];
+    const tabButtons = document.querySelectorAll('.tab');
+    ['squadra', 'confronto'].forEach(name => {
+        const idx = tabOrder.indexOf(name);
+        if (tabButtons[idx]) tabButtons[idx].style.display = 'none';
+    });
+
+    // Titolo pagina più coerente col contesto
+    const h1 = document.querySelector('.topbar h1');
+    if (h1) h1.textContent = 'Le mie statistiche';
+
+    // Passa direttamente alla tab Individuale, l'unica sensata per un giocatore
+    switchTab('individuale');
+}
+
 /* ── TABS (Invariato) ── */
 function switchTab(name){
   document.querySelectorAll('.tab').forEach((t,i)=>{
@@ -307,6 +344,20 @@ function renderTopScorers(){
 /* ── PLAYER SELECTOR ── */
 let selPlayer=0;
 function buildSelector(){
+  // Un giocatore non deve poter scorrere i compagni: si nasconde la lista e si
+  // blocca la vista sul proprio profilo (cercato per nome "N. Cognome")
+  if (ruoloUtente === 'GIOCATORE') {
+    const sel = document.getElementById('player-selector');
+    if (sel) sel.style.display = 'none';
+
+    let idx = PLAYERS.findIndex(p => p.nome === mioNomeStat);
+    if (idx === -1) idx = 0; // fallback di sicurezza se il nome non combacia
+    selPlayer = idx;
+    drawRadar(idx);
+    renderIndivBars(idx);
+    return;
+  }
+
   document.getElementById('player-selector').innerHTML=PLAYERS.map((p,i)=>`
     <button class="ps-btn ${i===0?'active':''}" onclick="selectPlayer(${i},this)">${p.nome}</button>
   `).join('');

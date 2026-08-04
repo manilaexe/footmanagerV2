@@ -11,14 +11,14 @@ function getAuthHeaders() {
 function verificaAutenticazione() {
     const token = localStorage.getItem('token');
     if (!token) {
-        window.location.href = '../login.html'; // Regola il percorso se la pagina di login si trova altrove
+        window.location.href = '/html/login.html';
     }
 }
 
 // Rimuove i dati di sessione e rimanda l'utente al login
 function logout() {
     localStorage.clear();
-    window.location.href = '../login.html';
+    window.location.href = '/html/login.html';
 }
 
 // Renderizza l'avatar in un contenitore circolare (.avatar / .profile-pic / sb-avatar):

@@ -149,7 +149,7 @@
       </div>
 
       <!-- Gol per giornata (line chart SVG) -->
-      <div class="card" style="margin-bottom:1.5rem">
+      <div class="card" id="card-line-chart" style="margin-bottom:1.5rem">
         <div class="card-header"><h2>📈 Gol segnati per giornata</h2></div>
         <div class="card-body">
           <div class="line-chart-wrap">
@@ -163,7 +163,7 @@
       </div>
 
       <!-- Possesso + Passaggi -->
-      <div class="grid-3">
+      <div class="grid-3" id="grid-possesso-disciplina">
         <div class="card">
           <div class="card-header"><h2>🔵 Possesso</h2></div>
           <div class="card-body" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:1.5rem">
@@ -219,7 +219,7 @@
             </div>
           </div>
         </div>
-        <div class="card">
+        <div class="card" id="card-classifica-marcatori">
           <div class="card-header"><h2>🏅 Classifica marcatori</h2></div>
           <div class="card-body">
             <div class="hbar-chart" id="top-scorers"></div>
