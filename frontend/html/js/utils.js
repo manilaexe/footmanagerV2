@@ -80,13 +80,18 @@ function adattaSidebarPerRuolo() {
     const linkRosa = nav.querySelector('a[href$="rosa.html"]');
     if (linkRosa) linkRosa.remove();
 
-    // Aggiunge "Quiz del giorno" e "Classifica" se non già presenti in questa pagina
-    const giaPresenti = [...nav.querySelectorAll('a')]
-        .some(a => a.textContent.includes('Quiz del giorno'));
-    if (!giaPresenti) {
-        nav.insertAdjacentHTML('beforeend', `
-            <a class="nav-item" href="/html/pages/dashboard-giocatore.html#quiz-card"><span class="ico">🎮</span> Quiz del giorno</a>
-            <a class="nav-item" href="/html/pages/dashboard-giocatore.html#classifica-card"><span class="ico">🏆</span> Classifica</a>`);
+    // Aggiunge "Quiz del giorno" e "Classifica" solo se non già presenti in questa
+    // pagina (es. sulla dashboard giocatore c'è già "Quiz del giorno", su
+    // classifica.html c'è già "Classifica": si evitano così duplicati)
+    const testiPresenti = [...nav.querySelectorAll('a')].map(a => a.textContent);
+
+    if (!testiPresenti.some(t => t.includes('Quiz del giorno'))) {
+        nav.insertAdjacentHTML('beforeend',
+            `<a class="nav-item" href="/html/pages/dashboard-giocatore.html#quiz-card"><span class="ico">🎮</span> Quiz del giorno</a>`);
+    }
+    if (!testiPresenti.some(t => t.includes('Classifica'))) {
+        nav.insertAdjacentHTML('beforeend',
+            `<a class="nav-item" href="/html/classifica.html"><span class="ico">🏆</span> Classifica</a>`);
     }
 }
 

@@ -232,7 +232,11 @@ public class QuizService {
                     .puntiTotali(g.getPunti_totali())
                     .build());
         }
-        result.sort(Comparator.comparingLong(ClassificaItemDto::getRisposteCorrette).reversed());
+        // Classifica SETTIMANALE: ordina per punti_settimanali (i punti guadagnati
+        // rispondendo ai quiz questa settimana), non per il totale storico.
+        result.sort(Comparator.comparingInt(
+                (ClassificaItemDto c) -> c.getPuntiSettimanali() == null ? 0 : c.getPuntiSettimanali())
+                .reversed());
         for (int i = 0; i < result.size(); i++) result.get(i).setPosizione(i + 1);
         return result;
     }

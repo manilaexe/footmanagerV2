@@ -131,7 +131,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/messaggi/**")                        .hasAnyRole("STAFF","ALLENATORE","IT")
 
                 // ── Quiz ──────────────────────────────────────────────
-                .requestMatchers(HttpMethod.GET, "/api/quiz/**")             .hasAnyRole("GIOCATORE","STAFF","IT")
+                .requestMatchers(HttpMethod.GET, "/api/quiz/**")             .hasAnyRole("GIOCATORE","ALLENATORE","STAFF","IT")
                 .requestMatchers(HttpMethod.POST,"/api/quiz/risposta")       .hasRole("GIOCATORE")
                 // Gamification: quiz del giorno — solo il giocatore può rispondere
                 .requestMatchers(HttpMethod.POST,"/api/quiz/oggi/risposta")  .hasRole("GIOCATORE")
