@@ -410,4 +410,18 @@ public class Dtos {
         @NotBlank private String nome;
         private String categoria;
     }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // ALLENATORE — DTO minimale per esporre il profilo (/api/utenti/me/allenatore)
+    // senza restituire l'entity JPA grezza (rischio LazyInitializationException
+    // e struttura interna del DB esposta direttamente).
+    // ══════════════════════════════════════════════════════════════════════
+    @Data @Builder
+    public static class AllenatoreDto {
+        private Integer id;
+        private String  nome;
+        private String  cognome;
+        private Integer squadraId;
+        private Integer utenteId;
+    }
 }

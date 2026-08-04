@@ -75,6 +75,47 @@ public class UtenteService {
         return toDto(u);
     }
 
+    /**
+     * Aggiorna username/password di un utente esistente.
+     *
+     * Il cambio di RUOLO non è supportato qui: cambiare il ruolo di un
+     * utente già collegato a una riga giocatore/allenatore la lascerebbe
+     * orfana (punterebbe a un utente con un ruolo diverso, senza che ne
+     * venga creata una nuova per il nuovo ruolo) — è un bug che avevamo
+     * nella versione precedente di questo metodo. Se il ruolo richiesto è
+     * diverso da quello attuale, l'operazione viene rifiutata: per cambiare
+     * ruolo a un utente bisogna eliminarlo e ricrearlo.
+     *
+     * Nome/cognome del profilo collegato (giocatore/allenatore) non vengono
+     * toccati da questo endpoint: restano di competenza di
+     * GiocatoreService/AllenatoreService, che già li gestiscono.
+     */
+    public UtenteDto aggiorna(Integer id, CreaUtenteRequest req) {
+        Utente u = utenteRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Utente", Long.valueOf(id)));
+
+        if (req.getUsername() != null && !req.getUsername().isBlank()
+                && !req.getUsername().equals(u.getUsername())) {
+            if (utenteRepo.existsByUsername(req.getUsername()))
+                throw new BadRequestException("Username '" + req.getUsername() + "' già in uso");
+            u.setUsername(req.getUsername());
+        }
+
+        if (req.getPassword() != null && !req.getPassword().isBlank()) {
+            u.setPassword(encoder.encode(req.getPassword()));
+        }
+
+        if (req.getNomeRuolo() != null && !req.getNomeRuolo().isBlank()) {
+            String ruoloAttuale = u.getRuolo() != null ? u.getRuolo().getNomeRuolo().name() : null;
+            if (!req.getNomeRuolo().toUpperCase().equals(ruoloAttuale)) {
+                throw new BadRequestException(
+                    "Non è possibile cambiare il ruolo di un utente esistente (elimina e ricrea l'utente).");
+            }
+        }
+
+        return toDto(utenteRepo.save(u));
+    }
+
     public void elimina(Integer id) {
         utenteRepo.deleteById(id);
     }

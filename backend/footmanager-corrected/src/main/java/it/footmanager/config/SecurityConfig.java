@@ -93,6 +93,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                 // ── Utenti / Rosa ─────────────────────────────────────
+                // /me/** deve restare accessibile a QUALSIASI ruolo autenticato
+                // (un giocatore chiama /me/giocatore, un allenatore /me/allenatore):
+                // va prima della regola generale, altrimenti un GIOCATORE
+                // riceverebbe 403 sul proprio stesso profilo.
+                .requestMatchers(HttpMethod.GET,  "/api/utenti/me/**")  .authenticated()
                 .requestMatchers(HttpMethod.GET,  "/api/utenti/**")     .hasAnyRole("STAFF","ALLENATORE","DIRIGENZA","IT")
                 .requestMatchers(HttpMethod.POST, "/api/utenti/**")     .hasAnyRole("STAFF","IT")
                 .requestMatchers(HttpMethod.PUT,  "/api/utenti/**")     .hasAnyRole("STAFF","IT")
