@@ -98,3 +98,17 @@ function adattaSidebarPerRuolo() {
 // Esegue entrambe le correzioni automaticamente appena la pagina è pronta
 document.addEventListener('DOMContentLoaded', impostaLinkDashboard);
 document.addEventListener('DOMContentLoaded', adattaSidebarPerRuolo);
+
+// Aggiunge automaticamente la voce "Classifica" alla sidebar se manca nella pagina corrente
+function assicuratiVoceClassifica() {
+    const nav = document.querySelector('.sidebar .nav-section');
+    if (!nav) return;
+
+    const testiPresenti = [...nav.querySelectorAll('a')].map(a => a.textContent);
+    if (!testiPresenti.some(t => t.includes('Classifica'))) {
+        nav.insertAdjacentHTML('beforeend',
+            `<a class="nav-item" href="/html/classifica.html"><span class="ico">🏆</span>Classifica</a>`);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', assicuratiVoceClassifica);
