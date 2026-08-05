@@ -1,356 +1,300 @@
-// ==========================================
-// STATO GLOBALE (Inizialmente vuoto, popolato dal DB)
-// ==========================================
-let currentPlayers = [];
-let currentEvents = [];
-let currentMessages = [];
-let currentMatches = [];
+/* ==========================================================================
+ * DASHBOARD FULL — pagina di riepilogo usata come destinazione di default
+ * per i ruoli senza una dashboard dedicata (es. IT).
+ *
+ * A differenza della versione precedente, questa pagina NON duplica più la
+ * logica di Rosa/Calendario/Statistiche/Messaggi: la sidebar rimanda alle
+ * pagine reali già funzionanti (rosa.html, calendario.html, statistiche.html,
+ * messaggi.html), coerentemente con come sono organizzate tutte le altre
+ * dashboard del progetto. Qui restano solo i dati aggregati per le card di
+ * riepilogo e il "messaggio rapido".
+ * ========================================================================== */
 
-// ==========================================
-// INIZIALIZZAZIONE DELLA PAGINA
-// ==========================================
-document.addEventListener("DOMContentLoaded", () => {
-    // Avvia la navigazione sulla prima sezione
-    nav('dashboard');
-    
-    // Carica tutti i dati dal Backend
-    loadAllData();
+const API = 'http://localhost:8080';
+const CALENDARIO_ID_DEFAULT = 1;
 
-    // Event Listeners per i Form
-    setupFormListeners();
+function idSquadra()    { return localStorage.getItem('idSquadra') || '1'; }
+function idCalendario() { return parseInt(localStorage.getItem('idCalendario') || CALENDARIO_ID_DEFAULT, 10); }
+
+function authHeaders() {
+    return typeof getAuthHeaders === 'function'
+        ? getAuthHeaders()
+        : { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') };
+}
+
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+const MESI_BREVI = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+const TIPO_EVENTO = {
+    ALLENAMENTO: { stripe: '#4caf50' },
+    PARTITA:     { stripe: '#3b82f6' },
+    RIUNIONE:    { stripe: '#eab308' },
+    ALTRO:       { stripe: '#8b5cf6' }
+};
+const tipoMeta = t => TIPO_EVENTO[t] || TIPO_EVENTO.ALTRO;
+function fmtOra(d) { return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+
+function pillPosizione(pos) {
+    const map = { 'Attaccante': 'pill-red', 'Centrocampista': 'pill-blue', 'Difensore': 'pill-amber', 'Portiere': 'pill-purple' };
+    const sigla = { 'Attaccante': 'ATT', 'Centrocampista': 'CEN', 'Difensore': 'DIF', 'Portiere': 'POR' };
+    return `<span class="pill ${map[pos] || 'pill-blue'}">${sigla[pos] || (pos || '—')}</span>`;
+}
+
+/* ─── STATO GLOBALE ────────────────────────────────────────────────────── */
+let cacheGiocatori   = [];   // GiocatoreDto[] + gol/presenze aggiunti dal merge con /statistiche/giocatori
+let cacheEventi      = [];   // EventoDto[]
+let cacheMessaggi    = [];   // MessaggioDto[] (inviati dall'allenatore/staff autenticato)
+let cacheStatSquadra = null; // SquadraStatsResponse
+
+/* ==========================================================================
+ * INIZIALIZZAZIONE
+ * ========================================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof verificaAutenticazione === 'function') verificaAutenticazione();
+    popolaSidebarFull();
+    caricaTutto();
 });
 
-// ==========================================
-// CHIAMATE API AL BACKEND (Spring Boot)
-// ==========================================
-async function loadAllData() {
+function popolaSidebarFull() {
+    const nome    = localStorage.getItem('nomeReale')    || '';
+    const cognome = localStorage.getItem('cognomeReale') || '';
+    const ruolo   = localStorage.getItem('ruolo')        || '—';
+    const username = localStorage.getItem('username')    || 'Utente';
+
+    const sbNome = document.getElementById('sb-nome');
+    const sbRuolo = document.getElementById('sb-ruolo');
+    const sbAv = document.getElementById('sb-avatar');
+
+    if (sbNome) sbNome.textContent = nome ? (cognome ? `${nome} ${cognome}` : nome) : username;
+    if (sbRuolo) sbRuolo.textContent = ruolo;
+    if (sbAv) {
+        const iniziali = ((nome[0] || username[0] || '?').toUpperCase()) + (cognome[0] || nome[1] || '').toUpperCase();
+        if (typeof renderAvatar === 'function') renderAvatar(sbAv, iniziali);
+        else sbAv.textContent = iniziali;
+    }
+}
+
+async function caricaTutto() {
+    await Promise.all([
+        caricaGiocatori(),
+        caricaEventi(),
+        caricaMessaggiInviati(),
+        caricaStatisticheSquadra()
+    ]);
+    renderDashboardSummary();
+}
+
+/* ==========================================================================
+ * CARICAMENTO DATI (stesse API usate da rosa.js / calendario.js / messaggi.js
+ * / statistiche.js — qui servono solo per calcolare le card di riepilogo)
+ * ========================================================================== */
+async function caricaGiocatori() {
     try {
-        const headers = getAuthHeaders(); // Recupera JWT e Content-Type
-        
-        // Esegui i fetch in parallelo per ottimizzare i tempi
-        const [resPlayers, resEvents, resMessages, resMatches] = await Promise.all([
-            fetch('/api/allenatore/giocatori', { headers }),
-            fetch('/api/allenatore/eventi', { headers }),
-            fetch('/api/allenatore/messaggi', { headers }),
-            fetch('/api/allenatore/partite', { headers })
+        const [resGioc, resStat] = await Promise.all([
+            fetch(`${API}/api/giocatori/squadra/${idSquadra()}`, { headers: authHeaders() }).catch(() => null),
+            fetch(`${API}/api/statistiche/giocatori`,            { headers: authHeaders() }).catch(() => null)
         ]);
 
-        // Parsing dei dati JSON
-        currentPlayers = await resPlayers.json();
-        currentEvents = await resEvents.json();
-        currentMessages = await resMessages.json();
-        currentMatches = await resMatches.json();
+        const giocatori = (resGioc && resGioc.ok) ? await resGioc.json() : [];
+        const stats     = (resStat && resStat.ok) ? await resStat.json() : [];
 
-        // Rendering delle varie sezioni con i dati reali
-        renderDashboardSummary();
-        renderRosa();
-        calRender();
-        renderEvTable();
-        renderMessaggi();
-        renderPartite();
-
-    } catch (error) {
-        console.error("Errore nel caricamento dei dati dal backend:", error);
-        alert("Impossibile caricare i dati. Verifica la connessione o il login.");
+        cacheGiocatori = giocatori.map(g => {
+            const s = stats.find(st => st.nome === `${g.nome} ${g.cognome}`);
+            return { ...g, presenze: s?.pres ?? 0, gol: s?.gol ?? 0 };
+        });
+    } catch (err) {
+        console.error('Errore caricamento giocatori:', err);
     }
 }
 
-// Esempio di invio nuovo evento al DB
-async function saveEvent(eventData) {
+async function caricaEventi() {
     try {
-        const response = await fetch('/api/allenatore/eventi', {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify(eventData)
-        });
-
-        if (response.ok) {
-            const nuovoEvento = await response.json();
-            currentEvents.push(nuovoEvento);
-            calRender();
-            renderEvTable();
-            closeModal('evtMdl');
-        } else {
-            alert("Errore durante il salvataggio dell'evento.");
-        }
-    } catch (error) {
-        console.error("Errore di rete:", error);
+        const res = await fetch(`${API}/api/eventi/calendario/${idCalendario()}`, { headers: authHeaders() });
+        cacheEventi = res.ok ? await res.json() : [];
+    } catch (err) {
+        console.error('Errore caricamento eventi:', err);
     }
 }
 
-// Esempio di eliminazione evento dal DB
-async function deleteEvent(id) {
-    if (!confirm("Vuoi davvero eliminare questo evento?")) return;
-
+async function caricaMessaggiInviati() {
     try {
-        const response = await fetch(`/api/allenatore/eventi/${id}`, {
-            method: 'DELETE',
-            headers: getAuthHeaders()
-        });
-
-        if (response.ok) {
-            currentEvents = currentEvents.filter(e => e.id !== id);
-            calRender();
-            renderEvTable();
-        } else {
-            alert("Errore durante l'eliminazione.");
-        }
-    } catch (error) {
-        console.error("Errore di rete:", error);
+        const res = await fetch(`${API}/api/messaggi/inviati`, { headers: authHeaders() });
+        cacheMessaggi = res.ok ? await res.json() : [];
+    } catch (err) {
+        console.error('Errore caricamento messaggi:', err);
     }
 }
 
-// Esempio di invio messaggio/comunicazione alla squadra
-async function sendMsg(msgData) {
+async function caricaStatisticheSquadra() {
     try {
-        const response = await fetch('/api/allenatore/messaggi', {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify(msgData)
-        });
-
-        if (response.ok) {
-            const nuovoMsg = await response.json();
-            currentMessages.unshift(nuovoMsg); // Mette in cima l'ultimo messaggio
-            renderMessaggi();
-            document.getElementById('msgFrm').reset();
-        }
-    } catch (error) {
-        console.error("Errore nell'invio del messaggio:", error);
+        const res = await fetch(`${API}/api/statistiche/squadra`, { headers: authHeaders() });
+        cacheStatSquadra = res.ok ? await res.json() : null;
+    } catch (err) {
+        console.error('Errore caricamento statistiche squadra:', err);
     }
 }
 
-// ==========================================
-// GESTIONE NAVIGAZIONE & INTERFACCIA (UI)
-// ==========================================
-function nav(secId) {
-    document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
-    
-    const targetSection = document.getElementById(secId);
-    if (targetSection) targetSection.classList.add('active');
-    
-    const activeLink = document.querySelector(`.sidebar a[onclick*="${secId}"]`);
-    if (activeLink) activeLink.classList.add('active');
-}
-
-function openModal(mdlId) {
-    const mdl = document.getElementById(mdlId);
-    if (mdl) mdl.style.display = 'flex';
-}
-
-function closeModal(mdlId) {
-    const mdl = document.getElementById(mdlId);
-    if (mdl) mdl.style.display = 'none';
-}
-
-// ==========================================
-// FUNZIONI DI ASCOLTO E ACQUISIZIONE FORM
-// ==========================================
-function setupFormListeners() {
-    // Listener per il form dei messaggi
-    const msgFrm = document.getElementById('msgFrm');
-    if (msgFrm) {
-        msgFrm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const msgData = {
-                title: document.getElementById('msgTtl').value,
-                body: document.getElementById('msgTxt').value,
-                date: new Date().toLocaleDateString('it-IT')
-            };
-            sendMsg(msgData);
-        });
-    }
-
-    // Listener per il form degli eventi
-    const evtFrm = document.getElementById('evtFrm');
-    if (evtFrm) {
-        evtFrm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const eventData = {
-                title: document.getElementById('evtTtl').value,
-                type: document.getElementById('evtTyp').value,
-                date: document.getElementById('evtDat').value,
-                time: document.getElementById('evtTim').value,
-                loc: document.getElementById('evtLoc').value
-            };
-            saveEvent(eventData);
-        });
-    }
-}
-
-// ==========================================
-// FUNZIONI DI RENDERING HTML (Interfaccia grafica)
-// ==========================================
+/* ==========================================================================
+ * RIEPILOGO DASHBOARD
+ * ========================================================================== */
 function renderDashboardSummary() {
-    // Aggiorna i contatori veloci nella home dell'allenatore
-    const plCount = document.getElementById('totalPlayersCount');
-    if (plCount) plCount.innerText = currentPlayers.length;
-    
-    const nextEv = document.getElementById('nextEventSummary');
-    if (nextEv && currentEvents.length > 0) {
-        // Mostra il primo evento disponibile cronologicamente
-        nextEv.innerText = `${currentEvents[0].title} - ${currentEvents[0].date}`;
+    const kpiGioc = document.getElementById('dash-kpi-giocatori');
+    const kpiGiocSub = document.getElementById('dash-kpi-giocatori-sub');
+    if (kpiGioc) kpiGioc.textContent = cacheGiocatori.length;
+    if (kpiGiocSub) kpiGiocSub.textContent = `${cacheGiocatori.length} giocatori in rosa`;
+
+    const ora = new Date();
+    const futuri = cacheEventi
+        .filter(e => e.dataOraInizio && new Date(e.dataOraInizio) > ora)
+        .sort((a, b) => new Date(a.dataOraInizio) - new Date(b.dataOraInizio));
+    const kpiEv = document.getElementById('dash-kpi-evento');
+    const kpiEvSub = document.getElementById('dash-kpi-evento-sub');
+    if (futuri.length > 0) {
+        const e = futuri[0];
+        const d = new Date(e.dataOraInizio);
+        if (kpiEv) kpiEv.textContent = d.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: 'short' });
+        if (kpiEvSub) kpiEvSub.textContent = `${e.titolo || ''} – ${e.luogo || 'luogo da definire'}`;
+    } else {
+        if (kpiEv) kpiEv.textContent = '—';
+        if (kpiEvSub) kpiEvSub.textContent = 'Nessun evento in programma';
     }
+
+    const nonLetti = cacheMessaggi.filter(m => (m.stato || '').toUpperCase() !== 'LETTO');
+    const kpiMsg = document.getElementById('dash-kpi-msg');
+    const kpiMsgSub = document.getElementById('dash-kpi-msg-sub');
+    if (kpiMsg) kpiMsg.textContent = nonLetti.length;
+    if (kpiMsgSub) kpiMsgSub.textContent = cacheMessaggi.length > 0 ? `su ${cacheMessaggi.length} inviati` : 'nessun messaggio inviato';
+
+    const kpiGol = document.getElementById('dash-kpi-golmedio');
+    const kpiGolSub = document.getElementById('dash-kpi-golmedio-sub');
+    if (cacheStatSquadra && cacheStatSquadra.kpi && cacheStatSquadra.kpi.partiteGiocate > 0) {
+        const media = cacheStatSquadra.kpi.golFatti / cacheStatSquadra.kpi.partiteGiocate;
+        if (kpiGol) kpiGol.textContent = media.toFixed(1);
+        if (kpiGolSub) kpiGolSub.textContent = `${cacheStatSquadra.kpi.golFatti} gol in ${cacheStatSquadra.kpi.partiteGiocate} partite`;
+    } else {
+        if (kpiGol) kpiGol.textContent = '—';
+        if (kpiGolSub) kpiGolSub.textContent = 'Nessuna partita registrata';
+    }
+
+    // Rosa — preview (primi 5), il resto si trova su rosa.html
+    const rosaTbody = document.getElementById('dash-rosa-tbody');
+    if (rosaTbody) {
+        rosaTbody.innerHTML = cacheGiocatori.length === 0
+            ? `<tr><td colspan="5" style="text-align:center;color:var(--muted);">Nessun giocatore in rosa.</td></tr>`
+            : cacheGiocatori.slice(0, 5).map(g => {
+                const iniziali = (g.nome?.[0] || '') + (g.cognome?.[0] || '');
+                return `<tr>
+                    <td><div class="player-name-cell"><div class="tbl-avatar">${escapeHtml(iniziali)}</div>${escapeHtml(g.nome)} ${escapeHtml(g.cognome)}</div></td>
+                    <td>${pillPosizione(g.posizione)}</td>
+                    <td>${g.presenze ?? 0}</td>
+                    <td><strong>${g.gol ?? 0}</strong></td>
+                    <td><span class="pill pill-green">In rosa</span></td>
+                </tr>`;
+            }).join('');
+    }
+
+    // Prossimi eventi — preview (primi 4), il resto si trova su calendario.html
+    const evList = document.getElementById('dash-eventi-list');
+    if (evList) {
+        evList.innerHTML = futuri.length === 0
+            ? `<div style="text-align:center;color:var(--muted);padding:1rem;">Nessun evento in programma.</div>`
+            : futuri.slice(0, 4).map(e => {
+                const d = new Date(e.dataOraInizio);
+                const meta = tipoMeta(e.tipo);
+                return `<div class="event-item">
+                    <div class="event-date"><div class="day">${String(d.getDate()).padStart(2,'0')}</div><div class="mon">${MESI_BREVI[d.getMonth()]}</div></div>
+                    <div class="event-stripe" style="background:${meta.stripe}"></div>
+                    <div class="event-info"><div class="title">${escapeHtml(e.titolo || '')}</div><div class="meta">${fmtOra(d)} – ${escapeHtml(e.luogo || 'Luogo da definire')}</div></div>
+                </div>`;
+            }).join('');
+    }
+
+    // Ultimi messaggi — preview (primi 3), il resto si trova su messaggi.html
+    const msgList = document.getElementById('dash-msg-list');
+    if (msgList) {
+        msgList.innerHTML = cacheMessaggi.length === 0
+            ? `<div style="text-align:center;color:var(--muted);padding:1rem;">Nessun messaggio inviato.</div>`
+            : cacheMessaggi.slice(0, 3).map(renderMsgItemHtml).join('');
+    }
+
+    aggiornaBadgeMessaggi();
+    popolaSelectDestinatari(document.getElementById('dash-msg-dest'));
 }
 
-function renderRosa() {
-    const grid = document.getElementById('rosaGrid');
-    if (!grid) return;
-    grid.innerHTML = '';
+function aggiornaBadgeMessaggi() {
+    const badge = document.getElementById('msg-badge');
+    if (!badge) return;
+    const nonLetti = cacheMessaggi.filter(m => (m.stato || '').toUpperCase() !== 'LETTO').length;
+    badge.textContent = nonLetti;
+    badge.style.display = nonLetti > 0 ? '' : 'none';
+}
 
-    currentPlayers.forEach(p => {
-        const c = document.createElement('div');
-        c.className = 'player-card';
-        c.innerHTML = `
-            <h3>${p.name}</h3>
-            <p>Ruolo: ${p.role}</p>
-            <p>N. Maglia: ${p.number}</p>
-            <button onclick="viewPlayerDetails(${p.id})">Vedi Statistiche</button>
-        `;
-        grid.appendChild(c);
+function renderMsgItemHtml(m) {
+    const letto = (m.stato || '').toUpperCase() === 'LETTO';
+    const d = m.dataOra ? new Date(m.dataOra) : null;
+    const quando = d ? d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }) + ' ' + fmtOra(d) : '';
+    return `<div class="msg-item">
+        <div class="msg-head"><span class="msg-from">→ ${escapeHtml(m.nomeGiocatore || m.giocatoreNome || 'Giocatore')}</span><span class="msg-time">${quando}</span></div>
+        <div class="msg-text">${escapeHtml(m.testo || '')}</div>
+        <div class="msg-status ${letto ? 'letto' : 'inviato'}">${letto ? '✔✔ Letto' : '✔ Inviato'}</div>
+    </div>`;
+}
+
+/* ==========================================================================
+ * MESSAGGIO RAPIDO (l'unica azione di scrittura rimasta su questa pagina;
+ * la gestione completa dei messaggi è su messaggi.html)
+ * ========================================================================== */
+const RUOLI_SQUADRA = [
+    { valore: 'Portiere', etichetta: 'Tutti i portieri' },
+    { valore: 'Difensore', etichetta: 'Tutti i difensori' },
+    { valore: 'Centrocampista', etichetta: 'Tutti i centrocampisti' },
+    { valore: 'Attaccante', etichetta: 'Tutti gli attaccanti' }
+];
+
+function popolaSelectDestinatari(sel) {
+    if (!sel || cacheGiocatori.length === 0) return;
+    let html = '<option value="">Destinatario…</option><optgroup label="Per ruolo">';
+    RUOLI_SQUADRA.forEach(r => {
+        const n = cacheGiocatori.filter(g => g.posizione === r.valore).length;
+        if (n > 0) html += `<option value="ruolo:${r.valore}">${r.etichetta} (${n})</option>`;
     });
+    html += '</optgroup><optgroup label="Singolo giocatore">';
+    cacheGiocatori.forEach(g => {
+        html += `<option value="giocatore:${g.id}">${escapeHtml(g.nome)} ${escapeHtml(g.cognome)}</option>`;
+    });
+    html += '</optgroup>';
+    sel.innerHTML = html;
 }
 
-function viewPlayerDetails(id) {
-    const p = currentPlayers.find(pl => pl.id === id);
-    if (!p) return;
+async function sendQuickMsg() {
+    const selEl = document.getElementById('dash-msg-dest');
+    const textEl = document.getElementById('dash-msg-text');
+    const val = selEl?.value || '';
+    const testo = (textEl?.value || '').trim();
+    if (!val) { alert('Seleziona un destinatario.'); return; }
+    if (!testo) { alert('Scrivi il testo del messaggio.'); return; }
 
-    document.getElementById('detNm').innerText = p.name;
-    document.getElementById('detRl').innerText = p.role;
-    
-    // Disegna i grafici basati sulle statistiche del giocatore del DB
-    if (p.stats) {
-        drawLineChart(p.stats.growth || []);
-        drawRadar(p.stats.skills || [50, 50, 50, 50, 50]);
-    }
-    
-    openModal('detMdl');
-}
+    const [tipo, valore] = val.split(':');
+    const isRuolo = tipo === 'ruolo';
+    const url = isRuolo ? `${API}/api/messaggi/ruolo` : `${API}/api/messaggi`;
+    const payload = isRuolo ? { ruolo: valore, testo } : { giocatoreId: parseInt(valore, 10), testo };
 
-function calRender() {
-    const grid = document.getElementById('calGrid');
-    if (!grid) return;
-    grid.innerHTML = '';
-
-    // Genera 30 giorni fittizi per il calendario visivo
-    for (let i = 1; i <= 30; i++) {
-        const d = document.createElement('div');
-        d.className = 'cal-day';
-        d.innerHTML = `<span class="day-num">${i}</span>`;
-        
-        // Cerca se ci sono eventi del DB in questo giorno del mese corrente (es. formato "2026-07-XX")
-        const dayStr = i < 10 ? `0${i}` : `${i}`;
-        const hasEvent = currentEvents.some(e => e.date.endsWith(`-${dayStr}`));
-        
-        if (hasEvent) {
-            d.classList.add('has-event');
+    try {
+        const res = await fetch(url, { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
+        if (res.ok) {
+            textEl.value = '';
+            selEl.value = '';
+            await caricaMessaggiInviati();
+            renderDashboardSummary();
+            alert(isRuolo ? '✔ Messaggio inviato al ruolo selezionato.' : '✔ Messaggio inviato.');
+        } else {
+            alert(`Errore invio (${res.status}): ${await res.text()}`);
         }
-        
-        grid.appendChild(d);
+    } catch (err) {
+        console.error('Errore rete invio messaggio:', err);
+        alert('Impossibile raggiungere il server.');
     }
-}
-
-function renderEvTable() {
-    const tbody = document.getElementById('evTbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    currentEvents.forEach(e => {
-        const r = document.createElement('tr');
-        r.innerHTML = `
-            <td>${e.date} ${e.time}</td>
-            <td><span class="badge ${e.type}">${e.type.toUpperCase()}</span></td>
-            <td>${e.title}</td>
-            <td>${e.loc}</td>
-            <td><button class="btn-del" onclick="deleteEvent(${e.id})">Elimina</button></td>
-        `;
-        tbody.appendChild(r);
-    });
-}
-
-function renderMessaggi() {
-    const list = document.getElementById('msgLst');
-    if (!list) return;
-    list.innerHTML = '';
-
-    currentMessages.forEach(m => {
-        const item = document.createElement('div');
-        item.className = 'msg-item';
-        item.innerHTML = `
-            <h4>${m.title} <small>${m.date}</small></h4>
-            <p>${m.body}</p>
-        `;
-        list.appendChild(item);
-    });
-}
-
-function renderPartite() {
-    const container = document.getElementById('partiteList');
-    if (!container) return;
-    container.innerHTML = '';
-
-    currentMatches.forEach(m => {
-        const div = document.createElement('div');
-        div.className = 'match-card';
-        div.innerHTML = `
-            <div class="match-info">${m.date} - ${m.competition}</div>
-            <div class="match-teams">
-                <span><strong>La Mia Squadra</strong></span> 
-                <span class="score">${m.scoreHome} - ${m.scoreAway}</span> 
-                <span>${m.opponent}</span>
-            </div>
-        `;
-        container.appendChild(div);
-    });
-}
-
-// ==========================================
-// LOGICA GRAFICA (SVG)
-// ==========================================
-function drawLineChart(data) {
-    const svg = document.getElementById('lineChart');
-    if (!svg) return;
-    if (data.length === 0) {
-        svg.innerHTML = '<text x="10" y="20">Nessun dato di crescita</text>';
-        return;
-    }
-
-    let pts = "";
-    const stepX = 260 / (data.length - 1 || 1);
-    data.forEach((val, idx) => {
-        const x = 30 + (idx * stepX);
-        const y = 120 - (val * 1); // Scala il valore sull'asse Y
-        pts += `${x},${y} `;
-    });
-
-    svg.innerHTML = `
-        <polyline points="${pts.trim()}" fill="none" stroke="#007bff" stroke-width="3"/>
-        ${data.map((val, idx) => `<circle cx="${30 + (idx * stepX)}" cy="${120 - (val * 1)}" r="4" fill="#fff" stroke="#007bff" stroke-width="2"/>`).join('')}
-    `;
-}
-
-function drawRadar(skills) {
-    const svg = document.getElementById('radarChart');
-    if (!svg) return;
-
-    const center = 100;
-    const maxR = 70;
-    // Angoli fissi per le 5 abilità del radar (Velocità, Resistenza, Tecnica, Tattica, Forza)
-    const angles = [-Math.PI/2, -Math.PI/2 + (2*Math.PI/5), -Math.PI/2 + (4*Math.PI/5), -Math.PI/2 + (6*Math.PI/5), -Math.PI/2 + (8*Math.PI/5)];
-    
-    let pts = "";
-    skills.forEach((sk, i) => {
-        const r = (sk / 100) * maxR;
-        const x = center + r * Math.cos(angles[i]);
-        const y = center + r * Math.sin(angles[i]);
-        pts += `${x},${y} `;
-    });
-
-    svg.innerHTML = `
-        <!-- Background Radar Poly (Max 100) -->
-        <polygon points="${angles.map(a => `${center + maxR*Math.cos(a)},${center + maxR*Math.sin(a)}`).join(' ')}" fill="none" stroke="#e0e0e0" stroke-width="1"/>
-        <!-- Player Stats Poly -->
-        <polygon points="${pts.trim()}" fill="rgba(0, 123, 255, 0.2)" stroke="#007bff" stroke-width="2"/>
-    `;
 }
