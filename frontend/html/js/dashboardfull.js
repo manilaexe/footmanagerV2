@@ -236,7 +236,11 @@ function renderMsgItemHtml(m) {
     const letto = (m.stato || '').toUpperCase() === 'LETTO';
     const d = m.dataOra ? new Date(m.dataOra) : null;
     const quando = d ? d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }) + ' ' + fmtOra(d) : '';
+    const mittenteHtml = m.mittenteNome
+        ? `<div style="font-size:.7rem;color:var(--muted);">Da: ${escapeHtml(m.mittenteNome)}</div>`
+        : '';
     return `<div class="msg-item">
+        ${mittenteHtml}
         <div class="msg-head"><span class="msg-from">→ ${escapeHtml(m.nomeGiocatore || m.giocatoreNome || 'Giocatore')}</span><span class="msg-time">${quando}</span></div>
         <div class="msg-text">${escapeHtml(m.testo || '')}</div>
         <div class="msg-status ${letto ? 'letto' : 'inviato'}">${letto ? '✔✔ Letto' : '✔ Inviato'}</div>

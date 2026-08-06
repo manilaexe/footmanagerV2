@@ -127,7 +127,7 @@ function renderizzaProfilo(g) {
  * Endpoint: GET /api/messaggi/miei
  * Auth:     JWT nel header → il backend identifica il giocatore dal token
  * Risposta: List<MessaggioDto>
- *   { id, testo, dataOra, stato, nomeAllenatore, nomeGiocatore, giocatoreId }
+ *   { id, testo, dataOra, stato, nomeAllenatore, nomeGiocatore, giocatoreId, mittenteNome, mittenteRuolo }
  *
  * stato = "INVIATO" → non ancora letto dal giocatore
  * stato = "LETTO"   → già letto
@@ -210,7 +210,7 @@ function renderizzaMessaggi(messaggi, container) {
             else dataStr = d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }) + ' ' + ora;
         }
 
-        const mittente = m.nomeAllenatore || 'Allenatore';
+        const mittente = m.mittenteNome || m.nomeAllenatore || 'Allenatore';
 
         // Costruisci il div usando le classi CSS già presenti in stylegiocatore.css:
         // .msg-item, .msg-item.unread, .msg-head, .msg-from, .msg-time,

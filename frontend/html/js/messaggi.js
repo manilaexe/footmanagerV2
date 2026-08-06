@@ -129,7 +129,7 @@ function renderizzaListaMessaggiGiocatore() {
     tuttiMessaggi.forEach(m => {
         const dataOraFormatted = formattaDataOra(m.dataOra);
         const letto = (m.stato || '').toUpperCase() === 'LETTO';
-        const mittente = m.nomeAllenatore || 'Allenatore';
+        const mittente = m.mittenteNome || m.nomeAllenatore || 'Allenatore';
 
         const msgItem = document.createElement('div');
         msgItem.className = 'msg-item';
@@ -306,10 +306,14 @@ function renderizzaListaMessaggi() {
         const statusClass = letto ? 'letto' : 'inviato';
         const statusText = letto ? '✔✔ Letto' : '✔ Inviato - Non ancora letto';
         const destinatarioName = m.nomeGiocatore || 'Giocatore';
+        const mittenteHtml = m.mittenteNome
+            ? `<div style="font-size:.72rem;color:var(--muted);margin-bottom:2px;">Da: ${m.mittenteNome}${m.mittenteRuolo ? ' (' + m.mittenteRuolo + ')' : ''}</div>`
+            : '';
 
         const msgItem = document.createElement('div');
         msgItem.className = 'msg-item';
         msgItem.innerHTML = `
+            ${mittenteHtml}
             <div class="msg-header">
                 <span class="msg-to">→ ${destinatarioName}</span>
                 <span class="msg-time">${dataOraFormatted}</span>
