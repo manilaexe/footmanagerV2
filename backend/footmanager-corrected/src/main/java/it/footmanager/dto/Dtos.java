@@ -153,6 +153,8 @@ public class Dtos {
         private String        nomeAllenatore;
         private String        nomeGiocatore;
         private Integer       giocatoreId;    // aggiunto: utile al frontend per raggruppare
+        private String        mittenteNome;   // nome di chi ha davvero scritto il messaggio
+        private String        mittenteRuolo;  // "ALLENATORE" | "STAFF" | "IT" | ...
     }
 
     @Data

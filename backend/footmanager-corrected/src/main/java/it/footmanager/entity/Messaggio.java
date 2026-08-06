@@ -32,6 +32,14 @@ public class Messaggio {
     @JoinColumn(name = "id_allenatore")
     private Allenatore allenatore;
 
+    // Chi ha davvero scritto il messaggio (utente autenticato al momento
+    // dell'invio) — distinto da "allenatore" sopra, che serve solo a risalire
+    // alla squadra quando si invia "per ruolo". Con questo campo l'allenatore
+    // vede solo i propri messaggi, mentre STAFF/IT vedono tutto.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_utente_mittente")
+    private Utente utenteMittente;
+
     @PrePersist
     protected void onCreate() {
         if (dataOra == null) dataOra = LocalDateTime.now();

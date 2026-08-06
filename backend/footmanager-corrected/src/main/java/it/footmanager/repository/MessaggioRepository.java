@@ -17,4 +17,13 @@ public interface MessaggioRepository extends JpaRepository<Messaggio, Integer> {
     // Usata dal riepilogo messaggi: quanti dei messaggi inviati dall'allenatore
     // non sono ancora stati letti dal destinatario.
     long countByAllenatore_IdAndStato(Integer allenatoreId, String stato);
+
+    // ── Mittente reale (utente autenticato che ha scritto il messaggio) ────
+    // Usati per distinguere "vedo solo i miei" (allenatore) da "vedo tutto" (admin).
+    List<Messaggio> findByUtenteMittente_IdOrderByDataOraDesc(Integer utenteId);
+    long countByUtenteMittente_IdAndStato(Integer utenteId, String stato);
+
+    // Vista admin: tutti i messaggi inviati da chiunque, più recenti prima.
+    List<Messaggio> findAllByOrderByDataOraDesc();
+    long countByStato(String stato);
 }
