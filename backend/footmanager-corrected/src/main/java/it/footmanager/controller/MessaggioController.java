@@ -30,8 +30,7 @@ public class MessaggioController {
     @GetMapping("/inviati")
     @PreAuthorize("hasAnyRole('ALLENATORE','STAFF','IT')")
     public List<MessaggioDto> inviati(@AuthenticationPrincipal UserDetails ud) {
-        Integer uid = utenteRepo.findByUsername(ud.getUsername()).orElseThrow().getId();
-        Integer aid = allenatoreRepo.findByUtente_Id(uid).orElseThrow().getId();
+        Integer aid = svc.resolveMittenteId(ud.getUsername());
         return svc.msgInviatiDaAllenatore(aid);
     }
 
@@ -41,8 +40,7 @@ public class MessaggioController {
     @GetMapping("/inviati/non-letti")
     @PreAuthorize("hasAnyRole('ALLENATORE','STAFF','IT')")
     public long inviatiNonLetti(@AuthenticationPrincipal UserDetails ud) {
-        Integer uid = utenteRepo.findByUsername(ud.getUsername()).orElseThrow().getId();
-        Integer aid = allenatoreRepo.findByUtente_Id(uid).orElseThrow().getId();
+        Integer aid = svc.resolveMittenteId(ud.getUsername());
         return svc.inviatiNonLetti(aid);
     }
 
@@ -51,8 +49,7 @@ public class MessaggioController {
     @GetMapping("/inviati/ultimo")
     @PreAuthorize("hasAnyRole('ALLENATORE','STAFF','IT')")
     public MessaggioDto ultimoInviato(@AuthenticationPrincipal UserDetails ud) {
-        Integer uid = utenteRepo.findByUsername(ud.getUsername()).orElseThrow().getId();
-        Integer aid = allenatoreRepo.findByUtente_Id(uid).orElseThrow().getId();
+        Integer aid = svc.resolveMittenteId(ud.getUsername());
         return svc.ultimoInviato(aid);
     }
 
@@ -62,8 +59,8 @@ public class MessaggioController {
     @GetMapping("/giocatori-squadra")
     @PreAuthorize("hasAnyRole('ALLENATORE','STAFF','IT')")
     public List<GiocatoreSelectDto> giocatoriSquadra(@AuthenticationPrincipal UserDetails ud) {
-        Integer uid     = utenteRepo.findByUsername(ud.getUsername()).orElseThrow().getId();
-        Integer idSquad = allenatoreRepo.findByUtente_Id(uid).orElseThrow().getSquadra().getId();
+        Integer aid = svc.resolveMittenteId(ud.getUsername());
+        Integer idSquad = allenatoreRepo.findById(aid).orElseThrow().getSquadra().getId();
         return giocatoreRepo.findBySquadra_Id(idSquad).stream()
                 .map(g -> GiocatoreSelectDto.builder()
                         .id(g.getId())

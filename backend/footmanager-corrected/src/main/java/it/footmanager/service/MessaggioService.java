@@ -49,13 +49,33 @@ public class MessaggioService {
         return lista.isEmpty() ? null : toDto(lista.get(0));
     }
 
+    // ── Risolve l'Allenatore "mittente" per l'utente autenticato ──────────
+    // Se l'utente è davvero un allenatore, usa il suo record. Se invece è
+    // STAFF/IT (che non hanno una riga propria nella tabella "allenatore" —
+    // l'app assume un solo club/un solo staff tecnico condiviso, stesso
+    // presupposto "mono-squadra" già usato altrove, es. DashboardService),
+    // usa l'unico allenatore del club. Senza questo fallback, un utente
+    // STAFF/IT che provava a inviare o leggere i messaggi otteneva un errore
+    // silenzioso e l'operazione non veniva mai completata.
+    @Transactional(readOnly = true)
+    public Allenatore resolveMittente(String username) {
+        Integer uid = utenteRepo.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Utente: " + username))
+                .getId();
+        return allenatoreRepo.findByUtente_Id(uid)
+                .orElseGet(() -> allenatoreRepo.findAll().stream().findFirst()
+                        .orElseThrow(() -> new ResourceNotFoundException("Nessun allenatore configurato nel DB")));
+    }
+
+    // Comoda per il controller: evita di dover esporre/gestire l'entity Allenatore lì.
+    @Transactional(readOnly = true)
+    public Integer resolveMittenteId(String username) {
+        return resolveMittente(username).getId();
+    }
+
     // ── Invia un messaggio a un singolo giocatore ─────────────────────────
     public MessaggioDto invia(InviaMessaggioRequest req, String usernameAllenatore) {
-        Integer uid = utenteRepo.findByUsername(usernameAllenatore)
-                .orElseThrow(() -> new ResourceNotFoundException("Utente: " + usernameAllenatore))
-                .getId();
-        Allenatore all = allenatoreRepo.findByUtente_Id(uid)
-                .orElseThrow(() -> new ResourceNotFoundException("Allenatore: " + usernameAllenatore));
+        Allenatore all = resolveMittente(usernameAllenatore);
         Giocatore g = giocatoreRepo.findById(req.getGiocatoreId())
                 .orElseThrow(() -> new ResourceNotFoundException("Giocatore", Long.valueOf(req.getGiocatoreId())));
 
@@ -72,11 +92,7 @@ public class MessaggioService {
     // dell'allenatore. Viene creata una riga Messaggio per ogni giocatore,
     // così ognuno ha il proprio stato di lettura indipendente.
     public List<MessaggioDto> inviaPerRuolo(InviaMessaggioRuoloRequest req, String usernameAllenatore) {
-        Integer uid = utenteRepo.findByUsername(usernameAllenatore)
-                .orElseThrow(() -> new ResourceNotFoundException("Utente: " + usernameAllenatore))
-                .getId();
-        Allenatore all = allenatoreRepo.findByUtente_Id(uid)
-                .orElseThrow(() -> new ResourceNotFoundException("Allenatore: " + usernameAllenatore));
+        Allenatore all = resolveMittente(usernameAllenatore);
 
         List<Giocatore> destinatari = giocatoreRepo.findBySquadra_IdAndPosizione(
                 all.getSquadra().getId(), req.getRuolo());
