@@ -26,9 +26,9 @@
     <a class="nav-item" href="#"><span>⚙️</span> Impostazioni</a>
     <div class="sidebar-footer">
       <div class="user-card">
-        <div class="avatar">ST</div>
-        <div class="user-info"><strong>Staff Admin</strong><small>Staff / Admin</small></div>
-        <button class="btn-logout" onclick="window.location.href='../login.html'">Esci</button>
+        <div class="avatar" id="sb-avatar">?</div>
+        <div class="user-info"><strong id="sb-nome">—</strong><small id="sb-ruolo">—</small></div>
+        <button class="btn-logout" onclick="logout()">Esci</button>
       </div>
     </div>
   </aside>
@@ -38,18 +38,18 @@
       <h1>Pannello Staff</h1>
       <div class="topbar-right">
         <button class="btn-outline" onclick="switchTab('quiz'); apriModalNuovaDomanda()">+ Aggiungi Quiz</button>
-        <button class="btn-primary" onclick="openModal('modal-utente')">+ Nuovo Utente</button>
+        <button class="btn-primary" onclick="apriModalNuovoUtente()">+ Nuovo Utente</button>
       </div>
     </div>
 
     <div class="content">
       <!-- KPI -->
       <div class="kpi-grid">
-        <div class="kpi green"><div class="num">23</div><div class="lbl">Giocatori</div></div>
-        <div class="kpi blue"><div class="num">4</div><div class="lbl">Allenatori</div></div>
-        <div class="kpi"><div class="num">48</div><div class="lbl">Utenti totali</div></div>
-        <div class="kpi amber"><div class="num">12</div><div class="lbl">Quiz nel DB</div></div>
-        <div class="kpi red"><div class="num">2</div><div class="lbl">Inattivi 30gg</div></div>
+        <div class="kpi green"><div class="num" id="kpi-giocatori">—</div><div class="lbl">Giocatori</div></div>
+        <div class="kpi blue"><div class="num" id="kpi-allenatori">—</div><div class="lbl">Allenatori</div></div>
+        <div class="kpi"><div class="num" id="kpi-utenti">—</div><div class="lbl">Utenti totali</div></div>
+        <div class="kpi amber"><div class="num" id="kpi-quiz">—</div><div class="lbl">Quiz nel DB</div></div>
+        <div class="kpi red"><div class="num" id="kpi-badge">—</div><div class="lbl">Badge nel DB</div></div>
       </div>
 
       <!-- TABS -->
@@ -65,19 +65,14 @@
         <div class="table-card">
           <div class="table-card-header">
             <h2>Gestione Utenti</h2>
-            <input type="search" placeholder="Cerca utente..." style="background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.875rem;padding:6px 10px;outline:none;width:200px;" />
+            <input type="search" id="utenti-search" oninput="renderizzaTabellaUtenti()" placeholder="Cerca utente..." style="background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.875rem;padding:6px 10px;outline:none;width:200px;" />
           </div>
           <table>
             <thead>
-              <tr><th>Username</th><th>Ruolo</th><th>Entità</th><th>Ultimo accesso</th><th>Stato</th><th>Azioni</th></tr>
+              <tr><th>Username</th><th>Ruolo</th><th>Azioni</th></tr>
             </thead>
-            <tbody>
-              <tr><td>marco.conti</td><td><span class="pill pill-blue">Allenatore</span></td><td>Bologna FC</td><td>Oggi 09:12</td><td><span class="pill pill-green">Attivo</span></td><td><div class="actions"><button class="btn-sm">✏️ Modifica</button><button class="btn-sm danger">🗑 Elimina</button></div></td></tr>
-              <tr><td>l.rossi</td><td><span class="pill pill-amber">Giocatore</span></td><td>Bologna FC</td><td>Oggi 08:45</td><td><span class="pill pill-green">Attivo</span></td><td><div class="actions"><button class="btn-sm">✏️ Modifica</button><button class="btn-sm danger">🗑 Elimina</button></div></td></tr>
-              <tr><td>m.bianchi</td><td><span class="pill pill-amber">Giocatore</span></td><td>Bologna FC</td><td>Ieri</td><td><span class="pill pill-green">Attivo</span></td><td><div class="actions"><button class="btn-sm">✏️ Modifica</button><button class="btn-sm danger">🗑 Elimina</button></div></td></tr>
-              <tr><td>dir.ferrari</td><td><span class="pill pill-gray">Dirigenza</span></td><td>Bologna FC</td><td>22 Mag</td><td><span class="pill pill-green">Attivo</span></td><td><div class="actions"><button class="btn-sm">✏️ Modifica</button><button class="btn-sm danger">🗑 Elimina</button></div></td></tr>
-              <tr><td>it.admin</td><td><span class="pill pill-red">IT</span></td><td>Sistema</td><td>Oggi 07:00</td><td><span class="pill pill-green">Attivo</span></td><td><div class="actions"><button class="btn-sm">✏️ Modifica</button><button class="btn-sm danger">🗑 Elimina</button></div></td></tr>
-              <tr><td>a.ferrari</td><td><span class="pill pill-amber">Giocatore</span></td><td>Bologna FC</td><td>18 Apr</td><td><span class="pill pill-red">Inattivo</span></td><td><div class="actions"><button class="btn-sm">✏️ Modifica</button><button class="btn-sm danger">🗑 Elimina</button></div></td></tr>
+            <tbody id="utenti-tbody">
+              <tr><td colspan="3" style="text-align:center;color:var(--muted);">Caricamento utenti...</td></tr>
             </tbody>
           </table>
         </div>
@@ -86,12 +81,11 @@
       <!-- TAB SQUADRE -->
       <div class="tab-panel" id="tab-squadre">
         <div class="table-card">
-          <div class="table-card-header"><h2>Squadre</h2><button class="btn-primary" onclick="openModal('modal-squadra')">+ Nuova Squadra</button></div>
+          <div class="table-card-header"><h2>Squadre</h2><button class="btn-primary" onclick="apriModalNuovaSquadra()">+ Nuova Squadra</button></div>
           <table>
-            <thead><tr><th>Nome</th><th>Categoria</th><th>Allenatore</th><th>Giocatori</th><th>Azioni</th></tr></thead>
-            <tbody>
-              <tr><td>Bologna FC Prima Squadra</td><td>Serie A</td><td>Marco Conti</td><td>23</td><td><div class="actions"><button class="btn-sm">✏️</button><button class="btn-sm danger">🗑</button></div></td></tr>
-              <tr><td>Bologna FC Primavera</td><td>Primavera 1</td><td>Luca Mori</td><td>22</td><td><div class="actions"><button class="btn-sm">✏️</button><button class="btn-sm danger">🗑</button></div></td></tr>
+            <thead><tr><th>Nome</th><th>Categoria</th><th>Giocatori</th><th>Azioni</th></tr></thead>
+            <tbody id="squadre-tbody">
+              <tr><td colspan="4" style="text-align:center;color:var(--muted);">Caricamento squadre...</td></tr>
             </tbody>
           </table>
         </div>
@@ -113,14 +107,11 @@
       <!-- TAB BADGE -->
       <div class="tab-panel" id="tab-badge">
         <div class="table-card">
-          <div class="table-card-header"><h2>Badge disponibili</h2><button class="btn-primary">+ Nuovo Badge</button></div>
+          <div class="table-card-header"><h2>Badge disponibili</h2><button class="btn-primary" onclick="apriModalNuovoBadge()">+ Nuovo Badge</button></div>
           <table>
-            <thead><tr><th>Nome</th><th>Descrizione</th><th>Soglia punti</th><th>Azioni</th></tr></thead>
-            <tbody>
-              <tr><td>🌱 Apprendista storico</td><td>10 risposte corrette</td><td>100</td><td><div class="actions"><button class="btn-sm">✏️</button><button class="btn-sm danger">🗑</button></div></td></tr>
-              <tr><td>📚 Storico in erba</td><td>30 risposte corrette</td><td>300</td><td><div class="actions"><button class="btn-sm">✏️</button><button class="btn-sm danger">🗑</button></div></td></tr>
-              <tr><td>🏅 Esperto del club</td><td>60 risposte corrette</td><td>600</td><td><div class="actions"><button class="btn-sm">✏️</button><button class="btn-sm danger">🗑</button></div></td></tr>
-              <tr><td>🔥 Bandiera del club</td><td>90+ risposte corrette</td><td>900</td><td><div class="actions"><button class="btn-sm">✏️</button><button class="btn-sm danger">🗑</button></div></td></tr>
+            <thead><tr><th>Nome</th><th>Soglia punti</th><th>Azioni</th></tr></thead>
+            <tbody id="badge-tbody">
+              <tr><td colspan="3" style="text-align:center;color:var(--muted);">Caricamento badge...</td></tr>
             </tbody>
           </table>
         </div>
@@ -133,25 +124,26 @@
 <!-- MODAL NUOVO UTENTE -->
 <div class="modal-overlay" id="modal-utente">
   <div class="modal">
-    <h3>Crea Nuovo Utente</h3>
+    <h3 id="modal-utente-titolo">Crea Nuovo Utente</h3>
+    <input type="hidden" id="utente-id-editing" value="" />
     <div class="form-grid">
-      <div class="form-group"><label>Username</label><input type="text" placeholder="es. m.verdi" /></div>
-      <div class="form-group"><label>Password temporanea</label><input type="password" placeholder="••••••••" /></div>
-      <div class="form-group"><label>Nome</label><input type="text" placeholder="Mario" /></div>
-      <div class="form-group"><label>Cognome</label><input type="text" placeholder="Verdi" /></div>
+      <div class="form-group"><label>Username</label><input type="text" id="utente-username" placeholder="es. m.verdi" /></div>
+      <div class="form-group"><label id="utente-password-label">Password temporanea</label><input type="password" id="utente-password" placeholder="••••••••" /></div>
+      <div class="form-group"><label>Nome</label><input type="text" id="utente-nome" placeholder="Mario" /></div>
+      <div class="form-group"><label>Cognome</label><input type="text" id="utente-cognome" placeholder="Verdi" /></div>
       <div class="form-group"><label>Ruolo</label>
-        <select>
-          <option>Giocatore</option><option>Allenatore</option>
-          <option>Staff</option><option>Dirigenza</option><option>IT</option>
+        <select id="utente-ruolo" onchange="aggiornaVisibilitaSquadraUtente()">
+          <option value="GIOCATORE">Giocatore</option><option value="ALLENATORE">Allenatore</option>
+          <option value="STAFF">Staff</option><option value="DIRIGENZA">Dirigenza</option><option value="IT">IT</option>
         </select>
       </div>
-      <div class="form-group"><label>Squadra</label>
-        <select><option>Bologna FC Prima Squadra</option><option>Bologna FC Primavera</option></select>
+      <div class="form-group" id="utente-squadra-group"><label>Squadra</label>
+        <select id="utente-squadra"></select>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeModal('modal-utente')">Annulla</button>
-      <button class="btn-primary" onclick="closeModal('modal-utente');alert('Utente creato!')">Crea Utente</button>
+      <button class="btn-primary" onclick="salvaUtente()">Crea Utente</button>
     </div>
   </div>
 </div>
@@ -200,14 +192,31 @@
 <!-- MODAL SQUADRA -->
 <div class="modal-overlay" id="modal-squadra">
   <div class="modal">
-    <h3>Nuova Squadra</h3>
+    <h3 id="modal-squadra-titolo">Nuova Squadra</h3>
+    <input type="hidden" id="squadra-id-editing" value="" />
     <div class="form-grid" style="grid-template-columns:1fr">
-      <div class="form-group"><label>Nome squadra</label><input type="text" placeholder="es. Bologna FC Primavera" /></div>
-      <div class="form-group"><label>Categoria</label><input type="text" placeholder="es. Serie B" /></div>
+      <div class="form-group"><label>Nome squadra</label><input type="text" id="squadra-nome" placeholder="es. Bologna FC Primavera" /></div>
+      <div class="form-group"><label>Categoria</label><input type="text" id="squadra-categoria" placeholder="es. Serie B" /></div>
     </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeModal('modal-squadra')">Annulla</button>
-      <button class="btn-primary" onclick="closeModal('modal-squadra');alert('Squadra creata!')">Salva</button>
+      <button class="btn-primary" onclick="salvaSquadra()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL BADGE -->
+<div class="modal-overlay" id="modal-badge">
+  <div class="modal">
+    <h3 id="modal-badge-titolo">Nuovo Badge</h3>
+    <input type="hidden" id="badge-id-editing" value="" />
+    <div class="form-grid" style="grid-template-columns:1fr">
+      <div class="form-group"><label>Nome badge</label><input type="text" id="badge-nome" placeholder="es. 🌱 Apprendista storico" /></div>
+      <div class="form-group"><label>Soglia punti</label><input type="number" id="badge-soglia" value="100" min="0" /></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-badge')">Annulla</button>
+      <button class="btn-primary" onclick="salvaBadge()">Salva Badge</button>
     </div>
   </div>
 </div>
