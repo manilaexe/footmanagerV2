@@ -40,10 +40,19 @@ public class GiocatoreController {
         return svc.topMarcatori(squadraId); 
     }
 
-    // ── METODO POST MANCANTE AGGIUNTO ──
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public GiocatoreDto crea(@RequestBody CreaGiocatoreRequest req) {
         return svc.creaGiocatore(req);
+    }
+
+    // ── PUT /api/giocatori/{id} ─────────────────────────────────────────────
+    // Aggiorna i dati anagrafici di un giocatore esistente (nome, cognome,
+    // numero, posizione, piede, nazionalità, altezza, peso, data nascita).
+    // Permessi già garantiti da SecurityConfig sulla regola generale
+    // "/api/giocatori/**" per i metodi non-GET: STAFF, ALLENATORE, IT.
+    @PutMapping("/{id}")
+    public GiocatoreDto aggiorna(@PathVariable Integer id, @RequestBody CreaGiocatoreRequest req) {
+        return svc.aggiornaGiocatore(id, req);
     }
 }

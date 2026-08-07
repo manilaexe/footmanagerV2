@@ -50,7 +50,7 @@
       <h1>Rosa della Squadra</h1>
       <div class="topbar-right">
         <button class="btn-ghost" id="btn-export">↓ Esporta CSV</button>
-        <button class="btn-primary" onclick="openModal('modal-add')">+ Aggiungi Giocatore</button>
+        <button class="btn-primary" onclick="apriModalAggiungi()">+ Aggiungi Giocatore</button>
       </div>
     </div>
 
@@ -117,34 +117,48 @@
     <div class="modal-body" id="detail-body"></div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeModal('modal-detail')">Chiudi</button>
-      <button class="btn-primary">✏️ Modifica</button>
+      <button class="btn-primary" id="btn-apri-modifica" onclick="apriModalModifica()">✏️ Modifica</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL AGGIUNGI GIOCATORE -->
+<!-- MODAL AGGIUNGI / MODIFICA GIOCATORE -->
+<!-- Stesso modal riusato per creazione e modifica: form-id-giocatore vuoto = crea,
+     valorizzato = modifica. Il titolo e il testo del pulsante Salva cambiano
+     dinamicamente via JS (vedi apriModalAggiungi()/apriModalModifica() in rosa.js). -->
 <div class="modal-overlay" id="modal-add">
   <div class="modal">
     <div style="padding:1.5rem 2rem 0">
-      <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;text-transform:uppercase;margin-bottom:1.25rem">Aggiungi Giocatore</h3>
+      <h3 id="form-titolo" style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;text-transform:uppercase;margin-bottom:1.25rem">Aggiungi Giocatore</h3>
+      <div id="form-errore" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);border-radius:8px;padding:.6rem .9rem;font-size:.82rem;color:#f87171;margin-bottom:1rem"></div>
+      <input type="hidden" id="form-id-giocatore" value="" />
       <div class="form-grid">
-        <div class="form-group"><label>Nome</label><input type="text" placeholder="Mario" /></div>
-        <div class="form-group"><label>Cognome</label><input type="text" placeholder="Rossi" /></div>
-        <div class="form-group"><label>Numero maglia</label><input type="number" placeholder="10" /></div>
+        <div class="form-group"><label>Nome</label><input type="text" id="form-nome" placeholder="Mario" /></div>
+        <div class="form-group"><label>Cognome</label><input type="text" id="form-cognome" placeholder="Rossi" /></div>
+        <div class="form-group"><label>Numero maglia</label><input type="number" id="form-numero" placeholder="10" /></div>
         <div class="form-group"><label>Posizione</label>
-          <select><option>Attaccante</option><option>Centrocampista</option><option>Difensore</option><option>Portiere</option></select>
+          <select id="form-posizione">
+            <option value="Attaccante">Attaccante</option>
+            <option value="Centrocampista">Centrocampista</option>
+            <option value="Difensore">Difensore</option>
+            <option value="Portiere">Portiere</option>
+          </select>
         </div>
         <div class="form-group"><label>Piede</label>
-          <select><option>Destro</option><option>Sinistro</option><option>Ambidestro</option></select>
+          <select id="form-piede">
+            <option value="Destro">Destro</option>
+            <option value="Sinistro">Sinistro</option>
+            <option value="Ambidestro">Ambidestro</option>
+          </select>
         </div>
-        <div class="form-group"><label>Nazionalità</label><input type="text" placeholder="ITA" /></div>
-        <div class="form-group"><label>Altezza (cm)</label><input type="number" placeholder="180" /></div>
-        <div class="form-group"><label>Username account</label><input type="text" placeholder="m.rossi" /></div>
+        <div class="form-group"><label>Nazionalità</label><input type="text" id="form-nazionalita" placeholder="ITA" /></div>
+        <div class="form-group"><label>Altezza (cm)</label><input type="number" id="form-altezza" placeholder="180" /></div>
+        <div class="form-group"><label>Peso (kg)</label><input type="number" id="form-peso" placeholder="75" /></div>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeModal('modal-add')">Annulla</button>
-      <button class="btn-primary" onclick="closeModal('modal-add');alert('Giocatore aggiunto!')">Salva Giocatore</button>
+      <button class="btn-primary" id="btn-salva-giocatore" onclick="salvaGiocatore()">Salva Giocatore</button>
     </div>
   </div>
 </div>

@@ -377,7 +377,46 @@ public class GiocatoreService {
         return toDto(salvato);
     }
 
-    // ── HELPER: crea la riga movimento/portiere vuota se manca ─────────────
+    // ── AGGIORNAMENTO GIOCATORE ─────────────────────────────────────────────
+    // Aggiorna i dati anagrafici (nome, cognome, numero, posizione, piede...).
+    // Se la posizione cambia categoria (portiere ↔ movimento), crea la riga
+    // statistica_movimento/statistica_portiere mancante per la nuova
+    // categoria — senza toccare quella vecchia, che semplicemente non viene
+    // più letta da getStatistiche() una volta cambiata isPortiere().
+    @Transactional
+    public GiocatoreDto aggiornaGiocatore(Integer id, CreaGiocatoreRequest req) {
+        Giocatore g = get(id);
+
+        if (req.getSquadraId() != null && !req.getSquadraId().equals(
+                g.getSquadra() != null ? g.getSquadra().getId() : null)) {
+            var squadra = squadraRepo.findById(req.getSquadraId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Squadra", Long.valueOf(req.getSquadraId())));
+            g.setSquadra(squadra);
+        }
+
+        g.setNome(req.getNome());
+        g.setCognome(req.getCognome());
+        g.setNumero(req.getNumero());
+        g.setPosizione(req.getPosizione());
+        g.setPiede(req.getPiede());
+        g.setNazionalita(req.getNazionalita());
+        g.setAltezza(req.getAltezza());
+        g.setPeso(req.getPeso());
+        g.setDataNascita(req.getDataNascita());
+
+        Giocatore salvato = giocatoreRepo.save(g);
+
+        // Assicura che esista la riga di dettaglio giusta per la posizione attuale
+        if (salvato.isPortiere()) {
+            if (statPortiereRepo.findByGiocatore_Id(salvato.getId()).isEmpty())
+                creaStatisticaPortiereVuota(salvato);
+        } else {
+            if (statMovimentoRepo.findByGiocatore_Id(salvato.getId()).isEmpty())
+                creaStatisticaMovimentoVuota(salvato);
+        }
+
+        return toDto(salvato);
+    }
     // Usati sia in creazione sia come fallback lazy (es. giocatore importato
     // via SQL senza le righe di dettaglio, o creato prima di questa modifica).
     private StatisticaMovimento creaStatisticaMovimentoVuota(Giocatore g) {

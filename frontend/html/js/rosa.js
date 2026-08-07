@@ -1,6 +1,7 @@
 // Variabile globale per salvare i giocatori scaricati e filtrarli in locale senza rifare chiamate al DB
 let tuttiGiocatori = [];
 let filtroRuolo = 'tutti';
+let idGiocatoreDettaglioCorrente = null;  // usato da apriModalModifica() per sapere chi modificare
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Esegue il controllo sulla validità del login
@@ -26,6 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sbName) sbName.textContent = cognome ? `${nome} ${cognome}` : nome;
     if (sbRole) sbRole.textContent = ruolo;
     if (sbAv)   renderAvatar(sbAv, (nome[0]||('')).toUpperCase() + (cognome[0]||nome[1]||'').toUpperCase());
+
+    // La DIRIGENZA vede la rosa in sola lettura: niente aggiunta/modifica giocatori
+    // (il backend rifiuterebbe comunque POST/PUT, ma nascondiamo i pulsanti per UX pulita)
+    if (ruolo === 'DIRIGENZA') {
+        document.querySelectorAll('.topbar-right .btn-primary').forEach(b => b.style.display = 'none');
+        const btnMod = document.getElementById('btn-apri-modifica');
+        if (btnMod) btnMod.style.display = 'none';
+    }
 
     // Imposta la vista di base (Griglia) all'avvio della pagina
     setView('grid');
@@ -285,6 +294,8 @@ function mostraDettaglio(idGiocatore) {
     const giocatore = tuttiGiocatori.find(g => (g.idGiocatore === idGiocatore || g.id === idGiocatore));
     if (!giocatore) return;
 
+    idGiocatoreDettaglioCorrente = giocatore.idGiocatore || giocatore.id;
+
     const dataNascitaFormatted = giocatore.dataNascita || giocatore.data_nascita;
 
     const detailHero = document.getElementById('detail-hero');
@@ -326,4 +337,152 @@ function openModal(id) {
 function closeModal(id) {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
+}
+// --- 7. MODAL AGGIUNGI / MODIFICA GIOCATORE ---
+// Stesso modal, stesso form: form-id-giocatore vuoto = creazione (POST),
+// valorizzato = modifica (PUT). Titolo e testo del pulsante cambiano di conseguenza.
+
+function resetFormGiocatore() {
+    document.getElementById('form-id-giocatore').value = '';
+    ['form-nome','form-cognome','form-numero','form-nazionalita','form-altezza','form-peso']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const pos = document.getElementById('form-posizione');
+    if (pos) pos.value = 'Attaccante';
+    const piede = document.getElementById('form-piede');
+    if (piede) piede.value = 'Destro';
+    const err = document.getElementById('form-errore');
+    if (err) err.style.display = 'none';
+}
+
+function apriModalAggiungi() {
+    resetFormGiocatore();
+    const titolo = document.getElementById('form-titolo');
+    if (titolo) titolo.textContent = 'Aggiungi Giocatore';
+    const btn = document.getElementById('btn-salva-giocatore');
+    if (btn) btn.textContent = 'Salva Giocatore';
+    openModal('modal-add');
+}
+
+// Chiamata dal pulsante "✏️ Modifica" nel modal dettaglio: precompila il
+// form con i dati del giocatore attualmente aperto (idGiocatoreDettaglioCorrente,
+// impostato da mostraDettaglio()).
+function apriModalModifica() {
+    const g = tuttiGiocatori.find(x => (x.idGiocatore === idGiocatoreDettaglioCorrente || x.id === idGiocatoreDettaglioCorrente));
+    if (!g) return;
+
+    resetFormGiocatore();
+
+    document.getElementById('form-id-giocatore').value = idGiocatoreDettaglioCorrente;
+    document.getElementById('form-nome').value        = g.nome || '';
+    document.getElementById('form-cognome').value      = g.cognome || '';
+    document.getElementById('form-numero').value       = g.numero || '';
+    document.getElementById('form-nazionalita').value  = g.nazionalita || '';
+    document.getElementById('form-altezza').value      = g.altezza || '';
+    document.getElementById('form-peso').value         = g.peso || '';
+
+    const posSelect = document.getElementById('form-posizione');
+    if (posSelect) {
+        const posValore = g.posizione || g.ruolo || 'Attaccante';
+        // Se la posizione salvata non corrisponde esattamente a una delle opzioni
+        // (es. "ATT" invece di "Attaccante"), la aggiunge al volo per non perderla.
+        if (![...posSelect.options].some(o => o.value === posValore)) {
+            const opt = document.createElement('option');
+            opt.value = posValore; opt.textContent = posValore;
+            posSelect.appendChild(opt);
+        }
+        posSelect.value = posValore;
+    }
+
+    const piedeSelect = document.getElementById('form-piede');
+    if (piedeSelect) piedeSelect.value = g.piede || 'Destro';
+
+    closeModal('modal-detail');
+
+    const titolo = document.getElementById('form-titolo');
+    if (titolo) titolo.textContent = `Modifica ${g.nome} ${g.cognome}`;
+    const btn = document.getElementById('btn-salva-giocatore');
+    if (btn) btn.textContent = 'Salva Modifiche';
+
+    openModal('modal-add');
+}
+
+function mostraErroreForm(msg) {
+    const err = document.getElementById('form-errore');
+    if (!err) return;
+    err.textContent = '⚠️ ' + msg;
+    err.style.display = 'block';
+}
+
+// Crea (POST) o aggiorna (PUT) un giocatore a seconda che form-id-giocatore
+// sia vuoto o valorizzato. Stesso payload in entrambi i casi: il backend
+// (CreaGiocatoreRequest) accetta la stessa struttura per crea() e aggiorna().
+async function salvaGiocatore() {
+    const idModifica = document.getElementById('form-id-giocatore').value;
+    const nome       = document.getElementById('form-nome').value.trim();
+    const cognome    = document.getElementById('form-cognome').value.trim();
+    const numero     = document.getElementById('form-numero').value;
+    const posizione  = document.getElementById('form-posizione').value;
+    const piede      = document.getElementById('form-piede').value;
+    const nazionalita = document.getElementById('form-nazionalita').value.trim();
+    const altezza    = document.getElementById('form-altezza').value;
+    const peso       = document.getElementById('form-peso').value;
+
+    if (!nome || !cognome) {
+        mostraErroreForm('Nome e cognome sono obbligatori.');
+        return;
+    }
+
+    const idSquadra = localStorage.getItem('idSquadra');
+    const payload = {
+        nome, cognome,
+        numero: numero ? parseInt(numero, 10) : null,
+        posizione, piede,
+        nazionalita: nazionalita || null,
+        altezza: altezza ? parseInt(altezza, 10) : null,
+        peso: peso ? parseInt(peso, 10) : null,
+        squadraId: idSquadra ? parseInt(idSquadra, 10) : null
+    };
+
+    const headers = typeof getAuthHeaders === 'function'
+        ? getAuthHeaders()
+        : { 'Authorization': `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json' };
+
+    const btn = document.getElementById('btn-salva-giocatore');
+    if (btn) { btn.disabled = true; btn.textContent = idModifica ? 'Salvataggio…' : 'Creazione…'; }
+
+    try {
+        const url    = idModifica ? `http://localhost:8080/api/giocatori/${idModifica}` : 'http://localhost:8080/api/giocatori';
+        const method = idModifica ? 'PUT' : 'POST';
+
+        const res = await fetch(url, { method, headers, body: JSON.stringify(payload) });
+
+        if (res.status === 401 || res.status === 403) {
+            mostraErroreForm('Non hai i permessi per questa operazione.');
+            return;
+        }
+        if (!res.ok) {
+            mostraErroreForm(`Errore dal server (${res.status}). Riprova.`);
+            return;
+        }
+
+        const giocatoreSalvato = await res.json();
+
+        if (idModifica) {
+            // Sostituisce il giocatore modificato nella cache locale
+            const idx = tuttiGiocatori.findIndex(g => (g.idGiocatore || g.id) === parseInt(idModifica, 10));
+            if (idx > -1) tuttiGiocatori[idx] = { ...tuttiGiocatori[idx], ...giocatoreSalvato };
+        } else {
+            tuttiGiocatori.push(giocatoreSalvato);
+        }
+
+        aggiornaSommario(tuttiGiocatori);
+        filterPlayers();   // ri-renderizza rispettando eventuali filtri/ricerca attivi
+        closeModal('modal-add');
+
+    } catch (err) {
+        console.error('Errore salvataggio giocatore:', err);
+        mostraErroreForm('Server non raggiungibile.');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = idModifica ? 'Salva Modifiche' : 'Salva Giocatore'; }
+    }
 }
