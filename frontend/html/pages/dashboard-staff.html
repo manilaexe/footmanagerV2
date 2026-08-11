@@ -140,6 +140,36 @@
       <div class="form-group" id="utente-squadra-group"><label>Squadra</label>
         <select id="utente-squadra"></select>
       </div>
+      <div class="form-group" id="utente-posizione-group"><label>Posizione</label>
+        <select id="utente-posizione">
+          <option value="Portiere">Portiere</option>
+          <option value="Difensore">Difensore</option>
+          <option value="Centrocampista">Centrocampista</option>
+          <option value="Attaccante">Attaccante</option>
+        </select>
+      </div>
+      <div class="form-group" id="utente-piede-group"><label>Piede</label>
+        <select id="utente-piede">
+          <option value="Destro">Destro</option>
+          <option value="Sinistro">Sinistro</option>
+          <option value="Ambidestro">Ambidestro</option>
+        </select>
+      </div>
+      <div class="form-group" id="utente-numero-group"><label>Numero di maglia</label>
+        <input type="number" id="utente-numero" placeholder="es. 9" min="1" max="99" />
+      </div>
+      <div class="form-group" id="utente-peso-group"><label>Peso (kg)</label>
+        <input type="number" id="utente-peso" placeholder="es. 75" min="0" />
+      </div>
+      <div class="form-group" id="utente-altezza-group"><label>Altezza (cm)</label>
+        <input type="number" id="utente-altezza" placeholder="es. 180" min="0" />
+      </div>
+      <div class="form-group" id="utente-datanascita-group"><label>Data di nascita</label>
+        <input type="date" id="utente-datanascita" />
+      </div>
+      <div class="form-group" id="utente-nazionalita-group"><label>Nazionalità</label>
+        <input type="text" id="utente-nazionalita" placeholder="es. Italia" />
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeModal('modal-utente')">Annulla</button>

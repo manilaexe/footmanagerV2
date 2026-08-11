@@ -131,8 +131,18 @@ function renderizzaTabellaUtenti() {
 
 function aggiornaVisibilitaSquadraUtente() {
     const ruolo = document.getElementById('utente-ruolo')?.value;
-    const group = document.getElementById('utente-squadra-group');
-    if (group) group.style.display = (ruolo === 'GIOCATORE' || ruolo === 'ALLENATORE') ? '' : 'none';
+    const mostraSquadra = (ruolo === 'GIOCATORE' || ruolo === 'ALLENATORE');
+    const mostraGiocatore = (ruolo === 'GIOCATORE');
+
+    const squadraGroup = document.getElementById('utente-squadra-group');
+    if (squadraGroup) squadraGroup.style.display = mostraSquadra ? '' : 'none';
+
+    ['utente-posizione-group', 'utente-piede-group', 'utente-altezza-group', 'utente-nazionalita-group',
+     'utente-numero-group', 'utente-peso-group', 'utente-datanascita-group']
+        .forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = mostraGiocatore ? '' : 'none';
+        });
 }
 
 function apriModalNuovoUtente() {
@@ -148,6 +158,20 @@ function apriModalNuovoUtente() {
     document.getElementById('utente-cognome').disabled = false;
     document.getElementById('utente-ruolo').value = 'GIOCATORE';
     document.getElementById('utente-ruolo').disabled = false;
+    document.getElementById('utente-posizione').value = 'Attaccante';
+    document.getElementById('utente-posizione').disabled = false;
+    document.getElementById('utente-piede').value = 'Destro';
+    document.getElementById('utente-piede').disabled = false;
+    document.getElementById('utente-altezza').value = '';
+    document.getElementById('utente-altezza').disabled = false;
+    document.getElementById('utente-nazionalita').value = '';
+    document.getElementById('utente-nazionalita').disabled = false;
+    document.getElementById('utente-numero').value = '';
+    document.getElementById('utente-numero').disabled = false;
+    document.getElementById('utente-peso').value = '';
+    document.getElementById('utente-peso').disabled = false;
+    document.getElementById('utente-datanascita').value = '';
+    document.getElementById('utente-datanascita').disabled = false;
     popolaSelectSquadraUtente();
     aggiornaVisibilitaSquadraUtente();
     openModal('modal-utente');
@@ -172,6 +196,18 @@ function apriModalModificaUtente(id) {
     document.getElementById('utente-cognome').disabled = true;
     document.getElementById('utente-ruolo').value = u.ruolo;
     document.getElementById('utente-ruolo').disabled = true;
+    document.getElementById('utente-posizione').disabled = true;
+    document.getElementById('utente-piede').disabled = true;
+    document.getElementById('utente-altezza').value = '';
+    document.getElementById('utente-altezza').disabled = true;
+    document.getElementById('utente-nazionalita').value = '';
+    document.getElementById('utente-nazionalita').disabled = true;
+    document.getElementById('utente-numero').value = '';
+    document.getElementById('utente-numero').disabled = true;
+    document.getElementById('utente-peso').value = '';
+    document.getElementById('utente-peso').disabled = true;
+    document.getElementById('utente-datanascita').value = '';
+    document.getElementById('utente-datanascita').disabled = true;
     aggiornaVisibilitaSquadraUtente();
     openModal('modal-utente');
 }
@@ -194,6 +230,19 @@ async function salvaUtente() {
         cognome: document.getElementById('utente-cognome').value.trim(),
         squadraId: document.getElementById('utente-squadra').value ? parseInt(document.getElementById('utente-squadra').value, 10) : null
     };
+
+    if (payload.nomeRuolo === 'GIOCATORE') {
+        payload.posizione = document.getElementById('utente-posizione').value;
+        payload.piede = document.getElementById('utente-piede').value;
+        payload.nazionalita = document.getElementById('utente-nazionalita').value.trim() || null;
+        const altezzaVal = document.getElementById('utente-altezza').value;
+        payload.altezza = altezzaVal ? parseInt(altezzaVal, 10) : null;
+        const pesoVal = document.getElementById('utente-peso').value;
+        payload.peso = pesoVal ? parseInt(pesoVal, 10) : null;
+        const numeroVal = document.getElementById('utente-numero').value;
+        payload.numero = numeroVal ? parseInt(numeroVal, 10) : null;
+        payload.dataNascita = document.getElementById('utente-datanascita').value || null;
+    }
 
     if (!payload.username) { alert('Lo username è obbligatorio.'); return; }
     if (!isModifica && !payload.password) { alert('La password è obbligatoria per un nuovo utente.'); return; }

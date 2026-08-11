@@ -24,6 +24,14 @@ public class Dtos {
         private String  nome;
         private String  cognome;
         private Integer squadraId;
+        // Valorizzati solo quando nomeRuolo = "GIOCATORE"; ignorati per gli altri ruoli.
+        private String    posizione;    // es. "Attaccante", "Portiere"...
+        private String    piede;        // "Destro" | "Sinistro" | "Ambidestro"
+        private String    nazionalita;
+        private Integer   altezza;      // cm
+        private Integer   peso;         // kg
+        private Integer   numero;       // numero di maglia
+        private LocalDate dataNascita;
     }
 
     // ── Giocatore ─────────────────────────────────────────────────────────

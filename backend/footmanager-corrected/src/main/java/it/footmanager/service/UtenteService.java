@@ -56,6 +56,13 @@ public class UtenteService {
                 g.setSquadra(sq);
                 g.setNome(req.getNome() != null ? req.getNome() : "");
                 g.setCognome(req.getCognome() != null ? req.getCognome() : "");
+                g.setPosizione(req.getPosizione());
+                g.setPiede(req.getPiede());
+                g.setNazionalita(req.getNazionalita());
+                g.setAltezza(req.getAltezza());
+                g.setPeso(req.getPeso());
+                g.setNumero(req.getNumero());
+                g.setDataNascita(req.getDataNascita());
                 giocatoreRepo.save(g);
                 StatisticaGiocatore s = new StatisticaGiocatore();
                 s.setGiocatore(g);
