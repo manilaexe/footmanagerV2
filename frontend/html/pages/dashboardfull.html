@@ -1,146 +1,258 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>FootManager – Allenatore</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet"/>
-<link href="/html/css/styledashboard.css" rel="stylesheet" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FootManager – Staff</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
+    <link href="/html/css/stylestaff.css" rel="stylesheet" />
+    
 </head>
 <body>
 <div class="app">
-
-<!-- SIDEBAR -->
-<aside class="sidebar">
-  <div class="sidebar-logo">
-    <div class="logo-icon">⚽</div>
-    <span class="logo-text">FootManager</span>
-  </div>
-  <nav class="nav-section">
-    <div class="nav-label">Principale</div>
-    <a class="nav-item active" href="#"><span class="ico">🏠</span>Dashboard</a>
-    <a class="nav-item" href="/html/rosa.html"><span class="ico">👥</span>Rosa</a>
-    <a class="nav-item" href="/html/calendario.html"><span class="ico">📅</span>Calendario</a>
-    <a class="nav-item" href="/html/statistiche.html"><span class="ico">📊</span>Statistiche</a>
-    <a class="nav-item" href="/html/messaggi.html"><span class="ico">💬</span>Messaggi<span class="nav-badge" id="msg-badge">3</span></a>
-    <a class="nav-item" href="/html/classifica.html"><span class="ico">🏆</span>Classifica</a>
-  </nav>
-  <nav class="nav-section">
-    <div class="nav-label">Account</div>
-    <a class="nav-item" href="/html/impostazioni.html"><span class="ico">⚙️</span>Impostazioni</a>
-  </nav>
-  <div class="sidebar-footer">
-    <div class="user-card">
-      <div class="user-avatar" id="sb-avatar">?</div>
-      <div class="user-info"><strong id="sb-nome">—</strong><small id="sb-ruolo">—</small></div>
-      <button class="btn-logout" onclick="logout()">Esci</button>
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="icon">⚽</div>
+      <span>FootManager</span>
     </div>
-  </div>
-</aside>
-
-<!-- MAIN -->
-<div class="main">
-  <div class="topbar">
-    <h1 id="page-title">Dashboard</h1>
-    <div class="topbar-right" id="topbar-actions"></div>
-  </div>
-  <div class="content-area">
-
-    <!-- ===== DASHBOARD ===== -->
-    <div class="section active" id="sec-dashboard">
-      <div class="grid-4">
-        <div class="stat-card c-green"><div class="stat-label">Giocatori in rosa</div><div class="stat-value" id="dash-kpi-giocatori">—</div><div class="stat-sub" id="dash-kpi-giocatori-sub">—</div></div>
-        <div class="stat-card c-blue"><div class="stat-label">Prossimo evento</div><div class="stat-value" id="dash-kpi-evento" style="font-size:1.35rem">—</div><div class="stat-sub" id="dash-kpi-evento-sub">—</div></div>
-        <div class="stat-card c-amber"><div class="stat-label">Messaggi non letti</div><div class="stat-value" id="dash-kpi-msg">—</div><div class="stat-sub" id="dash-kpi-msg-sub">—</div></div>
-        <div class="stat-card c-green"><div class="stat-label">Media gol/partita</div><div class="stat-value" id="dash-kpi-golmedio">—</div><div class="stat-sub" id="dash-kpi-golmedio-sub">—</div></div>
+    <div class="nav-label">Gestione sistema</div>
+    <a class="nav-item active" href="#"><span>🏠</span> Dashboard</a>
+    <a class="nav-item" href="#" onclick="switchTab('utenti')"><span>👤</span> Utenti</a>
+    <a class="nav-item" href="#" onclick="switchTab('squadre')"><span>🛡</span> Squadre</a>
+    <a class="nav-item" href="#" onclick="switchTab('quiz')"><span>🎮</span> Quiz</a>
+    <a class="nav-item" href="#" onclick="switchTab('badge')"><span>🏅</span> Badge</a>
+    <a class="nav-item" href="#"><span>📋</span> Log sistema</a>
+    <a class="nav-item" href="#"><span>⚙️</span> Impostazioni</a>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar" id="sb-avatar">?</div>
+        <div class="user-info"><strong id="sb-nome">—</strong><small id="sb-ruolo">—</small></div>
+        <button class="btn-logout" onclick="logout()">Esci</button>
       </div>
-      <div class="grid-3-1">
-        <div class="card">
-          <div class="card-header"><h2>Rosa – Ultima sessione</h2><span class="card-link" onclick="window.location.href='/html/rosa.html'">Vedi tutti →</span></div>
-          <div class="card-body" style="padding:0">
-            <table>
-              <thead><tr><th>Giocatore</th><th>Pos</th><th>Pres.</th><th>Gol</th><th>Stato</th></tr></thead>
-              <tbody id="dash-rosa-tbody">
-                <tr><td colspan="5" style="text-align:center;color:var(--muted);">Caricamento...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><h2>Prossimi eventi</h2><span class="card-link" onclick="window.location.href='/html/calendario.html'">Vedi →</span></div>
-          <div class="card-body">
-            <div class="event-list" id="dash-eventi-list">
-              <div style="text-align:center;color:var(--muted);padding:1rem;">Caricamento...</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-header"><h2>Ultimi messaggi</h2><span class="card-link" onclick="window.location.href='/html/messaggi.html'">Tutti →</span></div>
-          <div class="card-body">
-            <div class="msg-list" id="dash-msg-list">
-              <div style="text-align:center;color:var(--muted);padding:1rem;">Caricamento...</div>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><h2>Messaggio rapido</h2></div>
-          <div class="card-body">
-            <div class="compose-box">
-              <select id="dash-msg-dest"><option value="">Destinatario…</option><option>Tutta la squadra</option><option>Attaccanti</option><option>Difensori</option><option>L. Rossi</option><option>M. Bianchi</option></select>
-              <textarea rows="4" id="dash-msg-text" placeholder="Scrivi il messaggio…"></textarea>
-              <button class="btn-primary" style="align-self:flex-end" onclick="sendQuickMsg()">Invia →</button>
-            </div>
-          </div>
-        </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <h1>Pannello Staff</h1>
+      <div class="topbar-right">
+        <button class="btn-outline" onclick="switchTab('quiz'); apriModalNuovaDomanda()">+ Aggiungi Quiz</button>
+        <button class="btn-primary" onclick="apriModalNuovoUtente()">+ Nuovo Utente</button>
       </div>
     </div>
 
-  </div><!-- /content-area -->
-</div><!-- /main -->
-</div><!-- /app -->
+    <div class="content">
+      <!-- KPI -->
+      <div class="kpi-grid">
+        <div class="kpi green"><div class="num" id="kpi-giocatori">—</div><div class="lbl">Giocatori</div></div>
+        <div class="kpi blue"><div class="num" id="kpi-allenatori">—</div><div class="lbl">Allenatori</div></div>
+        <div class="kpi"><div class="num" id="kpi-utenti">—</div><div class="lbl">Utenti totali</div></div>
+        <div class="kpi amber"><div class="num" id="kpi-quiz">—</div><div class="lbl">Quiz nel DB</div></div>
+        <div class="kpi red"><div class="num" id="kpi-badge">—</div><div class="lbl">Badge nel DB</div></div>
+      </div>
 
-<!-- MODAL NUOVO EVENTO -->
-<div class="modal-overlay" id="modal-evento">
+      <!-- TABS -->
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('utenti')">Utenti</div>
+        <div class="tab" onclick="switchTab('squadre')">Squadre</div>
+        <div class="tab" onclick="switchTab('quiz')">Quiz</div>
+        <div class="tab" onclick="switchTab('badge')">Badge</div>
+      </div>
+
+      <!-- TAB UTENTI -->
+      <div class="tab-panel active" id="tab-utenti">
+        <div class="table-card">
+          <div class="table-card-header">
+            <h2>Gestione Utenti</h2>
+            <input type="search" id="utenti-search" oninput="renderizzaTabellaUtenti()" placeholder="Cerca utente..." style="background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.875rem;padding:6px 10px;outline:none;width:200px;" />
+          </div>
+          <table>
+            <thead>
+              <tr><th>Username</th><th>Ruolo</th><th>Azioni</th></tr>
+            </thead>
+            <tbody id="utenti-tbody">
+              <tr><td colspan="3" style="text-align:center;color:var(--muted);">Caricamento utenti...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB SQUADRE -->
+      <div class="tab-panel" id="tab-squadre">
+        <div class="table-card">
+          <div class="table-card-header"><h2>Squadre</h2><button class="btn-primary" onclick="apriModalNuovaSquadra()">+ Nuova Squadra</button></div>
+          <table>
+            <thead><tr><th>Nome</th><th>Categoria</th><th>Giocatori</th><th>Azioni</th></tr></thead>
+            <tbody id="squadre-tbody">
+              <tr><td colspan="4" style="text-align:center;color:var(--muted);">Caricamento squadre...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB QUIZ -->
+      <div class="tab-panel" id="tab-quiz">
+        <div class="table-card">
+          <div class="table-card-header"><h2>Domande Quiz</h2><button class="btn-primary" onclick="apriModalNuovaDomanda()">+ Nuova domanda</button></div>
+          <table>
+            <thead><tr><th>#</th><th>Domanda</th><th>Risposta corretta</th><th>Punti</th><th>Azioni</th></tr></thead>
+            <tbody id="quiz-tbody">
+              <tr><td colspan="5" style="text-align:center;color:var(--muted);">Caricamento domande...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB BADGE -->
+      <div class="tab-panel" id="tab-badge">
+        <div class="table-card">
+          <div class="table-card-header"><h2>Badge disponibili</h2><button class="btn-primary" onclick="apriModalNuovoBadge()">+ Nuovo Badge</button></div>
+          <table>
+            <thead><tr><th>Nome</th><th>Soglia punti</th><th>Azioni</th></tr></thead>
+            <tbody id="badge-tbody">
+              <tr><td colspan="3" style="text-align:center;color:var(--muted);">Caricamento badge...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div>
+</div>
+
+<!-- MODAL NUOVO UTENTE -->
+<div class="modal-overlay" id="modal-utente">
   <div class="modal">
-    <h3>Nuovo Evento</h3>
-    <form id="dashboard-evento-form">
-      <div class="form-group">
-        <label>Titolo</label>
-        <input type="text" id="evt-title" placeholder="es. Allenamento tattico" required />
-      </div>
-      <div class="form-group">
-        <label>Tipo</label>
-        <select id="evt-type" required>
-          <option value="allenamento">Allenamento</option>
-          <option value="partita">Partita</option>
-          <option value="riunione">Riunione</option>
-          <option value="extra">Extra sportivo</option>
+    <h3 id="modal-utente-titolo">Crea Nuovo Utente</h3>
+    <input type="hidden" id="utente-id-editing" value="" />
+    <div class="form-grid">
+      <div class="form-group"><label>Username</label><input type="text" id="utente-username" placeholder="es. m.verdi" /></div>
+      <div class="form-group"><label id="utente-password-label">Password temporanea</label><input type="password" id="utente-password" placeholder="••••••••" /></div>
+      <div class="form-group"><label>Nome</label><input type="text" id="utente-nome" placeholder="Mario" /></div>
+      <div class="form-group"><label>Cognome</label><input type="text" id="utente-cognome" placeholder="Verdi" /></div>
+      <div class="form-group"><label>Ruolo</label>
+        <select id="utente-ruolo" onchange="aggiornaVisibilitaSquadraUtente()">
+          <option value="GIOCATORE">Giocatore</option><option value="ALLENATORE">Allenatore</option>
+          <option value="STAFF">Staff</option><option value="DIRIGENZA">Dirigenza</option><option value="IT">IT</option>
         </select>
       </div>
+      <div class="form-group" id="utente-squadra-group"><label>Squadra</label>
+        <select id="utente-squadra"></select>
+      </div>
+      <div class="form-group" id="utente-posizione-group"><label>Posizione</label>
+        <select id="utente-posizione">
+          <option value="Portiere">Portiere</option>
+          <option value="Difensore">Difensore</option>
+          <option value="Centrocampista">Centrocampista</option>
+          <option value="Attaccante">Attaccante</option>
+        </select>
+      </div>
+      <div class="form-group" id="utente-piede-group"><label>Piede</label>
+        <select id="utente-piede">
+          <option value="Destro">Destro</option>
+          <option value="Sinistro">Sinistro</option>
+          <option value="Ambidestro">Ambidestro</option>
+        </select>
+      </div>
+      <div class="form-group" id="utente-numero-group"><label>Numero di maglia</label>
+        <input type="number" id="utente-numero" placeholder="es. 9" min="1" max="99" />
+      </div>
+      <div class="form-group" id="utente-peso-group"><label>Peso (kg)</label>
+        <input type="number" id="utente-peso" placeholder="es. 75" min="0" />
+      </div>
+      <div class="form-group" id="utente-altezza-group"><label>Altezza (cm)</label>
+        <input type="number" id="utente-altezza" placeholder="es. 180" min="0" />
+      </div>
+      <div class="form-group" id="utente-datanascita-group"><label>Data di nascita</label>
+        <input type="date" id="utente-datanascita" />
+      </div>
+      <div class="form-group" id="utente-nazionalita-group"><label>Nazionalità</label>
+        <input type="text" id="utente-nazionalita" placeholder="es. Italia" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-utente')">Annulla</button>
+      <button class="btn-primary" onclick="salvaUtente()">Crea Utente</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUOVO QUIZ -->
+<div class="modal-overlay" id="modal-quiz">
+  <div class="modal">
+    <h3 id="modal-quiz-titolo">Nuova Domanda Quiz</h3>
+    <!-- id nascosto: vuoto = creazione, popolato = modifica -->
+    <input type="hidden" id="quiz-id-editing" value="" />
+    <div class="form-grid" style="grid-template-columns:1fr">
+      <div class="form-group"><label>Domanda</label><input type="text" id="quiz-domanda" placeholder="Inserisci la domanda..." /></div>
+
       <div class="form-group">
-        <label>Data e ora inizio</label>
-        <input type="datetime-local" id="evt-start" required />
+        <label style="display:flex;align-items:center;gap:8px;">
+          <input type="radio" name="quiz-corretta" value="A" checked style="width:auto;" />
+          Opzione A
+        </label>
+        <input type="text" id="quiz-opzione-a" placeholder="Testo opzione A" />
       </div>
       <div class="form-group">
-        <label>Data e ora fine</label>
-        <input type="datetime-local" id="evt-end" required />
+        <label style="display:flex;align-items:center;gap:8px;">
+          <input type="radio" name="quiz-corretta" value="B" style="width:auto;" />
+          Opzione B
+        </label>
+        <input type="text" id="quiz-opzione-b" placeholder="Testo opzione B" />
       </div>
       <div class="form-group">
-        <label>Luogo</label>
-        <input type="text" id="evt-location" placeholder="es. Campo A" required />
+        <label style="display:flex;align-items:center;gap:8px;">
+          <input type="radio" name="quiz-corretta" value="C" style="width:auto;" />
+          Opzione C
+        </label>
+        <input type="text" id="quiz-opzione-c" placeholder="Testo opzione C" />
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn-ghost" onclick="closeModal('modal-evento')">Annulla</button>
-        <button type="submit" class="btn-primary">Salva Evento</button>
-      </div>
-    </form>
+      <small style="color:var(--muted);margin-top:-8px;">Seleziona il radio accanto all'opzione che è la risposta corretta.</small>
+
+      <div class="form-group"><label>Punti assegnati</label><input type="number" id="quiz-punti" value="10" min="0" /></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-quiz')">Annulla</button>
+      <button class="btn-primary" onclick="salvaDomandaQuiz()">Salva Domanda</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SQUADRA -->
+<div class="modal-overlay" id="modal-squadra">
+  <div class="modal">
+    <h3 id="modal-squadra-titolo">Nuova Squadra</h3>
+    <input type="hidden" id="squadra-id-editing" value="" />
+    <div class="form-grid" style="grid-template-columns:1fr">
+      <div class="form-group"><label>Nome squadra</label><input type="text" id="squadra-nome" placeholder="es. Bologna FC Primavera" /></div>
+      <div class="form-group"><label>Categoria</label><input type="text" id="squadra-categoria" placeholder="es. Serie B" /></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-squadra')">Annulla</button>
+      <button class="btn-primary" onclick="salvaSquadra()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL BADGE -->
+<div class="modal-overlay" id="modal-badge">
+  <div class="modal">
+    <h3 id="modal-badge-titolo">Nuovo Badge</h3>
+    <input type="hidden" id="badge-id-editing" value="" />
+    <div class="form-grid" style="grid-template-columns:1fr">
+      <div class="form-group"><label>Nome badge</label><input type="text" id="badge-nome" placeholder="es. 🌱 Apprendista storico" /></div>
+      <div class="form-group"><label>Soglia punti</label><input type="number" id="badge-soglia" value="100" min="0" /></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-badge')">Annulla</button>
+      <button class="btn-primary" onclick="salvaBadge()">Salva Badge</button>
+    </div>
   </div>
 </div>
 
 <script src="/html/js/utils.js"></script>
 <script src="/html/js/dashboardfull.js"></script>
+
 </body>
 </html>

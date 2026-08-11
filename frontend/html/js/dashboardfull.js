@@ -1,20 +1,4 @@
-/* ==========================================================================
- * DASHBOARD FULL — pagina di riepilogo usata come destinazione di default
- * per i ruoli senza una dashboard dedicata (es. IT).
- *
- * A differenza della versione precedente, questa pagina NON duplica più la
- * logica di Rosa/Calendario/Statistiche/Messaggi: la sidebar rimanda alle
- * pagine reali già funzionanti (rosa.html, calendario.html, statistiche.html,
- * messaggi.html), coerentemente con come sono organizzate tutte le altre
- * dashboard del progetto. Qui restano solo i dati aggregati per le card di
- * riepilogo e il "messaggio rapido".
- * ========================================================================== */
-
 const API = 'http://localhost:8080';
-const CALENDARIO_ID_DEFAULT = 1;
-
-function idSquadra()    { return localStorage.getItem('idSquadra') || '1'; }
-function idCalendario() { return parseInt(localStorage.getItem('idCalendario') || CALENDARIO_ID_DEFAULT, 10); }
 
 function authHeaders() {
     return typeof getAuthHeaders === 'function'
@@ -22,43 +6,36 @@ function authHeaders() {
         : { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') };
 }
 
-function escapeHtml(str) {
-    if (str == null) return '';
-    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function switchTab(name) {
+document.querySelectorAll('.tab').forEach((t,i) => {
+    const names = ['utenti','squadre','quiz','badge'];
+    t.classList.toggle('active', names[i] === name);
+});
+document.querySelectorAll('.tab-panel').forEach(p => {
+    p.classList.toggle('active', p.id === 'tab-' + name);
+});
 }
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-const MESI_BREVI = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
-const TIPO_EVENTO = {
-    ALLENAMENTO: { stripe: '#4caf50' },
-    PARTITA:     { stripe: '#3b82f6' },
-    RIUNIONE:    { stripe: '#eab308' },
-    ALTRO:       { stripe: '#8b5cf6' }
-};
-const tipoMeta = t => TIPO_EVENTO[t] || TIPO_EVENTO.ALTRO;
-function fmtOra(d) { return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+// ==========================================
+// INIZIALIZZAZIONE PAGINA
+// ==========================================
+let cacheUtenti  = [];
+let cacheSquadre = [];
+let cacheBadge   = [];
 
-function pillPosizione(pos) {
-    const map = { 'Attaccante': 'pill-red', 'Centrocampista': 'pill-blue', 'Difensore': 'pill-amber', 'Portiere': 'pill-purple' };
-    const sigla = { 'Attaccante': 'ATT', 'Centrocampista': 'CEN', 'Difensore': 'DIF', 'Portiere': 'POR' };
-    return `<span class="pill ${map[pos] || 'pill-blue'}">${sigla[pos] || (pos || '—')}</span>`;
-}
-
-/* ─── STATO GLOBALE ────────────────────────────────────────────────────── */
-let cacheGiocatori   = [];   // GiocatoreDto[] + gol/presenze aggiunti dal merge con /statistiche/giocatori
-let cacheEventi      = [];   // EventoDto[]
-let cacheMessaggi    = [];   // MessaggioDto[] (inviati dall'allenatore/staff autenticato)
-let cacheStatSquadra = null; // SquadraStatsResponse
-
-/* ==========================================================================
- * INIZIALIZZAZIONE
- * ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof verificaAutenticazione === 'function') verificaAutenticazione();
-    popolaSidebarFull();
-    caricaTutto();
+    popolaSidebarStaff();
+    caricaKpi();
+    caricaDomandeQuiz();     // già presente più sotto in questo file
+    caricaUtenti();
+    caricaSquadre();
+    caricaBadgeDisponibili();
 });
 
-function popolaSidebarFull() {
+function popolaSidebarStaff() {
     const nome    = localStorage.getItem('nomeReale')    || '';
     const cognome = localStorage.getItem('cognomeReale') || '';
     const ruolo   = localStorage.getItem('ruolo')        || '—';
@@ -77,228 +54,594 @@ function popolaSidebarFull() {
     }
 }
 
-async function caricaTutto() {
-    await Promise.all([
-        caricaGiocatori(),
-        caricaEventi(),
-        caricaMessaggiInviati(),
-        caricaStatisticheSquadra()
-    ]);
-    renderDashboardSummary();
+// ── KPI in alto: GET /api/dashboard/it (già esistente, riepilogo del club) ─
+async function caricaKpi() {
+    try {
+        const res = await fetch(`${API}/api/dashboard/it`, { headers: authHeaders() });
+        if (!res.ok) return;
+        const d = await res.json();
+        const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        set('kpi-giocatori', d.numeroGiocatori);
+        set('kpi-allenatori', d.numeroAllenatori);
+        set('kpi-utenti', d.numeroUtenti);
+        set('kpi-quiz', d.numeroQuiz);
+        set('kpi-badge', d.numeroBadge);
+    } catch (err) {
+        console.error('Errore caricamento KPI:', err);
+    }
 }
 
-/* ==========================================================================
- * CARICAMENTO DATI (stesse API usate da rosa.js / calendario.js / messaggi.js
- * / statistiche.js — qui servono solo per calcolare le card di riepilogo)
- * ========================================================================== */
-async function caricaGiocatori() {
+function escapeHtmlStaff(str) {
+    if (str == null) return '';
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ==========================================
+// TAB UTENTI — GET/POST/DELETE /api/utenti
+// ==========================================
+const RUOLO_PILL = {
+    ALLENATORE: 'pill-blue', GIOCATORE: 'pill-amber', STAFF: 'pill-gray',
+    DIRIGENZA: 'pill-gray', IT: 'pill-red'
+};
+
+async function caricaUtenti() {
+    const tbody = document.getElementById('utenti-tbody');
     try {
-        const [resGioc, resStat] = await Promise.all([
-            fetch(`${API}/api/giocatori/squadra/${idSquadra()}`, { headers: authHeaders() }).catch(() => null),
-            fetch(`${API}/api/statistiche/giocatori`,            { headers: authHeaders() }).catch(() => null)
-        ]);
+        const res = await fetch(`${API}/api/utenti`, { headers: authHeaders() });
+        if (res.status === 401 || res.status === 403) {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--muted);">Non hai i permessi per vedere gli utenti.</td></tr>`;
+            return;
+        }
+        if (!res.ok) {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--muted);">Errore nel caricamento (${res.status}).</td></tr>`;
+            return;
+        }
+        cacheUtenti = await res.json();
+        renderizzaTabellaUtenti();
+    } catch (err) {
+        console.error('Errore caricamento utenti:', err);
+        if (tbody) tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--muted);">Impossibile contattare il server.</td></tr>`;
+    }
+}
 
-        const giocatori = (resGioc && resGioc.ok) ? await resGioc.json() : [];
-        const stats     = (resStat && resStat.ok) ? await resStat.json() : [];
+function renderizzaTabellaUtenti() {
+    const tbody = document.getElementById('utenti-tbody');
+    if (!tbody) return;
 
-        cacheGiocatori = giocatori.map(g => {
-            const s = stats.find(st => st.nome === `${g.nome} ${g.cognome}`);
-            return { ...g, presenze: s?.pres ?? 0, gol: s?.gol ?? 0 };
+    const query = (document.getElementById('utenti-search')?.value || '').trim().toLowerCase();
+    const lista = query
+        ? cacheUtenti.filter(u => (u.username || '').toLowerCase().includes(query) || (u.ruolo || '').toLowerCase().includes(query))
+        : cacheUtenti;
+
+    if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--muted);">Nessun utente trovato.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = lista.map(u => `
+        <tr>
+            <td>${escapeHtmlStaff(u.username)}</td>
+            <td><span class="pill ${RUOLO_PILL[u.ruolo] || 'pill-gray'}">${escapeHtmlStaff(u.ruolo)}</span></td>
+            <td><div class="actions">
+                <button class="btn-sm" onclick="apriModalModificaUtente(${u.id})">✏️ Modifica</button>
+                <button class="btn-sm danger" onclick="eliminaUtente(${u.id})">🗑 Elimina</button>
+            </div></td>
+        </tr>`).join('');
+}
+
+function aggiornaVisibilitaSquadraUtente() {
+    const ruolo = document.getElementById('utente-ruolo')?.value;
+    const mostraSquadra = (ruolo === 'GIOCATORE' || ruolo === 'ALLENATORE');
+    const mostraGiocatore = (ruolo === 'GIOCATORE');
+
+    const squadraGroup = document.getElementById('utente-squadra-group');
+    if (squadraGroup) squadraGroup.style.display = mostraSquadra ? '' : 'none';
+
+    ['utente-posizione-group', 'utente-piede-group', 'utente-altezza-group', 'utente-nazionalita-group',
+     'utente-numero-group', 'utente-peso-group', 'utente-datanascita-group']
+        .forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = mostraGiocatore ? '' : 'none';
         });
-    } catch (err) {
-        console.error('Errore caricamento giocatori:', err);
-    }
 }
 
-async function caricaEventi() {
-    try {
-        const res = await fetch(`${API}/api/eventi/calendario/${idCalendario()}`, { headers: authHeaders() });
-        cacheEventi = res.ok ? await res.json() : [];
-    } catch (err) {
-        console.error('Errore caricamento eventi:', err);
-    }
+function apriModalNuovoUtente() {
+    document.getElementById('modal-utente-titolo').textContent = 'Crea Nuovo Utente';
+    document.getElementById('utente-id-editing').value = '';
+    document.getElementById('utente-username').value = '';
+    document.getElementById('utente-username').disabled = false;
+    document.getElementById('utente-password').value = '';
+    document.getElementById('utente-password-label').textContent = 'Password temporanea';
+    document.getElementById('utente-nome').value = '';
+    document.getElementById('utente-nome').disabled = false;
+    document.getElementById('utente-cognome').value = '';
+    document.getElementById('utente-cognome').disabled = false;
+    document.getElementById('utente-ruolo').value = 'GIOCATORE';
+    document.getElementById('utente-ruolo').disabled = false;
+    document.getElementById('utente-posizione').value = 'Attaccante';
+    document.getElementById('utente-posizione').disabled = false;
+    document.getElementById('utente-piede').value = 'Destro';
+    document.getElementById('utente-piede').disabled = false;
+    document.getElementById('utente-altezza').value = '';
+    document.getElementById('utente-altezza').disabled = false;
+    document.getElementById('utente-nazionalita').value = '';
+    document.getElementById('utente-nazionalita').disabled = false;
+    document.getElementById('utente-numero').value = '';
+    document.getElementById('utente-numero').disabled = false;
+    document.getElementById('utente-peso').value = '';
+    document.getElementById('utente-peso').disabled = false;
+    document.getElementById('utente-datanascita').value = '';
+    document.getElementById('utente-datanascita').disabled = false;
+    popolaSelectSquadraUtente();
+    aggiornaVisibilitaSquadraUtente();
+    openModal('modal-utente');
 }
 
-async function caricaMessaggiInviati() {
-    try {
-        const res = await fetch(`${API}/api/messaggi/inviati`, { headers: authHeaders() });
-        cacheMessaggi = res.ok ? await res.json() : [];
-    } catch (err) {
-        console.error('Errore caricamento messaggi:', err);
-    }
+function apriModalModificaUtente(id) {
+    const u = cacheUtenti.find(x => x.id === id);
+    if (!u) return;
+
+    // Il backend permette di modificare solo username/password su un utente
+    // esistente (cambiare ruolo/nome/squadra romperebbe i collegamenti già
+    // fatti a giocatore/allenatore) — quindi qui blocchiamo quei campi.
+    document.getElementById('modal-utente-titolo').textContent = `Modifica ${u.username}`;
+    document.getElementById('utente-id-editing').value = u.id;
+    document.getElementById('utente-username').value = u.username;
+    document.getElementById('utente-username').disabled = false;
+    document.getElementById('utente-password').value = '';
+    document.getElementById('utente-password-label').textContent = 'Nuova password (lascia vuoto per non cambiarla)';
+    document.getElementById('utente-nome').value = '';
+    document.getElementById('utente-nome').disabled = true;
+    document.getElementById('utente-cognome').value = '';
+    document.getElementById('utente-cognome').disabled = true;
+    document.getElementById('utente-ruolo').value = u.ruolo;
+    document.getElementById('utente-ruolo').disabled = true;
+    document.getElementById('utente-posizione').disabled = true;
+    document.getElementById('utente-piede').disabled = true;
+    document.getElementById('utente-altezza').value = '';
+    document.getElementById('utente-altezza').disabled = true;
+    document.getElementById('utente-nazionalita').value = '';
+    document.getElementById('utente-nazionalita').disabled = true;
+    document.getElementById('utente-numero').value = '';
+    document.getElementById('utente-numero').disabled = true;
+    document.getElementById('utente-peso').value = '';
+    document.getElementById('utente-peso').disabled = true;
+    document.getElementById('utente-datanascita').value = '';
+    document.getElementById('utente-datanascita').disabled = true;
+    aggiornaVisibilitaSquadraUtente();
+    openModal('modal-utente');
 }
 
-async function caricaStatisticheSquadra() {
-    try {
-        const res = await fetch(`${API}/api/statistiche/squadra`, { headers: authHeaders() });
-        cacheStatSquadra = res.ok ? await res.json() : null;
-    } catch (err) {
-        console.error('Errore caricamento statistiche squadra:', err);
-    }
+function popolaSelectSquadraUtente() {
+    const sel = document.getElementById('utente-squadra');
+    if (!sel) return;
+    sel.innerHTML = cacheSquadre.map(s => `<option value="${s.id}">${escapeHtmlStaff(s.nome)}</option>`).join('');
 }
 
-/* ==========================================================================
- * RIEPILOGO DASHBOARD
- * ========================================================================== */
-function renderDashboardSummary() {
-    const kpiGioc = document.getElementById('dash-kpi-giocatori');
-    const kpiGiocSub = document.getElementById('dash-kpi-giocatori-sub');
-    if (kpiGioc) kpiGioc.textContent = cacheGiocatori.length;
-    if (kpiGiocSub) kpiGiocSub.textContent = `${cacheGiocatori.length} giocatori in rosa`;
+async function salvaUtente() {
+    const idEditing = document.getElementById('utente-id-editing').value;
+    const isModifica = !!idEditing;
 
-    const ora = new Date();
-    const futuri = cacheEventi
-        .filter(e => e.dataOraInizio && new Date(e.dataOraInizio) > ora)
-        .sort((a, b) => new Date(a.dataOraInizio) - new Date(b.dataOraInizio));
-    const kpiEv = document.getElementById('dash-kpi-evento');
-    const kpiEvSub = document.getElementById('dash-kpi-evento-sub');
-    if (futuri.length > 0) {
-        const e = futuri[0];
-        const d = new Date(e.dataOraInizio);
-        if (kpiEv) kpiEv.textContent = d.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: 'short' });
-        if (kpiEvSub) kpiEvSub.textContent = `${e.titolo || ''} – ${e.luogo || 'luogo da definire'}`;
-    } else {
-        if (kpiEv) kpiEv.textContent = '—';
-        if (kpiEvSub) kpiEvSub.textContent = 'Nessun evento in programma';
+    const payload = {
+        username: document.getElementById('utente-username').value.trim(),
+        password: document.getElementById('utente-password').value,
+        nomeRuolo: document.getElementById('utente-ruolo').value,
+        nome: document.getElementById('utente-nome').value.trim(),
+        cognome: document.getElementById('utente-cognome').value.trim(),
+        squadraId: document.getElementById('utente-squadra').value ? parseInt(document.getElementById('utente-squadra').value, 10) : null
+    };
+
+    if (payload.nomeRuolo === 'GIOCATORE') {
+        payload.posizione = document.getElementById('utente-posizione').value;
+        payload.piede = document.getElementById('utente-piede').value;
+        payload.nazionalita = document.getElementById('utente-nazionalita').value.trim() || null;
+        const altezzaVal = document.getElementById('utente-altezza').value;
+        payload.altezza = altezzaVal ? parseInt(altezzaVal, 10) : null;
+        const pesoVal = document.getElementById('utente-peso').value;
+        payload.peso = pesoVal ? parseInt(pesoVal, 10) : null;
+        const numeroVal = document.getElementById('utente-numero').value;
+        payload.numero = numeroVal ? parseInt(numeroVal, 10) : null;
+        payload.dataNascita = document.getElementById('utente-datanascita').value || null;
     }
 
-    const nonLetti = cacheMessaggi.filter(m => (m.stato || '').toUpperCase() !== 'LETTO');
-    const kpiMsg = document.getElementById('dash-kpi-msg');
-    const kpiMsgSub = document.getElementById('dash-kpi-msg-sub');
-    if (kpiMsg) kpiMsg.textContent = nonLetti.length;
-    if (kpiMsgSub) kpiMsgSub.textContent = cacheMessaggi.length > 0 ? `su ${cacheMessaggi.length} inviati` : 'nessun messaggio inviato';
-
-    const kpiGol = document.getElementById('dash-kpi-golmedio');
-    const kpiGolSub = document.getElementById('dash-kpi-golmedio-sub');
-    if (cacheStatSquadra && cacheStatSquadra.kpi && cacheStatSquadra.kpi.partiteGiocate > 0) {
-        const media = cacheStatSquadra.kpi.golFatti / cacheStatSquadra.kpi.partiteGiocate;
-        if (kpiGol) kpiGol.textContent = media.toFixed(1);
-        if (kpiGolSub) kpiGolSub.textContent = `${cacheStatSquadra.kpi.golFatti} gol in ${cacheStatSquadra.kpi.partiteGiocate} partite`;
-    } else {
-        if (kpiGol) kpiGol.textContent = '—';
-        if (kpiGolSub) kpiGolSub.textContent = 'Nessuna partita registrata';
+    if (!payload.username) { alert('Lo username è obbligatorio.'); return; }
+    if (!isModifica && !payload.password) { alert('La password è obbligatoria per un nuovo utente.'); return; }
+    if (!isModifica && (payload.nomeRuolo === 'GIOCATORE' || payload.nomeRuolo === 'ALLENATORE') && !payload.squadraId) {
+        alert('Seleziona una squadra per questo ruolo.');
+        return;
     }
 
-    // Rosa — preview (primi 5), il resto si trova su rosa.html
-    const rosaTbody = document.getElementById('dash-rosa-tbody');
-    if (rosaTbody) {
-        rosaTbody.innerHTML = cacheGiocatori.length === 0
-            ? `<tr><td colspan="5" style="text-align:center;color:var(--muted);">Nessun giocatore in rosa.</td></tr>`
-            : cacheGiocatori.slice(0, 5).map(g => {
-                const iniziali = (g.nome?.[0] || '') + (g.cognome?.[0] || '');
-                return `<tr>
-                    <td><div class="player-name-cell"><div class="tbl-avatar">${escapeHtml(iniziali)}</div>${escapeHtml(g.nome)} ${escapeHtml(g.cognome)}</div></td>
-                    <td>${pillPosizione(g.posizione)}</td>
-                    <td>${g.presenze ?? 0}</td>
-                    <td><strong>${g.gol ?? 0}</strong></td>
-                    <td><span class="pill pill-green">In rosa</span></td>
-                </tr>`;
-            }).join('');
-    }
-
-    // Prossimi eventi — preview (primi 4), il resto si trova su calendario.html
-    const evList = document.getElementById('dash-eventi-list');
-    if (evList) {
-        evList.innerHTML = futuri.length === 0
-            ? `<div style="text-align:center;color:var(--muted);padding:1rem;">Nessun evento in programma.</div>`
-            : futuri.slice(0, 4).map(e => {
-                const d = new Date(e.dataOraInizio);
-                const meta = tipoMeta(e.tipo);
-                return `<div class="event-item">
-                    <div class="event-date"><div class="day">${String(d.getDate()).padStart(2,'0')}</div><div class="mon">${MESI_BREVI[d.getMonth()]}</div></div>
-                    <div class="event-stripe" style="background:${meta.stripe}"></div>
-                    <div class="event-info"><div class="title">${escapeHtml(e.titolo || '')}</div><div class="meta">${fmtOra(d)} – ${escapeHtml(e.luogo || 'Luogo da definire')}</div></div>
-                </div>`;
-            }).join('');
-    }
-
-    // Ultimi messaggi — preview (primi 3), il resto si trova su messaggi.html
-    const msgList = document.getElementById('dash-msg-list');
-    if (msgList) {
-        msgList.innerHTML = cacheMessaggi.length === 0
-            ? `<div style="text-align:center;color:var(--muted);padding:1rem;">Nessun messaggio inviato.</div>`
-            : cacheMessaggi.slice(0, 3).map(renderMsgItemHtml).join('');
-    }
-
-    aggiornaBadgeMessaggi();
-    popolaSelectDestinatari(document.getElementById('dash-msg-dest'));
-}
-
-function aggiornaBadgeMessaggi() {
-    const badge = document.getElementById('msg-badge');
-    if (!badge) return;
-    const nonLetti = cacheMessaggi.filter(m => (m.stato || '').toUpperCase() !== 'LETTO').length;
-    badge.textContent = nonLetti;
-    badge.style.display = nonLetti > 0 ? '' : 'none';
-}
-
-function renderMsgItemHtml(m) {
-    const letto = (m.stato || '').toUpperCase() === 'LETTO';
-    const d = m.dataOra ? new Date(m.dataOra) : null;
-    const quando = d ? d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }) + ' ' + fmtOra(d) : '';
-    const mittenteHtml = m.mittenteNome
-        ? `<div style="font-size:.7rem;color:var(--muted);">Da: ${escapeHtml(m.mittenteNome)}</div>`
-        : '';
-    return `<div class="msg-item">
-        ${mittenteHtml}
-        <div class="msg-head"><span class="msg-from">→ ${escapeHtml(m.nomeGiocatore || m.giocatoreNome || 'Giocatore')}</span><span class="msg-time">${quando}</span></div>
-        <div class="msg-text">${escapeHtml(m.testo || '')}</div>
-        <div class="msg-status ${letto ? 'letto' : 'inviato'}">${letto ? '✔✔ Letto' : '✔ Inviato'}</div>
-    </div>`;
-}
-
-/* ==========================================================================
- * MESSAGGIO RAPIDO (l'unica azione di scrittura rimasta su questa pagina;
- * la gestione completa dei messaggi è su messaggi.html)
- * ========================================================================== */
-const RUOLI_SQUADRA = [
-    { valore: 'Portiere', etichetta: 'Tutti i portieri' },
-    { valore: 'Difensore', etichetta: 'Tutti i difensori' },
-    { valore: 'Centrocampista', etichetta: 'Tutti i centrocampisti' },
-    { valore: 'Attaccante', etichetta: 'Tutti gli attaccanti' }
-];
-
-function popolaSelectDestinatari(sel) {
-    if (!sel || cacheGiocatori.length === 0) return;
-    let html = '<option value="">Destinatario…</option><optgroup label="Per ruolo">';
-    RUOLI_SQUADRA.forEach(r => {
-        const n = cacheGiocatori.filter(g => g.posizione === r.valore).length;
-        if (n > 0) html += `<option value="ruolo:${r.valore}">${r.etichetta} (${n})</option>`;
-    });
-    html += '</optgroup><optgroup label="Singolo giocatore">';
-    cacheGiocatori.forEach(g => {
-        html += `<option value="giocatore:${g.id}">${escapeHtml(g.nome)} ${escapeHtml(g.cognome)}</option>`;
-    });
-    html += '</optgroup>';
-    sel.innerHTML = html;
-}
-
-async function sendQuickMsg() {
-    const selEl = document.getElementById('dash-msg-dest');
-    const textEl = document.getElementById('dash-msg-text');
-    const val = selEl?.value || '';
-    const testo = (textEl?.value || '').trim();
-    if (!val) { alert('Seleziona un destinatario.'); return; }
-    if (!testo) { alert('Scrivi il testo del messaggio.'); return; }
-
-    const [tipo, valore] = val.split(':');
-    const isRuolo = tipo === 'ruolo';
-    const url = isRuolo ? `${API}/api/messaggi/ruolo` : `${API}/api/messaggi`;
-    const payload = isRuolo ? { ruolo: valore, testo } : { giocatoreId: parseInt(valore, 10), testo };
+    const url = isModifica ? `${API}/api/utenti/${idEditing}` : `${API}/api/utenti`;
+    const method = isModifica ? 'PUT' : 'POST';
 
     try {
-        const res = await fetch(url, { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
+        const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(payload) });
         if (res.ok) {
-            textEl.value = '';
-            selEl.value = '';
-            await caricaMessaggiInviati();
-            renderDashboardSummary();
-            alert(isRuolo ? '✔ Messaggio inviato al ruolo selezionato.' : '✔ Messaggio inviato.');
+            closeModal('modal-utente');
+            await caricaUtenti();
+            await caricaKpi();
+            alert(isModifica ? '✔ Utente modificato.' : '✔ Utente creato.');
         } else {
-            alert(`Errore invio (${res.status}): ${await res.text()}`);
+            alert(`Errore salvataggio (${res.status}): ${await res.text()}`);
         }
     } catch (err) {
-        console.error('Errore rete invio messaggio:', err);
+        console.error('Errore rete salvataggio utente:', err);
+        alert('Impossibile raggiungere il server.');
+    }
+}
+
+async function eliminaUtente(id) {
+    const u = cacheUtenti.find(x => x.id === id);
+    if (!confirm(`Eliminare definitivamente l'utente "${u ? u.username : id}"? L'eventuale profilo giocatore/allenatore collegato verrà eliminato a cascata.`)) return;
+
+    try {
+        const res = await fetch(`${API}/api/utenti/${id}`, { method: 'DELETE', headers: authHeaders() });
+        if (res.ok || res.status === 204) {
+            await caricaUtenti();
+            await caricaKpi();
+        } else {
+            alert(`Errore eliminazione (${res.status}): ${await res.text()}`);
+        }
+    } catch (err) {
+        console.error('Errore rete eliminazione utente:', err);
+        alert('Impossibile raggiungere il server.');
+    }
+}
+
+// ==========================================
+// TAB SQUADRE — GET/POST/PUT/DELETE /api/squadre
+// ==========================================
+async function caricaSquadre() {
+    const tbody = document.getElementById('squadre-tbody');
+    try {
+        const res = await fetch(`${API}/api/squadre`, { headers: authHeaders() });
+        if (!res.ok) {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--muted);">Errore nel caricamento (${res.status}).</td></tr>`;
+            return;
+        }
+        cacheSquadre = await res.json();
+        renderizzaTabellaSquadre();
+        popolaSelectSquadraUtente();
+    } catch (err) {
+        console.error('Errore caricamento squadre:', err);
+        if (tbody) tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--muted);">Impossibile contattare il server.</td></tr>`;
+    }
+}
+
+function renderizzaTabellaSquadre() {
+    const tbody = document.getElementById('squadre-tbody');
+    if (!tbody) return;
+
+    if (cacheSquadre.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--muted);">Nessuna squadra nel database.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = cacheSquadre.map(s => `
+        <tr>
+            <td>${escapeHtmlStaff(s.nome)}</td>
+            <td>${escapeHtmlStaff(s.categoria || '—')}</td>
+            <td>${s.numeroGiocatori ?? 0}</td>
+            <td><div class="actions">
+                <button class="btn-sm" onclick="apriModalModificaSquadra(${s.id})">✏️</button>
+                <button class="btn-sm danger" onclick="eliminaSquadra(${s.id})">🗑</button>
+            </div></td>
+        </tr>`).join('');
+}
+
+function apriModalNuovaSquadra() {
+    document.getElementById('modal-squadra-titolo').textContent = 'Nuova Squadra';
+    document.getElementById('squadra-id-editing').value = '';
+    document.getElementById('squadra-nome').value = '';
+    document.getElementById('squadra-categoria').value = '';
+    openModal('modal-squadra');
+}
+
+function apriModalModificaSquadra(id) {
+    const s = cacheSquadre.find(x => x.id === id);
+    if (!s) return;
+    document.getElementById('modal-squadra-titolo').textContent = 'Modifica Squadra';
+    document.getElementById('squadra-id-editing').value = s.id;
+    document.getElementById('squadra-nome').value = s.nome || '';
+    document.getElementById('squadra-categoria').value = s.categoria || '';
+    openModal('modal-squadra');
+}
+
+async function salvaSquadra() {
+    const idEditing = document.getElementById('squadra-id-editing').value;
+    const nome = document.getElementById('squadra-nome').value.trim();
+    const categoria = document.getElementById('squadra-categoria').value.trim();
+
+    if (!nome) { alert('Il nome della squadra è obbligatorio.'); return; }
+
+    const isModifica = !!idEditing;
+    const url = isModifica ? `${API}/api/squadre/${idEditing}` : `${API}/api/squadre`;
+    const method = isModifica ? 'PUT' : 'POST';
+
+    try {
+        const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify({ nome, categoria }) });
+        if (res.ok) {
+            closeModal('modal-squadra');
+            await caricaSquadre();
+            alert(isModifica ? '✔ Squadra modificata.' : '✔ Squadra creata.');
+        } else {
+            alert(`Errore salvataggio (${res.status}): ${await res.text()}`);
+        }
+    } catch (err) {
+        console.error('Errore rete salvataggio squadra:', err);
+        alert('Impossibile raggiungere il server.');
+    }
+}
+
+async function eliminaSquadra(id) {
+    const s = cacheSquadre.find(x => x.id === id);
+    if (!confirm(`Eliminare definitivamente "${s ? s.nome : id}"? Questa azione non è reversibile.`)) return;
+
+    try {
+        const res = await fetch(`${API}/api/squadre/${id}`, { method: 'DELETE', headers: authHeaders() });
+        if (res.ok || res.status === 204) {
+            await caricaSquadre();
+        } else {
+            alert(`Errore eliminazione (${res.status}): ${await res.text()}`);
+        }
+    } catch (err) {
+        console.error('Errore rete eliminazione squadra:', err);
+        alert('Impossibile raggiungere il server.');
+    }
+}
+
+// ==========================================
+// TAB BADGE — GET/POST/PUT/DELETE /api/badge
+// ==========================================
+async function caricaBadgeDisponibili() {
+    const tbody = document.getElementById('badge-tbody');
+    try {
+        const res = await fetch(`${API}/api/badge`, { headers: authHeaders() });
+        if (!res.ok) {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--muted);">Errore nel caricamento (${res.status}).</td></tr>`;
+            return;
+        }
+        cacheBadge = await res.json();
+        renderizzaTabellaBadge();
+    } catch (err) {
+        console.error('Errore caricamento badge:', err);
+        if (tbody) tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--muted);">Impossibile contattare il server.</td></tr>`;
+    }
+}
+
+function renderizzaTabellaBadge() {
+    const tbody = document.getElementById('badge-tbody');
+    if (!tbody) return;
+
+    if (cacheBadge.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--muted);">Nessun badge nel database.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = cacheBadge.map(b => `
+        <tr>
+            <td>${escapeHtmlStaff(b.nomeBadge)}</td>
+            <td>${b.sogliaPunti ?? 0}</td>
+            <td><div class="actions">
+                <button class="btn-sm" onclick="apriModalModificaBadge(${b.id})">✏️</button>
+                <button class="btn-sm danger" onclick="eliminaBadge(${b.id})">🗑</button>
+            </div></td>
+        </tr>`).join('');
+}
+
+function apriModalNuovoBadge() {
+    document.getElementById('modal-badge-titolo').textContent = 'Nuovo Badge';
+    document.getElementById('badge-id-editing').value = '';
+    document.getElementById('badge-nome').value = '';
+    document.getElementById('badge-soglia').value = 100;
+    openModal('modal-badge');
+}
+
+function apriModalModificaBadge(id) {
+    const b = cacheBadge.find(x => x.id === id);
+    if (!b) return;
+    document.getElementById('modal-badge-titolo').textContent = 'Modifica Badge';
+    document.getElementById('badge-id-editing').value = b.id;
+    document.getElementById('badge-nome').value = b.nomeBadge || '';
+    document.getElementById('badge-soglia').value = b.sogliaPunti ?? 0;
+    openModal('modal-badge');
+}
+
+async function salvaBadge() {
+    const idEditing = document.getElementById('badge-id-editing').value;
+    const nomeBadge = document.getElementById('badge-nome').value.trim();
+    const sogliaPunti = parseInt(document.getElementById('badge-soglia').value, 10) || 0;
+
+    if (!nomeBadge) { alert('Il nome del badge è obbligatorio.'); return; }
+
+    const isModifica = !!idEditing;
+    const url = isModifica ? `${API}/api/badge/${idEditing}` : `${API}/api/badge`;
+    const method = isModifica ? 'PUT' : 'POST';
+
+    try {
+        const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify({ nomeBadge, sogliaPunti }) });
+        if (res.ok) {
+            closeModal('modal-badge');
+            await caricaBadgeDisponibili();
+            await caricaKpi();
+            alert(isModifica ? '✔ Badge modificato.' : '✔ Badge creato.');
+        } else {
+            alert(`Errore salvataggio (${res.status}): ${await res.text()}`);
+        }
+    } catch (err) {
+        console.error('Errore rete salvataggio badge:', err);
+        alert('Impossibile raggiungere il server.');
+    }
+}
+
+async function eliminaBadge(id) {
+    const b = cacheBadge.find(x => x.id === id);
+    if (!confirm(`Eliminare definitivamente il badge "${b ? b.nomeBadge : id}"?`)) return;
+
+    try {
+        const res = await fetch(`${API}/api/badge/${id}`, { method: 'DELETE', headers: authHeaders() });
+        if (res.ok || res.status === 204) {
+            await caricaBadgeDisponibili();
+            await caricaKpi();
+        } else {
+            alert(`Errore eliminazione (${res.status}): ${await res.text()}`);
+        }
+    } catch (err) {
+        console.error('Errore rete eliminazione badge:', err);
+        alert('Impossibile raggiungere il server.');
+    }
+}
+
+// ==========================================
+// GESTIONE QUIZ (pannello STAFF/IT) — CRUD reale su /api/quiz/admin
+// ==========================================
+// Cache locale dell'ultima lista caricata: evita di rifare una GET solo per
+// precompilare il modal quando si clicca "Modifica" su una riga già visibile.
+let quizAdminCache = [];
+
+async function caricaDomandeQuiz() {
+    const tbody = document.getElementById('quiz-tbody');
+    const headers = typeof getAuthHeaders === 'function'
+        ? getAuthHeaders()
+        : { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') };
+
+    try {
+        const res = await fetch('http://localhost:8080/api/quiz/admin', { headers });
+
+        if (res.status === 401 || res.status === 403) {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);">Non hai i permessi per vedere le domande quiz.</td></tr>`;
+            return;
+        }
+        if (!res.ok) {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);">Errore nel caricamento (${res.status}).</td></tr>`;
+            return;
+        }
+
+        quizAdminCache = await res.json();
+        renderizzaTabellaQuiz();
+
+    } catch (err) {
+        console.error('Errore di rete caricamento quiz:', err);
+        if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);">Impossibile contattare il server.</td></tr>`;
+    }
+}
+
+function renderizzaTabellaQuiz() {
+    const tbody = document.getElementById('quiz-tbody');
+    if (!tbody) return;
+
+    if (!quizAdminCache || quizAdminCache.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);">Nessuna domanda nel database. Creane una con "+ Nuova domanda".</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = quizAdminCache.map(q => {
+        const testoCorretto = { A: q.opzioneA, B: q.opzioneB, C: q.opzioneC }[q.rispostaCorretta] || '—';
+        return `
+            <tr>
+                <td>${q.id}</td>
+                <td>${escapeHtml(q.domanda)}</td>
+                <td>${escapeHtml(testoCorretto)} <small style="color:var(--muted);">(${q.rispostaCorretta})</small></td>
+                <td>${q.puntiValore}</td>
+                <td><div class="actions">
+                    <button class="btn-sm" onclick="apriModalModificaDomanda(${q.id})">✏️</button>
+                    <button class="btn-sm danger" onclick="eliminaDomandaQuiz(${q.id})">🗑</button>
+                </div></td>
+            </tr>`;
+    }).join('');
+}
+
+// Evita che testo/domande con caratteri speciali rompano l'HTML della tabella
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function apriModalNuovaDomanda() {
+    document.getElementById('modal-quiz-titolo').textContent = 'Nuova Domanda Quiz';
+    document.getElementById('quiz-id-editing').value = '';
+    document.getElementById('quiz-domanda').value = '';
+    document.getElementById('quiz-opzione-a').value = '';
+    document.getElementById('quiz-opzione-b').value = '';
+    document.getElementById('quiz-opzione-c').value = '';
+    document.getElementById('quiz-punti').value = 10;
+    const radioA = document.querySelector('input[name="quiz-corretta"][value="A"]');
+    if (radioA) radioA.checked = true;
+    openModal('modal-quiz');
+}
+
+function apriModalModificaDomanda(id) {
+    const q = quizAdminCache.find(x => x.id === id);
+    if (!q) return;
+
+    document.getElementById('modal-quiz-titolo').textContent = 'Modifica Domanda Quiz';
+    document.getElementById('quiz-id-editing').value = q.id;
+    document.getElementById('quiz-domanda').value = q.domanda || '';
+    document.getElementById('quiz-opzione-a').value = q.opzioneA || '';
+    document.getElementById('quiz-opzione-b').value = q.opzioneB || '';
+    document.getElementById('quiz-opzione-c').value = q.opzioneC || '';
+    document.getElementById('quiz-punti').value = q.puntiValore ?? 10;
+
+    const radio = document.querySelector(`input[name="quiz-corretta"][value="${q.rispostaCorretta}"]`);
+    if (radio) radio.checked = true;
+
+    openModal('modal-quiz');
+}
+
+async function salvaDomandaQuiz() {
+    const idEditing = document.getElementById('quiz-id-editing').value;
+    const domanda   = document.getElementById('quiz-domanda').value.trim();
+    const opzioneA  = document.getElementById('quiz-opzione-a').value.trim();
+    const opzioneB  = document.getElementById('quiz-opzione-b').value.trim();
+    const opzioneC  = document.getElementById('quiz-opzione-c').value.trim();
+    const punti     = parseInt(document.getElementById('quiz-punti').value, 10) || 0;
+    const radioSel  = document.querySelector('input[name="quiz-corretta"]:checked');
+    const rispostaCorretta = radioSel ? radioSel.value : 'A';
+
+    if (!domanda || !opzioneA || !opzioneB || !opzioneC) {
+        alert('Compila la domanda e tutte e 3 le opzioni prima di salvare.');
+        return;
+    }
+
+    const payload = { domanda, opzioneA, opzioneB, opzioneC, rispostaCorretta, puntiValore: punti };
+    const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' };
+
+    const isModifica = !!idEditing;
+    const url    = isModifica ? `http://localhost:8080/api/quiz/admin/${idEditing}` : 'http://localhost:8080/api/quiz/admin';
+    const method = isModifica ? 'PUT' : 'POST';
+
+    try {
+        const res = await fetch(url, { method, headers, body: JSON.stringify(payload) });
+
+        if (res.ok) {
+            closeModal('modal-quiz');
+            await caricaDomandeQuiz();
+            alert(isModifica ? '✔ Domanda modificata.' : '✔ Domanda creata.');
+        } else {
+            const testo = await res.text();
+            alert(`Errore salvataggio (${res.status}): ${testo}`);
+        }
+    } catch (err) {
+        console.error('Errore di rete salvataggio quiz:', err);
+        alert('Impossibile raggiungere il server.');
+    }
+}
+
+async function eliminaDomandaQuiz(id) {
+    if (!confirm('Eliminare definitivamente questa domanda? Se è già stata usata come "quiz del giorno" resterà comunque nello storico delle risposte dei giocatori.')) return;
+
+    const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' };
+
+    try {
+        const res = await fetch(`http://localhost:8080/api/quiz/admin/${id}`, { method: 'DELETE', headers });
+        if (res.ok || res.status === 204) {
+            await caricaDomandeQuiz();
+        } else {
+            const testo = await res.text();
+            alert(`Errore eliminazione (${res.status}): ${testo}`);
+        }
+    } catch (err) {
+        console.error('Errore di rete eliminazione quiz:', err);
         alert('Impossibile raggiungere il server.');
     }
 }
