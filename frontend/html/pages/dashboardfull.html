@@ -17,7 +17,7 @@
       <span>FootManager</span>
     </div>
     <div class="nav-label">Gestione sistema</div>
-    <a class="nav-item active" href="#"><span>🏠</span> Dashboard</a>
+    <a class="nav-item active" href="#" onclick="switchTab('dashboard')"><span>🏠</span> Dashboard</a>
     <a class="nav-item" href="#" onclick="switchTab('utenti')"><span>👤</span> Utenti</a>
     <a class="nav-item" href="#" onclick="switchTab('squadre')"><span>🛡</span> Squadre</a>
     <a class="nav-item" href="#" onclick="switchTab('quiz')"><span>🎮</span> Quiz</a>
@@ -52,16 +52,40 @@
         <div class="kpi red"><div class="num" id="kpi-badge">—</div><div class="lbl">Badge nel DB</div></div>
       </div>
 
-      <!-- TABS -->
-      <div class="tabs">
-        <div class="tab active" onclick="switchTab('utenti')">Utenti</div>
-        <div class="tab" onclick="switchTab('squadre')">Squadre</div>
-        <div class="tab" onclick="switchTab('quiz')">Quiz</div>
-        <div class="tab" onclick="switchTab('badge')">Badge</div>
+      <!-- TAB DASHBOARD (vista di riepilogo, non duplica la sidebar) -->
+      <div class="tab-panel active" id="tab-dashboard">
+        <div class="quick-grid">
+          <div class="quick-card" onclick="switchTab('utenti')">
+            <div class="quick-icon">👤</div>
+            <div class="quick-info"><div class="quick-num" id="qc-utenti">—</div><div class="quick-lbl">Utenti — gestisci →</div></div>
+          </div>
+          <div class="quick-card" onclick="switchTab('squadre')">
+            <div class="quick-icon">🛡</div>
+            <div class="quick-info"><div class="quick-num" id="qc-squadre">—</div><div class="quick-lbl">Squadre — gestisci →</div></div>
+          </div>
+          <div class="quick-card" onclick="switchTab('quiz')">
+            <div class="quick-icon">🎮</div>
+            <div class="quick-info"><div class="quick-num" id="qc-quiz">—</div><div class="quick-lbl">Quiz — gestisci →</div></div>
+          </div>
+          <div class="quick-card" onclick="switchTab('badge')">
+            <div class="quick-icon">🏅</div>
+            <div class="quick-info"><div class="quick-num" id="qc-badge">—</div><div class="quick-lbl">Badge — gestisci →</div></div>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-card-header"><h2>Ultimi utenti registrati</h2><span class="card-link" onclick="switchTab('utenti')">Vedi tutti →</span></div>
+          <table>
+            <thead><tr><th>Username</th><th>Ruolo</th></tr></thead>
+            <tbody id="dash-ultimi-utenti-tbody">
+              <tr><td colspan="2" style="text-align:center;color:var(--muted);">Caricamento...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- TAB UTENTI -->
-      <div class="tab-panel active" id="tab-utenti">
+      <div class="tab-panel" id="tab-utenti">
         <div class="table-card">
           <div class="table-card-header">
             <h2>Gestione Utenti</h2>

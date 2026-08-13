@@ -7,16 +7,42 @@ function authHeaders() {
 }
 
 function switchTab(name) {
-document.querySelectorAll('.tab').forEach((t,i) => {
-    const names = ['utenti','squadre','quiz','badge'];
-    t.classList.toggle('active', names[i] === name);
-});
 document.querySelectorAll('.tab-panel').forEach(p => {
     p.classList.toggle('active', p.id === 'tab-' + name);
 });
+document.querySelectorAll('.sidebar .nav-item').forEach(a => a.classList.remove('active'));
+const link = document.querySelector(`.sidebar .nav-item[onclick*="'${name}'"]`);
+if (link) link.classList.add('active');
 }
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ==========================================
+// PANNELLO DASHBOARD — riepilogo (card di accesso rapido + ultimi utenti)
+// Richiamata dopo ogni caricamento dati: aggiorna solo i numeri già
+// disponibili, quindi è sicuro chiamarla più volte mentre le altre
+// chiamate API sono ancora in corso.
+// ==========================================
+function aggiornaOverviewDashboard() {
+    const setNum = (id, arr) => { const el = document.getElementById(id); if (el) el.textContent = arr.length; };
+    setNum('qc-utenti', cacheUtenti);
+    setNum('qc-squadre', cacheSquadre);
+    setNum('qc-quiz', quizAdminCache);
+    setNum('qc-badge', cacheBadge);
+
+    const tbody = document.getElementById('dash-ultimi-utenti-tbody');
+    if (!tbody) return;
+    if (cacheUtenti.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="2" style="text-align:center;color:var(--muted);">Nessun utente nel database.</td></tr>`;
+        return;
+    }
+    const ultimi = [...cacheUtenti].sort((a, b) => b.id - a.id).slice(0, 5);
+    tbody.innerHTML = ultimi.map(u => `
+        <tr>
+            <td>${escapeHtmlStaff(u.username)}</td>
+            <td><span class="pill ${RUOLO_PILL[u.ruolo] || 'pill-gray'}">${escapeHtmlStaff(u.ruolo)}</span></td>
+        </tr>`).join('');
+}
 
 // ==========================================
 // INIZIALIZZAZIONE PAGINA
@@ -98,6 +124,7 @@ async function caricaUtenti() {
         }
         cacheUtenti = await res.json();
         renderizzaTabellaUtenti();
+        aggiornaOverviewDashboard();
     } catch (err) {
         console.error('Errore caricamento utenti:', err);
         if (tbody) tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--muted);">Impossibile contattare il server.</td></tr>`;
@@ -302,6 +329,7 @@ async function caricaSquadre() {
         cacheSquadre = await res.json();
         renderizzaTabellaSquadre();
         popolaSelectSquadraUtente();
+        aggiornaOverviewDashboard();
     } catch (err) {
         console.error('Errore caricamento squadre:', err);
         if (tbody) tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--muted);">Impossibile contattare il server.</td></tr>`;
@@ -403,6 +431,7 @@ async function caricaBadgeDisponibili() {
         }
         cacheBadge = await res.json();
         renderizzaTabellaBadge();
+        aggiornaOverviewDashboard();
     } catch (err) {
         console.error('Errore caricamento badge:', err);
         if (tbody) tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--muted);">Impossibile contattare il server.</td></tr>`;
@@ -519,6 +548,7 @@ async function caricaDomandeQuiz() {
 
         quizAdminCache = await res.json();
         renderizzaTabellaQuiz();
+        aggiornaOverviewDashboard();
 
     } catch (err) {
         console.error('Errore di rete caricamento quiz:', err);

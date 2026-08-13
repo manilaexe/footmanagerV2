@@ -42,6 +42,17 @@ html, body { height: 100%; font-family: 'Barlow', sans-serif; background: var(--
 .kpi.amber .num { color: #facc15; }
 .kpi.red   .num { color: #f87171; }
 
+/* QUICK ACCESS (pannello Dashboard) */
+.quick-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.quick-card { background: var(--dark2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem; display: flex; align-items: center; gap: 0.9rem; cursor: pointer; transition: border-color 0.15s, transform 0.15s; }
+.quick-card:hover { border-color: var(--green); transform: translateY(-2px); }
+.quick-icon { font-size: 1.6rem; width: 46px; height: 46px; border-radius: 10px; background: var(--dark3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.quick-num { font-family: 'Barlow Condensed', sans-serif; font-size: 1.6rem; font-weight: 800; line-height: 1; }
+.quick-lbl { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+.card-link { font-size: 0.8rem; color: var(--green-l); cursor: pointer; }
+.card-link:hover { text-decoration: underline; }
+@media (max-width: 1000px) { .quick-grid { grid-template-columns: repeat(2,1fr); } }
+
 /* TABS */
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
 .tab { padding: 0.6rem 1.2rem; font-size: 0.875rem; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
