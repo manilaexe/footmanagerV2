@@ -1,18 +1,35 @@
-// ── CONFIGURAZIONE API ──
-const API_BASE_URL = 'http://localhost:8080/api';
-const token = localStorage.getItem('token'); // Recuperato al login
+/* ==========================================================================
+   1. CONFIGURAZIONE API E VARIABILI GLOBALI DI STATO
+   ==========================================================================
+   Definiamo gli endpoint per la comunicazione con il server (backend)
+   e le variabili di stato che mantengono in memoria i dati condivisi nell'applicazione
+   (lista giocatori, partite, ruoli e nome dell'utente loggato).
+*/
+const API_BASE_URL = 'http://localhost:8080/api'; // Definisce l'URL di base dell'API REST a cui inviare tutte le richieste HTTP per il backend
+const token = localStorage.getItem('token');      // Recupera il token di autenticazione JWT dalla memoria locale del browser (localStorage), salvato durante il login
 
-// Array dinamici che verranno popolati dalle chiamate API
-let PLAYERS = [];
-let MATCHES = [];
-let ruoloUtente = '';     // ruolo dell'utente loggato (per adattare la vista)
-let mioNomeStat = '';     // nome nel formato "N. Cognome" usato dal backend, per riconoscere il proprio giocatore
+//ARRAY DINAMICI CHE VERRANNO POPOLATI DALLE CHIAMATE API
+let PLAYERS = [];         // Array globale destinato a contenere l'elenco completo dei giocatori ricevuti dal server
+/*NON CREDO SERVA, NON ABBIAMO UN DB CON I MATCH MA MAGARI CON UN API CHE SI COLLEGA A "GOOGLE E PRENDE I DFATI DELLE PARTITE POTREBBE ESSE USATO COME COLLEGAMENTO ESTERNO SENZA USARE PROGETTI DI ALTRI COMPAGNI*/
+  let MATCHES = [];         // Array globale destinato a contenere la cronologia e l'andamento delle ultime partite
+let ruoloUtente = '';     // Memorizza la stringa rappresentante il ruolo dell'utente (es. 'ALLENATORE' o 'GIOCATORE') per adattare l'interfaccia
+let mioNomeStat = '';     // Memorizza il nome del giocatore corrente nel formato "N. Cognome" per identificarlo all'interno delle liste
 
+/* ==========================================================================
+   2. INIZIALIZZAZIONE DELLA PAGINA (EVENTO DOMContentLoaded)
+   ==========================================================================
+   Viene eseguito non appena il documento HTML è stato completamente scaricato e analizzato.
+   Si occupa di:
+   - Verificare le credenziali di accesso.
+   - Popolare l'interfaccia utente di base (sidebar con nome, ruolo e avatar).
+   - Verificare le autorizzazioni di ruolo (nascondendo sezioni se l'utente è un semplice giocatore).
+   - Avviare il caricamento asincrono dei dati reali dal server tramite API.
+*/
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Esegue il controllo sulla validità del login
+    //Esegue il controllo sulla validità del login
     verificaAutenticazione();
 
-    // 2. Popola la sidebar con nome/ruolo dal localStorage (Stessa identica logica di rosa.js)
+    // Legge i dati utente salvati nel browser e popola la sidebar con nome/ruolo dal localStorage
     const sbName = document.getElementById('sb-nome');
     const sbRole = document.getElementById('sb-ruolo');
     const sbAv   = document.getElementById('sb-avatar');
@@ -21,13 +38,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cognome = localStorage.getItem('cognomeReale') || '';
     const ruolo   = localStorage.getItem('ruolo')        || '';
     
+    // Mostra nome e ruolo nella barra laterale
     if (sbName) sbName.textContent = cognome ? `${nome} ${cognome}` : nome;
-    
-    // Formattiamo il testo del Ruolo in modo elegante (es. ALLENATORE -> Allenatore)
-    if (sbRole && ruolo) {
-        sbRole.textContent = ruolo;
-    }
-    
+    if (sbRole && ruolo) { sbRole.textContent = ruolo; }  // Formattiamo il testo del Ruolo in modo elegante (es. ALLENATORE -> Allenatore)
     if (sbAv) renderAvatar(sbAv, (nome[0]||('')).toUpperCase() + (cognome[0]||nome[1]||'').toUpperCase());
 
     // Salviamo ruolo e nome "N. Cognome" (stesso formato usato dal backend) per poter
