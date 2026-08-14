@@ -252,7 +252,6 @@ function popolaKpiSquadra(kpi) {
    - Limitano la vista e nascondono componenti ad uso esclusivo dello staff quando accede un GIOCATORE.
    - Gestiscono il passaggio visivo tra i vari tab (Squadra, Individuale, Confronto, Forma).
 */
-
 // Sostituisce il contenuto del selettore giocatori con una stringa di caricamento temporanea
 function aggiornaInterfacciaCaricamento() {
     document.getElementById('player-selector').innerHTML = "Caricamento giocatori...";
@@ -359,41 +358,62 @@ function radarPts(vals,max=100,r=100){
 
 // Disegna e renderizza l'intero grafico Radar vettoriale per il giocatore selezionato
 function drawRadar(idx){
-  const p=PLAYERS[idx];   // Recupera il giocatore dall'array tramite indice
-  const svg=document.getElementById('radar-svg');
+  const p = PLAYERS[idx];   // Recupera il giocatore dall'array tramite indice
+  const svg = document.getElementById('radar-svg');
   if(!svg || !p) return;  // Controlla la presenza sia dell'SVG che dell'oggetto giocatore
   
-  const N=RADAR_CATS.length,R=100;                              // Numero di assi (6) e raggio massimo (100px)
-  const maxVals=[20,12,100,100,100,30];                         // Scala massima per ogni singola categoria
-  const vals=[p.gol,p.ass,p.pass,p.drib,p.duelli,p.intercetti]; // Dati reali del giocatore
+  // Distingue categorie, valori massimi e valori reali in base al ruolo (Portiere vs Giocatore di movimento)
+  const isGK = Boolean(p.portiere);
+  
+  const cats = isGK 
+    ? ['Parate', 'Clean Sheet', 'Passaggi', 'Uscite', 'Duelli', 'Intercetti']
+    : RADAR_CATS; // ['Gol','Assist','Passaggi','Dribbling','Duelli','Intercetti']
 
-  let html='';
+  const maxVals = isGK 
+    ? [80, 15, 100, 30, 100, 30] 
+    : [20, 12, 100, 100, 100, 30];
 
-  // 1. Disegna 5 poligoni concentrici grigi per rappresentare la ragnatela di sfondo (20%, 40%, 60%, 80%, 100%)
-  for(let ring=1;ring<=5;ring++){
-    const pts=RADAR_CATS.map((_,i)=>{const a=(2*Math.PI*i/N)-Math.PI/2;const r2=(ring/5)*R;return`${(r2*Math.cos(a)).toFixed(1)},${(r2*Math.sin(a)).toFixed(1)}`;});
-    html+=`<polygon points="${pts.join(' ')}" fill="none" stroke="rgba(48,54,61,.7)" stroke-width="1"/>`;
+  const vals = isGK 
+    ? [p.parate, p.cleanSheet, p.pass, p.uscite, p.duelli, p.intercetti]
+    : [p.gol, p.ass, p.pass, p.drib, p.duelli, p.intercetti];
+
+  const N = cats.length, R = 100;
+
+  let html = '';
+
+  // 1. Disegna 5 poligoni concentrici grigi per la ragnatela di sfondo
+  for(let ring = 1; ring <= 5; ring++){
+    const pts = cats.map((_, i) => {
+      const a = (2 * Math.PI * i / N) - Math.PI / 2;
+      const r2 = (ring / 5) * R;
+      return `${(r2 * Math.cos(a)).toFixed(1)},${(r2 * Math.sin(a)).toFixed(1)}`;
+    });
+    html += `<polygon points="${pts.join(' ')}" fill="none" stroke="rgba(48,54,61,.7)" stroke-width="1"/>`;
   }
 
-  // 2. Disegna le 6 linee degli assi radiali che partono dal centro verso i vertici esterni e posiziona le etichette
-  RADAR_CATS.forEach((cat,i)=>{
-    const a=(2*Math.PI*i/N)-Math.PI/2;
-    html+=`<line x1="0" y1="0" x2="${(R*Math.cos(a)).toFixed(1)}" y2="${(R*Math.sin(a)).toFixed(1)}" stroke="rgba(48,54,61,.8)" stroke-width="1"/>`;
-    const lx=(R*1.2*Math.cos(a)).toFixed(1),ly=(R*1.2*Math.sin(a)).toFixed(1);
-    html+=`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" font-size="10" fill="#8b949e">${cat}</text>`;
+  // 2. Disegna le 6 linee degli assi radiali e posiziona le etichette specifiche
+  cats.forEach((cat, i) => {
+    const a = (2 * Math.PI * i / N) - Math.PI / 2;
+    html += `<line x1="0" y1="0" x2="${(R * Math.cos(a)).toFixed(1)}" y2="${(R * Math.sin(a)).toFixed(1)}" stroke="rgba(48,54,61,.8)" stroke-width="1"/>`;
+    const lx = (R * 1.2 * Math.cos(a)).toFixed(1);
+    const ly = (R * 1.2 * Math.sin(a)).toFixed(1);
+    html += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" font-size="10" fill="#8b949e">${cat}</text>`;
   });
 
-  // 3. Normalizza i valori del giocatore (0-100%) e calcola i punti per disegnare il poligono verde pieno dei dati
-  const pts=radarPts(vals.map((v,i)=>Math.min(v/maxVals[i]*100,100)),100,R);
-  const poly=pts.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+  // 3. Normalizza i valori (0-100%) e calcola le coordinate poligonali
+  const pts = radarPts(vals.map((v, i) => Math.min((v || 0) / maxVals[i] * 100, 100)), 100, R);
+  const poly = pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
 
-  // Aggiunge la forma poligonale semitrasparente verde ed i relativi pallini vertice
-  html+=`<polygon points="${poly}" fill="rgba(76,175,80,.15)" stroke="#4caf50" stroke-width="2"/>`;
-  pts.forEach(([x,y])=>{ html+=`<circle cx="${x}" cy="${y}" r="4" fill="#4caf50"/>`; });
+  // Aggiunge il poligono pieno con colore differente per i portieri (es. Arancione/Amber per GK, Verde per Movement)
+  const color = isGK ? '#f59e0b' : '#4caf50';
+  const fillColor = isGK ? 'rgba(245, 158, 11, 0.15)' : 'rgba(76, 175, 80, 0.15)';
+
+  html += `<polygon points="${poly}" fill="${fillColor}" stroke="${color}" stroke-width="2"/>`;
+  pts.forEach(([x, y]) => { html += `<circle cx="${x}" cy="${y}" r="4" fill="${color}"/>`; });
   
-  // Inserisce l'HTML generato dentro il tag SVG e aggiorna l'intestazione col nome del giocatore
-  svg.innerHTML=html;
-  document.getElementById('radar-name').textContent=p.nome;
+  // Inserisce l'HTML generato dentro il tag SVG e aggiorna l'intestazione
+  svg.innerHTML = html;
+  document.getElementById('radar-name').textContent = `${p.nome} ${isGK ? '(POR)' : ''}`;
 }
 
 /* ==========================================================================
@@ -405,24 +425,39 @@ function drawRadar(idx){
 */
 // Renderizza la scheda dettagliata a barre per le statistiche del singolo giocatore selezionato
 function renderIndivBars(idx){
-  const p=PLAYERS[idx]; // Seleziona il giocatore
+  const p = PLAYERS[idx]; // Seleziona il giocatore
   if(!p) return;
 
-  // Struttura dati locale contenente le metriche da mostrare, i relativi valori massimi e la classe di colore CSS
-  const items=[
-    {l:'Presenze',v:p.pres,max:25,c:'fill-green'},
-    {l:'Gol',v:p.gol,max:20,c:'fill-green'},
-    {l:'Assist',v:p.ass,max:12,c:'fill-blue'},
-    {l:'Tiri totali',v:p.tiri,max:40,c:'fill-amber'},
-    {l:'Passaggi %',v:p.pass,max:100,c:'fill-blue'},
-    {l:'Dribbling %',v:p.drib,max:100,c:'fill-green'},
-    {l:'Duelli vinti %',v:p.duelli,max:100,c:'fill-amber'},
+  // Struttura dati condizionale in base al ruolo
+  const items = p.portiere ? [
+    { l: 'Presenze', v: p.pres || 0, max: 25, c: 'fill-green' },
+    { l: 'Parate effettuate', v: p.parate || 0, max: 80, c: 'fill-blue' },
+    { l: 'Clean Sheet', v: p.cleanSheet || 0, max: 15, c: 'fill-green' },
+    { l: 'Gol Subiti', v: p.golSubiti || 0, max: 30, c: 'fill-amber' },
+    { l: 'Passaggi %', v: p.pass || 0, max: 100, c: 'fill-blue' },
+    { l: 'Uscite uscite %', v: p.uscite || 0, max: 100, c: 'fill-green' },
+    { l: 'Duelli Aerei %', v: p.duelli || 0, max: 100, c: 'fill-amber' }
+  ] : [
+    { l: 'Presenze', v: p.pres || 0, max: 25, c: 'fill-green' },
+    { l: 'Gol', v: p.gol || 0, max: 20, c: 'fill-green' },
+    { l: 'Assist', v: p.ass || 0, max: 12, c: 'fill-blue' },
+    { l: 'Tiri totali', v: p.tiri || 0, max: 40, c: 'fill-amber' },
+    { l: 'Passaggi %', v: p.pass || 0, max: 100, c: 'fill-blue' },
+    { l: 'Dribbling %', v: p.drib || 0, max: 100, c: 'fill-green' },
+    { l: 'Duelli vinti %', v: p.duelli || 0, max: 100, c: 'fill-amber' }
   ];
 
   // Inietta l'HTML mappando ogni voce nell'elemento contenitore 'indiv-bars'
-  document.getElementById('indiv-bars').innerHTML=items.map(it=>`
-    <div class="bc-row"><div class="bc-label"><span class="name">${it.l}</span><span>${it.v}${it.l.includes('%')?'%':''}</span></div>
-    <div class="bc-track"><div class="bc-fill ${it.c}" style="width:${(it.v/it.max*100).toFixed(0)}%"></div></div></div>
+  document.getElementById('indiv-bars').innerHTML = items.map(it => `
+    <div class="bc-row">
+      <div class="bc-label">
+        <span class="name">${it.l}</span>
+        <span>${it.v}${it.l.includes('%') ? '%' : ''}</span>
+      </div>
+      <div class="bc-track">
+        <div class="bc-fill ${it.c}" style="width:${Math.min((it.v / it.max * 100), 100).toFixed(0)}%"></div>
+      </div>
+    </div>
   `).join('');
 }
 
