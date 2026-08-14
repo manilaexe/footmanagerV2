@@ -228,44 +228,100 @@
       </div>
 
       <!-- Indicatori: Possesso palla, Passaggi e Disciplina -->
-      <div class="grid-3" id="grid-possesso-disciplina">
-        <div class="card">
-          <div class="card-header"><h2>🔵 Possesso</h2></div>
-          <div class="card-body" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:1.5rem">
-            <div style="position:relative;width:120px;height:120px">
-              <svg viewBox="0 0 36 36" style="width:100%;height:100%;transform:rotate(-90deg)">
-                <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
-                <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--green-l)" stroke-width="3.5" stroke-dasharray="0 100" id="circle-possesso" stroke-linecap="round"/>
-              </svg>
-              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800" id="kpi-possesso">--%</div>
+                  <!-- Indicatori a Cerchio (Donuts) -->
+            <div class="grid-cards-6" id="grid-stat-donuts">
+              
+              <!-- 1. Duelli Vinti -->
+              <div class="card">
+                <div class="card-header"><h2>⚔️ Duelli Vinti</h2></div>
+                <div class="card-body donut-card-body">
+                  <div class="donut-wrap">
+                    <svg viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--green-l)" stroke-width="3.5" stroke-dasharray="0 100" id="circle-duelli-vinti" stroke-linecap="round"/>
+                    </svg>
+                    <div class="donut-val" id="kpi-duelli-vinti">--%</div>
+                  </div>
+                  <div class="donut-label">Duelli Vinti</div>
+                </div>
+              </div>
+
+              <!-- 2. Duelli Persi -->
+              <div class="card">
+                <div class="card-header"><h2>🛡️ Duelli Persi</h2></div>
+                <div class="card-body donut-card-body">
+                  <div class="donut-wrap">
+                    <svg viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f87171" stroke-width="3.5" stroke-dasharray="0 100" id="circle-duelli-persi" stroke-linecap="round"/>
+                    </svg>
+                    <div class="donut-val" id="kpi-duelli-persi">--%</div>
+                  </div>
+                  <div class="donut-label">Duelli Persi</div>
+                </div>
+              </div>
+
+              <!-- 3. Precisione Passaggi -->
+              <div class="card">
+                <div class="card-header"><h2>🎯 Passaggi</h2></div>
+                <div class="card-body donut-card-body">
+                  <div class="donut-wrap">
+                    <svg viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="#60a5fa" stroke-width="3.5" stroke-dasharray="0 100" id="circle-precisione" stroke-linecap="round"/>
+                    </svg>
+                    <div class="donut-val" id="kpi-precisione">--%</div>
+                  </div>
+                  <div class="donut-label">Precisione Passaggi</div>
+                </div>
+              </div>
+
+              <!-- 4. Dribbling Vinti -->
+              <div class="card">
+                <div class="card-header"><h2>⚡ Dribbling Vinti</h2></div>
+                <div class="card-body donut-card-body">
+                  <div class="donut-wrap">
+                    <svg viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="#a78bfa" stroke-width="3.5" stroke-dasharray="0 100" id="circle-drib-vinti" stroke-linecap="round"/>
+                    </svg>
+                    <div class="donut-val" id="kpi-drib-vinti">--%</div>
+                  </div>
+                  <div class="donut-label">Dribbling Riusciti</div>
+                </div>
+              </div>
+
+              <!-- 5. Dribbling Persi -->
+              <div class="card">
+                <div class="card-header"><h2>❌ Dribbling Persi</h2></div>
+                <div class="card-body donut-card-body">
+                  <div class="donut-wrap">
+                    <svg viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f87171" stroke-width="3.5" stroke-dasharray="0 100" id="circle-drib-persi" stroke-linecap="round"/>
+                    </svg>
+                    <div class="donut-val" id="kpi-drib-persi">--%</div>
+                  </div>
+                  <div class="donut-label">Dribbling Falliti</div>
+                </div>
+              </div>
+
+              <!-- 6. Possesso Palla -->
+              <div class="card">
+                <div class="card-header"><h2>🔵 Possesso</h2></div>
+                <div class="card-body donut-card-body">
+                  <div class="donut-wrap">
+                    <svg viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="#facc15" stroke-width="3.5" stroke-dasharray="0 100" id="circle-possesso" stroke-linecap="round"/>
+                    </svg>
+                    <div class="donut-val" id="kpi-possesso">--%</div>
+                  </div>
+                  <div class="donut-label">Possesso Medio</div>
+                </div>
+              </div>
+
             </div>
-            <div style="font-size:.8rem;color:var(--muted)">Possesso medio</div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><h2>🎯 Precisione passaggi</h2></div>
-          <div class="card-body" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:1.5rem">
-            <div style="position:relative;width:120px;height:120px">
-              <svg viewBox="0 0 36 36" style="width:100%;height:100%;transform:rotate(-90deg)">
-                <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
-                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#60a5fa" stroke-width="3.5" stroke-dasharray="0 100" id="circle-precisione" stroke-linecap="round"/>
-              </svg>
-              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800" id="kpi-precisione">--%</div>
-            </div>
-            <div style="font-size:.8rem;color:var(--muted)">Passaggi riusciti</div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><h2>⚠️ Disciplina</h2></div>
-          <div class="card-body">
-            <div style="display:flex;flex-direction:column;gap:14px;padding:.25rem 0">
-              <div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:800;color:#facc15" id="kpi-ammonizioni">--</div><div style="font-size:.75rem;color:var(--muted);text-transform:uppercase">Ammonizioni</div></div>
-              <div style="height:1px;background:var(--border)"></div>
-              <div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:800;color:#f87171" id="kpi-espulsioni">--</div><div style="font-size:.75rem;color:var(--muted);text-transform:uppercase">Espulsioni</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
 
     </div>
   </div>

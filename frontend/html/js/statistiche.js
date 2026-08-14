@@ -143,105 +143,122 @@ async function caricaDatiGiocatori() {
    dinamicamente gli elementi di testo, le barre di progresso HTML e i grafici a cerchio SVG.
 */
 function popolaKpiSquadra(kpi) {
-  // Se l'oggetto KPI ricevuto è nullo o non definito, interrompe l'esecuzione per evitare errori
+  // Se l'oggetto KPI ricevuto è nullo o non definito, interrompe l'esecuzione
   if (!kpi) return;
     
-  // Funzione helper interna per impostare in modo sicuro il testo di un elemento DOM dato il suo ID
+  // Helper per impostare il testo di un elemento DOM dato il suo ID
   const impostaTesto = (id, valore) => {
-    const el = document.getElementById(id); // Cerca l'elemento per ID
-    if (el) el.textContent = valore;        // Se trovato, imposta il valore testuale
+    const el = document.getElementById(id);
+    if (el) el.textContent = valore;
   };
 
-  // Funzione helper interna per calcolare la percentuale e aggiornare sia il testo che la larghezza della barra CSS
+  // Helper per calcolare la percentuale e aggiornare le barre di progresso CSS
   const aggiornaBarra = (idTesto, idBarra, valore, maxValore, isPercentuale = false) => {
-    // Garantisce che il valore sia un numero valido (se undefined/null usa 0)
     const val = valore ?? 0;
-
-    // Formatta il valore visibile a schermo (0 decimali se percentuale, 1 decimale per le medie)
     impostaTesto(idTesto, isPercentuale ? `${Number(val).toFixed(0)}%` : Number(val).toFixed(1));
         
-    // Seleziona la barra di progresso nell'interfaccia
     const barra = document.getElementById(idBarra);
     if (barra) {
-      let percentuale = isPercentuale ? val : (val / maxValore) * 100;  // Calcola la larghezza percentuale rispetto al valore massimo teorico
-      // Applica vincoli (clamping) affinché la larghezza sia sempre compresa tra 0% e 100%
+      let percentuale = isPercentuale ? val : (val / maxValore) * 100;
       if (percentuale > 100) percentuale = 100;
       if (percentuale < 0) percentuale = 0;
-      // Applica la nuova larghezza calcolata direttamente allo stile CSS dell'elemento
       barra.style.width = `${percentuale}%`;
     }
   };
 
-  // Estrae i valori principali dal DB con fallback su valori di default di sicurezza
+  // Helper per aggiornare i grafici a cerchio (SVG Donuts)
+  const aggiornaDonut = (idTesto, idCerchio, valorePercentuale) => {
+    // Clamping tra 0% e 100%
+    const pct = Math.min(Math.max(Number(valorePercentuale) || 0, 0), 100);
+    
+    // Aggiorna la label testuale al centro del cerchio
+    impostaTesto(idTesto, `${pct.toFixed(0)}%`);
+
+    // Aggiorna il tratto dell'SVG (stroke-dasharray)
+    const cerchio = document.getElementById(idCerchio);
+    if (cerchio) {
+      cerchio.setAttribute('stroke-dasharray', `${pct.toFixed(1)} ${100 - pct.toFixed(1)}`);
+    }
+  };
+
+  // Valori principali dal DB con fallback
   const partiteTotali = kpi.partiteGiocate ?? kpi.partite ?? 2; 
   const golFattiTotali = kpi.golFatti ?? 2;
   const golSubitiTotali = kpi.golSubiti ?? 4;
 
-  // 1. Popola i box numerici dei KPI in alto (Gol fatti, subiti, vittorie, pareggi, ecc.)
+  // 1. Popola i box numerici dei KPI principali in alto
   impostaTesto('kpi-gol-fatti', golFattiTotali);
   impostaTesto('kpi-gol-subiti', golSubitiTotali);
   impostaTesto('kpi-partite', partiteTotali);
   impostaTesto('kpi-vittorie', kpi.vittorie ?? 0);
   impostaTesto('kpi-pareggi', kpi.pareggi ?? 0);
   impostaTesto('kpi-sconfitte', kpi.sconfitte ?? 0);
-    
-  // 2. Popola i box numerici dei KPI secondari in basso (Possesso, passaggi, cartellini)
-  impostaTesto('kpi-possesso', (kpi.possessoMedio ?? 50) + '%');
-  impostaTesto('kpi-precisione', (kpi.precisionePassaggi ?? 50) + '%');
-  impostaTesto('kpi-ammonizioni', kpi.ammonizioniTotali ?? 0);
-  impostaTesto('kpi-espulsioni', kpi.espulsioniTotali ?? 0);
 
-  // Somma i tiri e gli assist totali effettuati da ciascun giocatore sommando le metriche dell'array PLAYERS
+  // Somma statistiche avanzate dai giocatori (PLAYERS)
   const totaleTiriGiocatori = PLAYERS.reduce((sum, p) => sum + (Number(p.tiri) || 0), 0);
   const totaleAssistGiocatori = PLAYERS.reduce((sum, p) => sum + (Number(p.ass) || 0), 0);
-  
-  const giocatoriAttivi = PLAYERS.filter(p => (Number(p.pres) || 0) > 0); // Filtra l'array mantenendo solo i giocatori che hanno effettivamente disputato almeno una presenza
-  const contaAttivi = giocatoriAttivi.length || 1;                        // Conta quanti giocatori sono attivi (utilizza 1 come valore minimo per evitare divisioni per zero)
-
-  // Calcola la media squadra relativa alle percentuali di passaggi, dribbling e duelli
-  const mediaPassaggi = giocatoriAttivi.reduce((sum, p) => sum + (Number(p.pass) || 0), 0) / contaAttivi;
-  const mediaDribbling = giocatoriAttivi.reduce((sum, p) => sum + (Number(p.drib) || 0), 0) / contaAttivi;
-  const mediaDuelli = giocatoriAttivi.reduce((sum, p) => sum + (Number(p.duelli) || 0), 0) / contaAttivi;
-  
-  // Calcola il totale complessivo degli intercetti difensivi della squadra
   const totaleIntercetti = PLAYERS.reduce((sum, p) => sum + (Number(p.intercetti) || 0), 0);
 
-  // Calcola le medie partita dividendo i totali della squadra per il numero di partite giocate
+  const giocatoriAttivi = PLAYERS.filter(p => (Number(p.pres) || 0) > 0);
+  const contaAttivi = giocatoriAttivi.length || 1;
+
+  // Medie generali per giocatore
+  const mediaPassaggi = giocatoriAttivi.reduce((sum, p) => sum + (Number(p.pass) || 0), 0) / contaAttivi;
+  const mediaDuelli = giocatoriAttivi.reduce((sum, p) => sum + (Number(p.duelli) || 0), 0) / contaAttivi;
+
+  // Medie squadra per partita
   const golFattiMedio = golFattiTotali / partiteTotali;
   const golSubitiMedio = golSubitiTotali / partiteTotali;
   const tiriMedio = totaleTiriGiocatori / partiteTotali;
   const assistMedio = totaleAssistGiocatori / partiteTotali;
 
-  // Calcola il tasso percentuale di conversione dei tiri in gol (Gol / Tiri * 100)
+  // Conversione tiri/gol %
   const conversioneSquadra = totaleTiriGiocatori > 0 ? (golFattiTotali / totaleTiriGiocatori) * 100 : 0;
 
-  // 3. Aggiorna visivamente la sezione "Rendimento Offensivo"
+  // 2. Aggiorna "Rendimento Offensivo"
   aggiornaBarra('txt-off-gol', 'bar-off-gol', golFattiMedio, 4.0);
   aggiornaBarra('txt-off-tiri', 'bar-off-tiri', tiriMedio, 10.0);
   aggiornaBarra('txt-off-conversione', 'bar-off-conversione', conversioneSquadra, 100, true); 
   aggiornaBarra('txt-off-chance', 'bar-off-chance', kpi.bigChancePartita ?? 1.5, 6.0);
   aggiornaBarra('txt-off-assist', 'bar-off-assist', assistMedio, 4.0);
 
-  // 4. Aggiorna visivamente la sezione "Rendimento Difensivo"
+  // 3. Aggiorna "Rendimento Difensivo"
   aggiornaBarra('txt-def-gol', 'bar-def-gol', golSubitiMedio, 3.0);
   aggiornaBarra('txt-def-clean', 'bar-def-clean', kpi.cleanSheet ?? 0, partiteTotali); 
   aggiornaBarra('txt-def-tackle', 'bar-def-tackle', mediaDuelli / 4, 25.0);
   aggiornaBarra('txt-def-intercetti', 'bar-def-intercetti', totaleIntercetti / partiteTotali, 20.0);
   aggiornaBarra('txt-def-falli', 'bar-def-falli', kpi.falliSubitiPartita ?? 0, 25.0);
 
-  // 5. Aggiorna le proprietà dei cerchi vettoriali SVG per rappresentare graficamente il possesso palla
-  const cerchioPossesso = document.getElementById('circle-possesso');
-  if (cerchioPossesso) {
-    const possesso = kpi.possessoMedio ?? 50;
-    // La proprietà stroke-dasharray definisce la lunghezza del tratto visibile e del tratto trasparente
-    cerchioPossesso.setAttribute('stroke-dasharray', `${possesso} ${100 - possesso}`);
-  }
-  // Aggiorna la circonferenza vettoriale SVG relativa alla precisione dei passaggi
-  const cerchioPrecisione = document.getElementById('circle-precisione');
-  if (cerchioPrecisione) {
-    const precisione = kpi.precisionePassaggi ?? mediaPassaggi ?? 50;
-    cerchioPrecisione.setAttribute('stroke-dasharray', `${precisione} ${100 - precisione}`);
-  }
+  // 4. CALCOLO E AGGIORNAMENTO DEI 6 CERCHI (DONUTS)
+
+  // --- DUELLI ---
+  const duelliVintiTot  = PLAYERS.reduce((s, p) => s + (Number(p.duelliRiusciti) || Number(p.duelli) || 0), 0);
+  const duelliTotali    = PLAYERS.reduce((s, p) => s + (Number(p.duelliTentati)  || 0), 0);
+  const pctDuelliVinti  = duelliTotali > 0 ? (duelliVintiTot / duelliTotali) * 100 : (kpi.pctDuelliVinti ?? 50);
+  const pctDuelliPersi  = 100 - pctDuelliVinti;
+
+  aggiornaDonut('kpi-duelli-vinti', 'circle-duelli-vinti', pctDuelliVinti);
+  aggiornaDonut('kpi-duelli-persi', 'circle-duelli-persi', pctDuelliPersi);
+
+  // --- PASSAGGI ---
+  const passVintiTot  = PLAYERS.reduce((s, p) => s + (Number(p.passaggiRiusciti) || 0), 0);
+  const passTotali    = PLAYERS.reduce((s, p) => s + (Number(p.passaggiTentati)  || 0), 0);
+  const pctPassaggi   = passTotali > 0 ? (passVintiTot / passTotali) * 100 : (kpi.precisionePassaggi ?? mediaPassaggi ?? 50);
+
+  aggiornaDonut('kpi-precisione', 'circle-precisione', pctPassaggi);
+
+  // --- DRIBBLING ---
+  const dribVintiTot  = PLAYERS.reduce((s, p) => s + (Number(p.dribblingRiusciti) || Number(p.drib) || 0), 0);
+  const dribTotali    = PLAYERS.reduce((s, p) => s + (Number(p.dribblingTentati)  || 0), 0);
+  const pctDribVinti  = dribTotali > 0 ? (dribVintiTot / dribTotali) * 100 : (kpi.pctDribblingVinti ?? 50);
+  const pctDribPersi  = 100 - pctDribVinti;
+
+  aggiornaDonut('kpi-drib-vinti', 'circle-drib-vinti', pctDribVinti);
+  aggiornaDonut('kpi-drib-persi', 'circle-drib-persi', pctDribPersi);
+
+  // --- POSSESSO ---
+  const pctPossesso = kpi.possessoMedio ?? 50;
+  aggiornaDonut('kpi-possesso', 'circle-possesso', pctPossesso);
 }
 
 /* ==========================================================================
