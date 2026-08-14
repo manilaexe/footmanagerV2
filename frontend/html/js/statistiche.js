@@ -26,282 +26,356 @@ let mioNomeStat = '';     // Memorizza il nome del giocatore corrente nel format
    - Avviare il caricamento asincrono dei dati reali dal server tramite API.
 */
 document.addEventListener('DOMContentLoaded', async () => {
-    //Esegue il controllo sulla validità del login
-    verificaAutenticazione();
+  // 1. Esegue la funzione di verifica per controllare se il token di login è presente e valido  
+  verificaAutenticazione(); 
 
-    // Legge i dati utente salvati nel browser e popola la sidebar con nome/ruolo dal localStorage
-    const sbName = document.getElementById('sb-nome');
-    const sbRole = document.getElementById('sb-ruolo');
-    const sbAv   = document.getElementById('sb-avatar');
+  // 2. Seleziona gli elementi DOM della sidebar da popolare con i dati dell'utente    
+  const sbName = document.getElementById('sb-nome');    // Elemento per il nome e cognome
+  const sbRole = document.getElementById('sb-ruolo');   // Elemento per la visualizzazione del ruolo
+  const sbAv   = document.getElementById('sb-avatar');  // Elemento contenitore per l'avatar con le iniziali
+  
+  // Recupera il nome, cognome e ruolo dell'utente memorizzati nel localStorage, definendo valori di fallback se assenti
+  const nome    = localStorage.getItem('nomeReale')    || localStorage.getItem('username') || 'Utente';
+  const cognome = localStorage.getItem('cognomeReale') || '';
+  const ruolo   = localStorage.getItem('ruolo')        || '';
     
-    const nome    = localStorage.getItem('nomeReale')    || localStorage.getItem('username') || 'Utente';
-    const cognome = localStorage.getItem('cognomeReale') || '';
-    const ruolo   = localStorage.getItem('ruolo')        || '';
-    
-    // Mostra nome e ruolo nella barra laterale
-    if (sbName) sbName.textContent = cognome ? `${nome} ${cognome}` : nome;
-    if (sbRole && ruolo) { sbRole.textContent = ruolo; }  // Formattiamo il testo del Ruolo in modo elegante (es. ALLENATORE -> Allenatore)
-    if (sbAv) renderAvatar(sbAv, (nome[0]||('')).toUpperCase() + (cognome[0]||nome[1]||'').toUpperCase());
+  // Se l'elemento del nome esiste nella pagina, inserisce il nome completo o solo il nome
+  if (sbName) sbName.textContent = cognome ? `${nome} ${cognome}` : nome;
+  // Se esistono sia l'elemento ruolo che la stringa del ruolo, aggiorna il testo visibile
+  if (sbRole && ruolo) {
+    sbRole.textContent = ruolo;
+  }
+  // Se l'elemento avatar esiste, estrae le iniziali di Nome e Cognome e invoca la funzione di rendering dell'avatar
+  if (sbAv) renderAvatar(sbAv, (nome[0]||('')).toUpperCase() + (cognome[0]||nome[1]||'').toUpperCase());
 
-    // Salviamo ruolo e nome "N. Cognome" (stesso formato usato dal backend) per poter
-    // riconoscere il proprio giocatore nell'elenco e adattare la pagina di conseguenza
-    ruoloUtente = ruolo;
-    mioNomeStat = nome ? `${nome.charAt(0).toUpperCase()}. ${cognome}` : '';
-    if (ruoloUtente === 'GIOCATORE') nascondiSezioniSquadra();
+  // Assegna il ruolo dell'utente alla variabile globale
+  ruoloUtente = ruolo;
+  // Costruisce la stringa identificativa "N. Cognome" (es. "M. Rossi") utilizzata dal backend per le statistiche
+  mioNomeStat = nome ? `${nome.charAt(0).toUpperCase()}. ${cognome}` : '';
+  // Se l'utente loggato è un semplice 'GIOCATORE', nasconde tutte le sezioni riservate alla vista complessiva di squadra
+  if (ruoloUtente === 'GIOCATORE') nascondiSezioniSquadra();
 
-    // 3. Mostra lo stato iniziale di caricamento o azzeramento dei grafici
-    aggiornaInterfacciaCaricamento();
+  // 3. Imposta l'interfaccia nello stato di caricamento iniziale (es. placeholders o testi temporanei)
+  aggiornaInterfacciaCaricamento();
 
-    // 4. Avvia il caricamento parallelo dei dati dal Backend
-    await Promise.all([
-        caricaDatiSquadra(),
-        caricaDatiGiocatori()
-    ]);
+  // 4. Avvia contemporaneamente e in modo parallelo le due chiamate HTTP asincrone verso il backend
+  await Promise.all([
+    caricaDatiSquadra(),  // Richiede i dati e le statistiche globali della squadra
+    caricaDatiGiocatori() // Richiede le statistiche individuali di tutti i giocatori
+  ]);
 });
 
-/* ── REPERIMENTO DATI DAL BACKEND ── */
-
-// 1. Recupera le statistiche generali di squadra e le ultime partite
+/* ==========================================================================
+   3. REPERIMENTO DATI DAL BACKEND (CHIAMATE HTTP API)
+   ==========================================================================
+   Contiene le funzioni asincrone che comunicano direttamente con il backend tramite API REST (`fetch`).
+   Si occupano di scaricare i dati JSON, gestire eventuali errori di rete o autenticazione e scatenare il popolamento dei componenti visivi.
+*/
+// 1. Recupera dal server le statistiche generali di squadra e l'andamento degli ultimi match
 async function caricaDatiSquadra() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/statistiche/squadra`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!response.ok) throw new Error('Errore nel recupero dei dati squadra');
+  try {
+    // Effettua una richiesta HTTP GET all'endpoint /statistiche/squadra allegando il token Bearer nell'header
+    const response = await fetch(`${API_BASE_URL}/statistiche/squadra`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    // Controlla se la risposta del server è andata a buon fine (status code 200-299); altrimenti lancia un errore
+    if (!response.ok) throw new Error('Errore nel recupero dei dati squadra');
+      
+    // Converte il corpo della risposta HTTP da formato JSON in un oggetto JavaScript gestibile  
+    const data = await response.json();
+      
+    // Popola i riquadri con i KPI principali di squadra in alto nella dashboard
+    popolaKpiSquadra(data.kpi);
         
-        const data = await response.json();
+    // Disegna il grafico a linee dell'andamento dei gol fatti e subiti
+    drawLineChart(data.andamentoGolFatti, data.andamentoGolSubiti);
         
-        // Popola i KPI della squadra in alto
-        popolaKpiSquadra(data.kpi);
-        
-        // Disegna il line chart dei gol con i dati reali del backend
-        drawLineChart(data.andamentoGolFatti, data.andamentoGolSubiti);
-        
-        // Salva i match reali e renderizza la scheda Forma
-        MATCHES = data.ultimiMatch || [];
-        renderForma();
-        
-    } catch (error) {
-        console.error('Errore nel caricamento della squadra:', error);
-    }
+    // Salva nell'array globale l'elenco dei match recenti oppure un array vuoto se non presenti
+    MATCHES = data.ultimiMatch || [];
+    
+    // Genera la visualizzazione grafica dello stato di forma recente della squadra
+    renderForma();
+  } catch (error) {
+    // Intercetta e gestisce eventuali eccezioni durante la richiesta o l'elaborazione dei dati
+    console.error('Errore nel caricamento della squadra:', error);
+  }
 }
 
-// 2. Recupera le statistiche individuali di tutti i giocatori della rosa
+// 2. Recupera dal server le statistiche dettagliate relative a tutti i singoli giocatori
 async function caricaDatiGiocatori() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/statistiche/giocatori`, {
+  try {
+    // Effettua una richiesta HTTP GET all'endpoint /statistiche/giocatori includendo l'autorizzazione JWT
+    const response = await fetch(`${API_BASE_URL}/statistiche/giocatori`, {
             headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!response.ok) throw new Error('Errore nel recupero dei giocatori');
+    });
+
+    // Se la risposta non è valida o ritorna un codice di errore, blocca l'esecuzione e lancia un'eccezione
+    if (!response.ok) throw new Error('Errore nel recupero dei giocatori');
         
-        PLAYERS = await response.json();
-        
-        if (PLAYERS.length > 0) {
-            buildSelector();
-            renderConfronto();
-            renderTopScorers();
+    // Decodifica la risposta JSON salvando l'array ottenuto nella variabile globale PLAYERS
+    PLAYERS = await response.json();
+       
+    // Se l'array di giocatori contiene almeno un elemento
+    if (PLAYERS.length > 0) {
+      buildSelector();    // Costruisce la lista/selettore per la scelta del giocatore attivo
+      renderConfronto();  // Renderizza il pannello di confronto tra due giocatori
+      renderTopScorers(); // Genera la classifica visiva dei migliori marcatori (Top Scorers)
             
-            // 🌟 AGGIUNGI QUESTA RIGA: Forza il ricalcolo dei rendimenti ora che i giocatori ci sono!
-            if(MATCHES.length > 0) {
-                 // Recupera l'ultimo kpi caricato o riesegue il refresh
-                 caricaDatiSquadra(); 
-            }
-        } else {
-            document.getElementById('player-selector').innerHTML = "<p>Nessun giocatore trovato.</p>";
-        }
-    } catch (error) {
-        console.error('Errore nel caricamento dei giocatori:', error);
+      // Se sono già state caricate le partite di squadra, forza un ricalcolo aggiornato dei dati correlati
+      if(MATCHES.length > 0) {
+        caricaDatiSquadra(); 
+      }
+    } else {
+      // Se il server restituisce un array vuoto, mostra un messaggio informativo nel selettore
+      document.getElementById('player-selector').innerHTML = "<p>Nessun giocatore trovato.</p>";
     }
+  } catch (error) {
+    // Registra in console gli eventuali errori di connessione o di parsing del file JSON
+    console.error('Errore nel caricamento dei giocatori:', error);
+  }
 }
 
-/* ── POPOLAMENTO ELEMENTI STATICI/KPI ── */
-/* ── POPOLAMENTO ELEMENTI STATICI/KPI SQUADRA CON INTEGRAZIONE ROSE ── */
+/* ==========================================================================
+   4. POPOLAMENTO ELEMENTI STATICI E KPI DI SQUADRA
+   ==========================================================================
+   Prende in ingresso i dati KPI aggregati e calcola le varie metriche di squadra
+   (rendimento offensivo, difensivo, possesso palla, percentuali di precisione) aggiornando
+   dinamicamente gli elementi di testo, le barre di progresso HTML e i grafici a cerchio SVG.
+*/
 function popolaKpiSquadra(kpi) {
-    if (!kpi) return;
+  // Se l'oggetto KPI ricevuto è nullo o non definito, interrompe l'esecuzione per evitare errori
+  if (!kpi) return;
     
-    // Funzione interna di utilità per cambiare il testo se l'elemento esiste
-    const impostaTesto = (id, valore) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = valore;
-    };
+  // Funzione helper interna per impostare in modo sicuro il testo di un elemento DOM dato il suo ID
+  const impostaTesto = (id, valore) => {
+    const el = document.getElementById(id); // Cerca l'elemento per ID
+    if (el) el.textContent = valore;        // Se trovato, imposta il valore testuale
+  };
 
-    // Funzione interna per aggiornare sia il testo che la lunghezza percentuale della barra
-    const aggiornaBarra = (idTesto, idBarra, valore, maxValore, isPercentuale = false) => {
-        const val = valore ?? 0;
-        impostaTesto(idTesto, isPercentuale ? `${Number(val).toFixed(0)}%` : Number(val).toFixed(1));
+  // Funzione helper interna per calcolare la percentuale e aggiornare sia il testo che la larghezza della barra CSS
+  const aggiornaBarra = (idTesto, idBarra, valore, maxValore, isPercentuale = false) => {
+    // Garantisce che il valore sia un numero valido (se undefined/null usa 0)
+    const val = valore ?? 0;
+
+    // Formatta il valore visibile a schermo (0 decimali se percentuale, 1 decimale per le medie)
+    impostaTesto(idTesto, isPercentuale ? `${Number(val).toFixed(0)}%` : Number(val).toFixed(1));
         
-        const barra = document.getElementById(idBarra);
-        if (barra) {
-            let percentuale = isPercentuale ? val : (val / maxValore) * 100;
-            if (percentuale > 100) percentuale = 100;
-            if (percentuale < 0) percentuale = 0;
-            barra.style.width = `${percentuale}%`;
-        }
-    };
-
-    const partiteTotali = kpi.partiteGiocate ?? kpi.partite ?? 2; // Prende le partite dal DB (nel tuo caso 2)
-    const golFattiTotali = kpi.golFatti ?? 2;
-    const golSubitiTotali = kpi.golSubiti ?? 4;
-
-    // 1. Box KPI in alto
-    impostaTesto('kpi-gol-fatti', golFattiTotali);
-    impostaTesto('kpi-gol-subiti', golSubitiTotali);
-    impostaTesto('kpi-partite', partiteTotali);
-    impostaTesto('kpi-vittorie', kpi.vittorie ?? 0);
-    impostaTesto('kpi-pareggi', kpi.pareggi ?? 0);
-    impostaTesto('kpi-sconfitte', kpi.sconfitte ?? 0);
-    
-    // 2. Box KPI in basso
-    impostaTesto('kpi-possesso', (kpi.possessoMedio ?? 50) + '%');
-    impostaTesto('kpi-precisione', (kpi.precisionePassaggi ?? 50) + '%');
-    impostaTesto('kpi-ammonizioni', kpi.ammonizioniTotali ?? 0);
-    impostaTesto('kpi-espulsioni', kpi.espulsioniTotali ?? 0);
-
-    // 🌟 TRUCCO: Calcoliamo i totali aggregati partendo dall'array dei giocatori (PLAYERS)
-    // Se PLAYERS è vuoto (chiamata asincrona non ancora finita), impostiamo dei valori di base sicuri
-    const totaleTiriGiocatori = PLAYERS.reduce((sum, p) => sum + (Number(p.tiri) || 0), 0);
-    const totaleAssistGiocatori = PLAYERS.reduce((sum, p) => sum + (Number(p.ass) || 0), 0);
-    
-    // Per le percentuali medie di squadra (Passaggi, Dribbling, Duelli), facciamo la media dei giocatori che hanno effettivamente giocato
-    const giocatoriAttivi = PLAYERS.filter(p => (Number(p.pres) || 0) > 0);
-    const contaAttivi = giocatoriAttivi.length || 1;
-
-    const mediaPassaggi = giocatoriAttivi.reduce((sum, p) => sum + (Number(p.pass) || 0), 0) / contaAttivi;
-    const mediaDribbling = giocatoriAttivi.reduce((sum, p) => sum + (Number(p.drib) || 0), 0) / contaAttivi;
-    const mediaDuelli = giocatoriAttivi.reduce((sum, p) => sum + (Number(p.duelli) || 0), 0) / contaAttivi;
-    const totaleIntercetti = PLAYERS.reduce((sum, p) => sum + (Number(p.intercetti) || 0), 0);
-
-    // Calcoliamo le medie per partita reali della squadra
-    const golFattiMedio = golFattiTotali / partiteTotali;
-    const golSubitiMedio = golSubitiTotali / partiteTotali;
-    const tiriMedio = totaleTiriGiocatori / partiteTotali;
-    const assistMedio = totaleAssistGiocatori / partiteTotali;
-
-    // Calcolo conversione tiri della squadra (Gol totali / Tiri totali * 100)
-    const conversioneSquadra = totaleTiriGiocatori > 0 ? (golFattiTotali / totaleTiriGiocatori) * 100 : 0;
-
-    // 3. COLLEGAMENTO DINAMICO RENDIMENTO OFFENSIVO
-    aggiornaBarra('txt-off-gol', 'bar-off-gol', golFattiMedio, 4.0);
-    aggiornaBarra('txt-off-tiri', 'bar-off-tiri', tiriMedio, 10.0);
-    aggiornaBarra('txt-off-conversione', 'bar-off-conversione', conversioneSquadra, 100, true); 
-    aggiornaBarra('txt-off-chance', 'bar-off-chance', kpi.bigChancePartita ?? 1.5, 6.0); // fallback o dato DB
-    aggiornaBarra('txt-off-assist', 'bar-off-assist', assistMedio, 4.0);
-
-    // 4. COLLEGAMENTO DINAMICO RENDIMENTO DIFENSIVO
-    aggiornaBarra('txt-def-gol', 'bar-def-gol', golSubitiMedio, 3.0);
-    aggiornaBarra('txt-def-clean', 'bar-def-clean', kpi.cleanSheet ?? 0, partiteTotali); 
-    aggiornaBarra('txt-def-tackle', 'bar-def-tackle', mediaDuelli / 4, 25.0); // stima basata sui duelli vinti
-    aggiornaBarra('txt-def-intercetti', 'bar-def-intercetti', totaleIntercetti / partiteTotali, 20.0);
-    aggiornaBarra('txt-def-falli', 'bar-def-falli', kpi.falliSubitiPartita ?? 0, 25.0);
-
-    // 5. CERCHI SVG
-    const cerchioPossesso = document.getElementById('circle-possesso');
-    if (cerchioPossesso) {
-        const possesso = kpi.possessoMedio ?? 50;
-        cerchioPossesso.setAttribute('stroke-dasharray', `${possesso} ${100 - possesso}`);
+    // Seleziona la barra di progresso nell'interfaccia
+    const barra = document.getElementById(idBarra);
+    if (barra) {
+      let percentuale = isPercentuale ? val : (val / maxValore) * 100;  // Calcola la larghezza percentuale rispetto al valore massimo teorico
+      // Applica vincoli (clamping) affinché la larghezza sia sempre compresa tra 0% e 100%
+      if (percentuale > 100) percentuale = 100;
+      if (percentuale < 0) percentuale = 0;
+      // Applica la nuova larghezza calcolata direttamente allo stile CSS dell'elemento
+      barra.style.width = `${percentuale}%`;
     }
-    const cerchioPrecisione = document.getElementById('circle-precisione');
-    if (cerchioPrecisione) {
-        const precisione = kpi.precisionePassaggi ?? mediaPassaggi ?? 50;
-        cerchioPrecisione.setAttribute('stroke-dasharray', `${precisione} ${100 - precisione}`);
-    }
+  };
+
+  // Estrae i valori principali dal DB con fallback su valori di default di sicurezza
+  const partiteTotali = kpi.partiteGiocate ?? kpi.partite ?? 2; 
+  const golFattiTotali = kpi.golFatti ?? 2;
+  const golSubitiTotali = kpi.golSubiti ?? 4;
+
+  // 1. Popola i box numerici dei KPI in alto (Gol fatti, subiti, vittorie, pareggi, ecc.)
+  impostaTesto('kpi-gol-fatti', golFattiTotali);
+  impostaTesto('kpi-gol-subiti', golSubitiTotali);
+  impostaTesto('kpi-partite', partiteTotali);
+  impostaTesto('kpi-vittorie', kpi.vittorie ?? 0);
+  impostaTesto('kpi-pareggi', kpi.pareggi ?? 0);
+  impostaTesto('kpi-sconfitte', kpi.sconfitte ?? 0);
+    
+  // 2. Popola i box numerici dei KPI secondari in basso (Possesso, passaggi, cartellini)
+  impostaTesto('kpi-possesso', (kpi.possessoMedio ?? 50) + '%');
+  impostaTesto('kpi-precisione', (kpi.precisionePassaggi ?? 50) + '%');
+  impostaTesto('kpi-ammonizioni', kpi.ammonizioniTotali ?? 0);
+  impostaTesto('kpi-espulsioni', kpi.espulsioniTotali ?? 0);
+
+  // Somma i tiri e gli assist totali effettuati da ciascun giocatore sommando le metriche dell'array PLAYERS
+  const totaleTiriGiocatori = PLAYERS.reduce((sum, p) => sum + (Number(p.tiri) || 0), 0);
+  const totaleAssistGiocatori = PLAYERS.reduce((sum, p) => sum + (Number(p.ass) || 0), 0);
+  
+  const giocatoriAttivi = PLAYERS.filter(p => (Number(p.pres) || 0) > 0); // Filtra l'array mantenendo solo i giocatori che hanno effettivamente disputato almeno una presenza
+  const contaAttivi = giocatoriAttivi.length || 1;                        // Conta quanti giocatori sono attivi (utilizza 1 come valore minimo per evitare divisioni per zero)
+
+  // Calcola la media squadra relativa alle percentuali di passaggi, dribbling e duelli
+  const mediaPassaggi = giocatoriAttivi.reduce((sum, p) => sum + (Number(p.pass) || 0), 0) / contaAttivi;
+  const mediaDribbling = giocatoriAttivi.reduce((sum, p) => sum + (Number(p.drib) || 0), 0) / contaAttivi;
+  const mediaDuelli = giocatoriAttivi.reduce((sum, p) => sum + (Number(p.duelli) || 0), 0) / contaAttivi;
+  
+  // Calcola il totale complessivo degli intercetti difensivi della squadra
+  const totaleIntercetti = PLAYERS.reduce((sum, p) => sum + (Number(p.intercetti) || 0), 0);
+
+  // Calcola le medie partita dividendo i totali della squadra per il numero di partite giocate
+  const golFattiMedio = golFattiTotali / partiteTotali;
+  const golSubitiMedio = golSubitiTotali / partiteTotali;
+  const tiriMedio = totaleTiriGiocatori / partiteTotali;
+  const assistMedio = totaleAssistGiocatori / partiteTotali;
+
+  // Calcola il tasso percentuale di conversione dei tiri in gol (Gol / Tiri * 100)
+  const conversioneSquadra = totaleTiriGiocatori > 0 ? (golFattiTotali / totaleTiriGiocatori) * 100 : 0;
+
+  // 3. Aggiorna visivamente la sezione "Rendimento Offensivo"
+  aggiornaBarra('txt-off-gol', 'bar-off-gol', golFattiMedio, 4.0);
+  aggiornaBarra('txt-off-tiri', 'bar-off-tiri', tiriMedio, 10.0);
+  aggiornaBarra('txt-off-conversione', 'bar-off-conversione', conversioneSquadra, 100, true); 
+  aggiornaBarra('txt-off-chance', 'bar-off-chance', kpi.bigChancePartita ?? 1.5, 6.0);
+  aggiornaBarra('txt-off-assist', 'bar-off-assist', assistMedio, 4.0);
+
+  // 4. Aggiorna visivamente la sezione "Rendimento Difensivo"
+  aggiornaBarra('txt-def-gol', 'bar-def-gol', golSubitiMedio, 3.0);
+  aggiornaBarra('txt-def-clean', 'bar-def-clean', kpi.cleanSheet ?? 0, partiteTotali); 
+  aggiornaBarra('txt-def-tackle', 'bar-def-tackle', mediaDuelli / 4, 25.0);
+  aggiornaBarra('txt-def-intercetti', 'bar-def-intercetti', totaleIntercetti / partiteTotali, 20.0);
+  aggiornaBarra('txt-def-falli', 'bar-def-falli', kpi.falliSubitiPartita ?? 0, 25.0);
+
+  // 5. Aggiorna le proprietà dei cerchi vettoriali SVG per rappresentare graficamente il possesso palla
+  const cerchioPossesso = document.getElementById('circle-possesso');
+  if (cerchioPossesso) {
+    const possesso = kpi.possessoMedio ?? 50;
+    // La proprietà stroke-dasharray definisce la lunghezza del tratto visibile e del tratto trasparente
+    cerchioPossesso.setAttribute('stroke-dasharray', `${possesso} ${100 - possesso}`);
+  }
+  // Aggiorna la circonferenza vettoriale SVG relativa alla precisione dei passaggi
+  const cerchioPrecisione = document.getElementById('circle-precisione');
+  if (cerchioPrecisione) {
+    const precisione = kpi.precisionePassaggi ?? mediaPassaggi ?? 50;
+    cerchioPrecisione.setAttribute('stroke-dasharray', `${precisione} ${100 - precisione}`);
+  }
 }
 
+/* ==========================================================================
+   5. ADATTAMENTO DELL'INTERFACCIA E UTILITIES
+   ==========================================================================
+   Gestiscono lo stato visivo della pagina:
+   - Notificano lo stato di caricamento dati.
+   - Limitano la vista e nascondono componenti ad uso esclusivo dello staff quando accede un GIOCATORE.
+   - Gestiscono il passaggio visivo tra i vari tab (Squadra, Individuale, Confronto, Forma).
+*/
+
+// Sostituisce il contenuto del selettore giocatori con una stringa di caricamento temporanea
 function aggiornaInterfacciaCaricamento() {
     document.getElementById('player-selector').innerHTML = "Caricamento giocatori...";
 }
 
-// I giocatori devono vedere solo le proprie statistiche: nascondiamo tutto ciò che
-// riguarda la squadra o gli altri compagni (KPI squadra, tab Squadra/Confronto,
-// grafico gol di squadra, possesso/disciplina, classifica marcatori) e mostriamo
-// direttamente la scheda individuale.
+// Oculta gli elementi di squadra quando l'utente loggato è un semplice GIOCATORE
 function nascondiSezioniSquadra() {
-    const nascondi = (id) => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
+  // Helper per nascondere un elemento per ID impostando il display CSS a 'none'
+  const nascondi = (id) => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
 
-    nascondi('card-line-chart');
-    nascondi('grid-possesso-disciplina');
-    nascondi('card-classifica-marcatori');
-    const kpiStrip = document.querySelector('.kpi-strip');
-    if (kpiStrip) kpiStrip.style.display = 'none';
+  // Nasconde i grafici e i riquadri delle statistiche complessive di squadra
+  nascondi('card-line-chart');
+  nascondi('grid-possesso-disciplina');
+  nascondi('card-classifica-marcatori');
 
-    // Nasconde le tab "Squadra" e "Confronto" (mantenendo Individuale e Forma)
-    const tabOrder = ['squadra', 'individuale', 'confronto', 'forma'];
-    const tabButtons = document.querySelectorAll('.tab');
-    ['squadra', 'confronto'].forEach(name => {
-        const idx = tabOrder.indexOf(name);
-        if (tabButtons[idx]) tabButtons[idx].style.display = 'none';
-    });
+  // Nasconde la barra superiore contenente i KPI generali
+  const kpiStrip = document.querySelector('.kpi-strip');
+  if (kpiStrip) kpiStrip.style.display = 'none';
 
-    // Titolo pagina più coerente col contesto
-    const h1 = document.querySelector('.topbar h1');
-    if (h1) h1.textContent = 'Le mie statistiche';
+  // Definisce la struttura dei tab visibili e nasconde i pulsanti "Squadra" e "Confronto"
+  const tabOrder = ['squadra', 'individuale', 'confronto', 'forma'];
+  const tabButtons = document.querySelectorAll('.tab');
+  ['squadra', 'confronto'].forEach(name => {
+    const idx = tabOrder.indexOf(name);
+    if (tabButtons[idx]) tabButtons[idx].style.display = 'none';  // Nasconde il pulsante del tab
+  });
 
-    // Passa direttamente alla tab Individuale, l'unica sensata per un giocatore
-    switchTab('individuale');
+  // Personalizza l'intestazione H1 della pagina rendendola individuale
+  const h1 = document.querySelector('.topbar h1');
+  if (h1) h1.textContent = 'Le mie statistiche';
+
+  // Forza la navigazione diretta ed esclusiva al tab delle statistiche individuali
+  switchTab('individuale');
 }
 
-/* ── TABS (Invariato) ── */
+// Gestisce l'attivazione/disattivazione visiva dei Tab della pagina
 function switchTab(name){
+  // Cicla su tutti i pulsanti tab e applica la classe 'active' solo al tab selezionato
   document.querySelectorAll('.tab').forEach((t,i)=>{
     t.classList.toggle('active',['squadra','individuale','confronto','forma'][i]===name);
   });
+  // Cicla su tutti i pannelli dei contenuti e rende visibile solo quello corrispondente al nome
   document.querySelectorAll('.tab-panel').forEach(p=>{
     p.classList.toggle('active',p.id==='tab-'+name);
   });
 }
 
-/* ── LINE CHART (Dinamico) ── */
+/* ==========================================================================
+   6. GRAFICO A LINEE SVG (LINE CHART DINAMICO)
+   ==========================================================================
+   Disegna un grafico cartesiano vettoriale SVG per rappresentare lo storico dei gol fatti e subiti.
+   Calcola e scala la coordinata X e la coordinata Y per ciascun punto, tracciando linee e griglie.
+*/
 function drawLineChart(gf = [], gs = []){
+  // Se gli array dei gol sono vuoti, assegna un valore iniziale predefinito [0] per evitare errori
   if (gf.length === 0) gf = [0];
   if (gs.length === 0) gs = [0];
   
+  // Recupera l'elemento SVG dal DOM
   const svg = document.getElementById('line-svg');
-  if(!svg) return;
+  if(!svg) return;  // Se il canvas SVG non esiste interrompe la funzione
   
-  const W=700,H=200,pad=20,maxV=Math.max(...gf, ...gs, 5);
-  const xs=i=>pad+(W-2*pad)*(i/(gf.length-1 || 1));
-  const ys=v=>H-pad-(H-2*pad)*(v/maxV);
+  const W=700,H=200,pad=20,maxV=Math.max(...gf, ...gs, 5);  // Definisce le dimensioni del grafico: Larghezza (W), Altezza (H), Margine (pad) e Valore Massimo della scala (maxV)
+  const xs=i=>pad+(W-2*pad)*(i/(gf.length-1 || 1));         // Trasforma un indice di array (0, 1, 2...) nella coordinata X sul piano cartesiano SVG
+  const ys=v=>H-pad-(H-2*pad)*(v/maxV);                     // Trasforma un valore numerico nella coordinata Y invirtendo l'asse (in SVG l'origine 0 è in alto)
   
+  // Funzione interna per generare la stringa 'd' del percorso <path> SVG e i pallini <circle> di evidenziazione
   const path=(arr,col)=>{
+    // Mappa ciascun punto dell'array creando i comandi SVG 'M' (Move To per il primo punto) o 'L' (Line To)
     let d=arr.map((v,i)=>`${i===0?'M':'L'}${xs(i).toFixed(1)},${ys(v).toFixed(1)}`).join(' ');
+    // Ritorna l'elemento <path> del tracciato unito ai vari <circle> sovrapposti per ogni singolo punto
     return `<path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             ${arr.map((v,i)=>`<circle cx="${xs(i)}" cy="${ys(v)}" r="3" fill="${col}" opacity=".8"/>`).join('')}`;
   };
 
+  // Costruisce le linee orizzontali di griglia e i relativi valori dell'asse Y
   let grid='';
   for(let g=0;g<=maxV;g++){
     const y=ys(g);
     grid+=`<line x1="${pad}" y1="${y}" x2="${W-pad}" y2="${y}" stroke="rgba(48,54,61,.6)" stroke-width="1"/>
            <text x="${pad-10}" y="${y+4}" text-anchor="end" font-size="14" fill="#8b949e">${g}</text>`;
   }
+
+  // Inserisce nel container SVG sia la griglia di sfondo che le due linee (verde per gol fatti, rossa per subiti)
   svg.innerHTML=grid+path(gf,'#4caf50')+path(gs,'#f87171');
 }
 
-/* ── RADAR ── */
+/* ==========================================================================
+   7. GRAFICO RADAR (SPIDER CHART / STELLA)
+   ==========================================================================
+   Calcola le coordinate polari/trigonometriche per generare un grafico Spider Radar a 6 assi.
+   Converte valori percentuali/statistici in posizioni X,Y su un piano circolare a 360 gradi.
+*/
+// Definisce le 6 categorie che rappresentano gli assi del grafico Radar
 const RADAR_CATS=['Gol','Assist','Passaggi','Dribbling','Duelli','Intercetti'];
+// Converte array di valori in coordinate cartesiane [x, y] ruotate nello spazio circolare
 function radarPts(vals,max=100,r=100){
   return vals.map((v,i)=>{
-    const angle=(2*Math.PI*i/vals.length)-Math.PI/2;
-    const d=(v/max)*r;
-    return [d*Math.cos(angle),d*Math.sin(angle)];
+    const angle=(2*Math.PI*i/vals.length)-Math.PI/2;  // Calcola l'angolo in radianti per ciascuna delle 6 categorie (offset di -90° per partire dall'alto)
+    const d=(v/max)*r;                                // Calcola la distanza dal centro in proporzione al valore relativo al massimo
+    return [d*Math.cos(angle),d*Math.sin(angle)];     // Utilizza funzioni trigonometriche cos() e sin() per convertire la coordinata polare in cartesiana [x, y]
   });
 }
 
+// Disegna e renderizza l'intero grafico Radar vettoriale per il giocatore selezionato
 function drawRadar(idx){
-  const p=PLAYERS[idx];
+  const p=PLAYERS[idx];   // Recupera il giocatore dall'array tramite indice
   const svg=document.getElementById('radar-svg');
-  if(!svg || !p) return;
+  if(!svg || !p) return;  // Controlla la presenza sia dell'SVG che dell'oggetto giocatore
   
-  const N=RADAR_CATS.length,R=100;
-  const maxVals=[20,12,100,100,100,30];
-  const vals=[p.gol,p.ass,p.pass,p.drib,p.duelli,p.intercetti];
+  const N=RADAR_CATS.length,R=100;                              // Numero di assi (6) e raggio massimo (100px)
+  const maxVals=[20,12,100,100,100,30];                         // Scala massima per ogni singola categoria
+  const vals=[p.gol,p.ass,p.pass,p.drib,p.duelli,p.intercetti]; // Dati reali del giocatore
 
   let html='';
+
+  // 1. Disegna 5 poligoni concentrici grigi per rappresentare la ragnatela di sfondo (20%, 40%, 60%, 80%, 100%)
   for(let ring=1;ring<=5;ring++){
     const pts=RADAR_CATS.map((_,i)=>{const a=(2*Math.PI*i/N)-Math.PI/2;const r2=(ring/5)*R;return`${(r2*Math.cos(a)).toFixed(1)},${(r2*Math.sin(a)).toFixed(1)}`;});
     html+=`<polygon points="${pts.join(' ')}" fill="none" stroke="rgba(48,54,61,.7)" stroke-width="1"/>`;
   }
 
+  // 2. Disegna le 6 linee degli assi radiali che partono dal centro verso i vertici esterni e posiziona le etichette
   RADAR_CATS.forEach((cat,i)=>{
     const a=(2*Math.PI*i/N)-Math.PI/2;
     html+=`<line x1="0" y1="0" x2="${(R*Math.cos(a)).toFixed(1)}" y2="${(R*Math.sin(a)).toFixed(1)}" stroke="rgba(48,54,61,.8)" stroke-width="1"/>`;
@@ -309,18 +383,32 @@ function drawRadar(idx){
     html+=`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" font-size="10" fill="#8b949e">${cat}</text>`;
   });
 
+  // 3. Normalizza i valori del giocatore (0-100%) e calcola i punti per disegnare il poligono verde pieno dei dati
   const pts=radarPts(vals.map((v,i)=>Math.min(v/maxVals[i]*100,100)),100,R);
   const poly=pts.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+
+  // Aggiunge la forma poligonale semitrasparente verde ed i relativi pallini vertice
   html+=`<polygon points="${poly}" fill="rgba(76,175,80,.15)" stroke="#4caf50" stroke-width="2"/>`;
   pts.forEach(([x,y])=>{ html+=`<circle cx="${x}" cy="${y}" r="4" fill="#4caf50"/>`; });
+  
+  // Inserisce l'HTML generato dentro il tag SVG e aggiorna l'intestazione col nome del giocatore
   svg.innerHTML=html;
   document.getElementById('radar-name').textContent=p.nome;
 }
 
-/* ── INDIVIDUALE BARS ── */
+/* ==========================================================================
+   8. STATISTICHE INDIVIDUALI E TOP SCORERS
+   ==========================================================================
+   Spiegazione generale:
+   Renderizza le metriche prestazionali del singolo giocatore sotto forma di barre orizzontali di avanzamento
+   e crea la classifica visiva dei principali marcatori ordinando i dati dei giocatori dal valore più alto al più basso.
+*/
+// Renderizza la scheda dettagliata a barre per le statistiche del singolo giocatore selezionato
 function renderIndivBars(idx){
-  const p=PLAYERS[idx];
+  const p=PLAYERS[idx]; // Seleziona il giocatore
   if(!p) return;
+
+  // Struttura dati locale contenente le metriche da mostrare, i relativi valori massimi e la classe di colore CSS
   const items=[
     {l:'Presenze',v:p.pres,max:25,c:'fill-green'},
     {l:'Gol',v:p.gol,max:20,c:'fill-green'},
@@ -330,18 +418,26 @@ function renderIndivBars(idx){
     {l:'Dribbling %',v:p.drib,max:100,c:'fill-green'},
     {l:'Duelli vinti %',v:p.duelli,max:100,c:'fill-amber'},
   ];
+
+  // Inietta l'HTML mappando ogni voce nell'elemento contenitore 'indiv-bars'
   document.getElementById('indiv-bars').innerHTML=items.map(it=>`
     <div class="bc-row"><div class="bc-label"><span class="name">${it.l}</span><span>${it.v}${it.l.includes('%')?'%':''}</span></div>
     <div class="bc-track"><div class="bc-fill ${it.c}" style="width:${(it.v/it.max*100).toFixed(0)}%"></div></div></div>
   `).join('');
 }
 
-/* ── TOP SCORERS ── */
+// Ordina e renderizza la classifica dei migliori 6 marcatori (Top Scorers)
 function renderTopScorers(){
+  // Crea una copia dell'array PLAYERS con lo spread operator [...PLAYERS], lo ordina in modo decrescente per gol e prende i primi 6
   const sorted=[...PLAYERS].sort((a,b)=>b.gol-a.gol).slice(0,6);
   if(sorted.length === 0) return;
+
+  // Trova il numero di gol massimo per impostare la proporzione al 100% della barra
   const max=sorted[0].gol||1;
+  // Palette di colori esadecimali personalizzati per evidenziare i primi posti (Oro, Argento, Bronzo, ecc.)
   const cols=['#facc15','#94a3b8','#b45309','#4caf50','#60a5fa','#a78bfa'];
+
+  // Inserisce il blocco HTML popolato assegnando le medaglie 🥇 🥈 🥉 ai primi tre classificati
   document.getElementById('top-scorers').innerHTML=sorted.map((p,i)=>`
     <div class="hbar-row">
       <div class="hbar-name">${i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':''}${p.nome}</div>
@@ -354,56 +450,81 @@ function renderTopScorers(){
   `).join('');
 }
 
-/* ── PLAYER SELECTOR ── */
-let selPlayer=0;
+/* ==========================================================================
+   9. SELETTORE DEL GIOCATORE (PLAYER SELECTOR)
+   ==========================================================================
+   Crea la bottoniera interattiva che consente di selezionare un giocatore.
+   Se l'utente è un 'GIOCATORE', blocca la selezione automatica sul proprio profilo unico,
+   altrimenti permette all'allenatore/staff di cambiare atleta e aggiornare i grafici al click.
+*/
+let selPlayer=0;  // Memorizza l'indice del giocatore attualmente selezionato (default 0)
 function buildSelector(){
-  // Un giocatore non deve poter scorrere i compagni: si nasconde la lista e si
-  // blocca la vista sul proprio profilo (cercato per nome "N. Cognome")
+  // Se l'utente è un 'GIOCATORE', non deve poter consultare gli altri compagni
   if (ruoloUtente === 'GIOCATORE') {
     const sel = document.getElementById('player-selector');
     if (sel) sel.style.display = 'none';
 
+    // Cerca l'indice del giocatore nell'array corrispondente al nome identificativo dell'utente loggato
     let idx = PLAYERS.findIndex(p => p.nome === mioNomeStat);
-    if (idx === -1) idx = 0; // fallback di sicurezza se il nome non combacia
+    if (idx === -1) idx = 0; // Fallback di sicurezza: seleziona il primo giocatore se non trova la corrispondenza
+    
     selPlayer = idx;
-    drawRadar(idx);
-    renderIndivBars(idx);
-    return;
+    drawRadar(idx);       // Renderizza il Radar del proprio profilo
+    renderIndivBars(idx); // Renderizza le barre del proprio profilo
+    return;               // Interrompe l'esecuzione evitando di disegnare la bottoniera completa
   }
 
+  // Se l'utente è uno Staff/Allenatore, genera i bottoni dinamici per ogni giocatore presente nell'array
   document.getElementById('player-selector').innerHTML=PLAYERS.map((p,i)=>`
     <button class="ps-btn ${i===0?'active':''}" onclick="selectPlayer(${i},this)">${p.nome}</button>
   `).join('');
   
-  // Popola anche le select del Confronto in automatico coi giocatori reali del DB
+  // Inizializza i dropdown per il tab di confronto tra giocatori
   popolaSelectConfronto();
   
+  // Renderizza i grafici per il primo giocatore di default (indice 0)
   drawRadar(0); 
   renderIndivBars(0);
 }
 
+// Gestisce l'evento di cambio giocatore quando si clicca su uno dei bottoni del selettore
 function selectPlayer(i,btn){
-  selPlayer=i;
+  selPlayer=i;  // Aggiorna l'indice del giocatore selezionato
+
+  // Rimuove la classe CSS 'active' da tutti i pulsanti presenti nel selettore
   document.querySelectorAll('#player-selector .ps-btn').forEach(b=>b.classList.remove('active'));
+
+  // Aggiunge la classe 'active' al solo pulsante appena cliccato
   btn.classList.add('active');
+
+  // Disegna il grafico radar e aggiorna le barre delle statistiche per il nuovo giocatore
   drawRadar(i); 
   renderIndivBars(i);
 }
 
-/* ── CONFRONTO ── */
+/* ==========================================================================
+   10. CONFRONTO DIRETTO TRA DUE GIOCATORI (TESTA A TESTA)
+   ==========================================================================
+   Consente la comparazione visiva affiancata tra due atleti.
+   Determina dinamicamente le metriche da confrontare (distinguendo portieri da giocatori di movimento),
+   assegnando il colore verde al dato migliore e il colore rosso al dato inferiore.
+*/
+// Popola le due liste a cascata (<select>) necessarie per la scelta dei due giocatori da confrontare
 function popolaSelectConfronto() {
-    const cmpA = document.getElementById('cmp-a');
-    const cmpB = document.getElementById('cmp-b');
-    if(!cmpA || !cmpB) return;
+  const cmpA = document.getElementById('cmp-a');
+  const cmpB = document.getElementById('cmp-b');
+  if(!cmpA || !cmpB) return;
 
-    const opzioni = PLAYERS.map((p, i) => `<option value="${i}">${p.nome}</option>`).join('');
-    cmpA.innerHTML = opzioni;
-    cmpB.innerHTML = opzioni;
+  // Crea le opzioni dell'HTML <option> per ogni giocatore disponibile
+  const opzioni = PLAYERS.map((p, i) => `<option value="${i}">${p.nome}</option>`).join('');
+  cmpA.innerHTML = opzioni;
+  cmpB.innerHTML = opzioni;
     
-    // Seleziona di default il secondo elemento per il secondo giocatore (se esiste)
-    if(PLAYERS.length > 1) cmpB.value = 1;
+  // Assegna il secondo giocatore (indice 1) come opzione predefinita nel secondo menu a tendina
+  if(PLAYERS.length > 1) cmpB.value = 1;
 }
 
+// Definisce la configurazione standard dei campi da confrontare per i giocatori di movimento
 const COMPARE_CATS=[
   {lbl:'Gol',key:'gol',max:20},
   {lbl:'Assist',key:'ass',max:12},
@@ -413,14 +534,19 @@ const COMPARE_CATS=[
   {lbl:'Dribbling %',key:'drib',max:100},
 ];
 
+// Genera la griglia visiva di confronto tra Giocatore A (Sinistra) e Giocatore B (Destra)
 function renderConfronto(){
   if(PLAYERS.length === 0) return;
+
+  // Legge l'indice numerico del primo e del secondo giocatore dai rispettivi menu a tendina
   const ia=+document.getElementById('cmp-a').value || 0;
   const ib=+document.getElementById('cmp-b').value || 0;
+
+  // Recupera gli oggetti dei due giocatori
   const pa=PLAYERS[ia],pb=PLAYERS[ib];
   if(!pa || !pb) return;
   
-  // Statistiche diverse per portiere vs movimento (come richiesto dalla spec)
+  // Se entrambi i giocatori messi a confronto sono PORTIERI, imposta un set di metriche specifico per il loro ruolo
   const cats = (pa.portiere && pb.portiere) ? [
     {lbl:'Presenze',key:'pres',max:25},
     {lbl:'Parate',key:'parate',max:80},
@@ -431,26 +557,37 @@ function renderConfronto(){
 
   const grid=document.getElementById('compare-grid');
   let leftH='',centerH='',rightH='';
+
+  // Itera su tutte le categorie da confrontare
   cats.forEach(c=>{
-    const va=pa[c.key] || 0, vb=pb[c.key] || 0;
-    const pctA=Math.min(va/c.max*100,100),pctB=Math.min(vb/c.max*100,100);
+    const va=pa[c.key] || 0, vb=pb[c.key] || 0;                             // Estrae i valori reali di ciascuno
+    const pctA=Math.min(va/c.max*100,100),pctB=Math.min(vb/c.max*100,100);  // Calcola le percentuali per la barra
     const unitSuffix=c.lbl.includes('%')?'%':'';
 
-    // Verde per il valore migliore, rosso per il peggiore (a parità: nessun colore)
+    // Imposta i colori standard di testo (colore predefinito dell'interfaccia)
     let colA = 'var(--text,#e6edf3)', colB = 'var(--text,#e6edf3)';
+
+    // Confronta i due valori e applica Verde (#4caf50) al migliore e Rosso (#f87171) al peggiore
     if (va > vb)      { colA = '#4caf50'; colB = '#f87171'; }
     else if (vb > va) { colB = '#4caf50'; colA = '#f87171'; }
 
+    // Genera la colonna di sinistra (Giocatore A)
     leftH+=`<div class="compare-row">
       <div class="val" style="text-align:right;color:${colA};font-weight:700">${va}${unitSuffix}</div>
       <div class="bar-wrap"><div class="bar-inner" style="width:${pctA}%;background:${colA}"></div></div>
     </div>`;
+
+    // Genera la colonna centrale con l'etichetta del nome della statistica
     centerH+=`<div class="cat-lbl">${c.lbl}</div>`;
+
+    // Genera la colonna di destra (Giocatore B)
     rightH+=`<div class="compare-row">
       <div class="val" style="text-align:left;color:${colB};font-weight:700">${vb}${unitSuffix}</div>
       <div class="bar-wrap"><div class="bar-inner" style="width:${pctB}%;background:${colB}"></div></div>
     </div>`;
   });
+
+  // Assembla e inietta la struttura HTML complessiva nel container della griglia di confronto
   grid.innerHTML=`
     <div class="compare-col compare-left">
       <div style="text-align:center;margin-bottom:1rem">
@@ -470,24 +607,38 @@ function renderConfronto(){
   `;
 }
 
-/* ── FORMA ── */
+/* ==========================================================================
+   11. STATO DI FORMA E STORICO ULTIME PARTITE
+   =========================================================================
+   Spiegazione generale:
+   Si occupa di renderizzare la sequenza temporale dello stato di forma (pallini V/P/S)
+   e la tabella dettagliata dei risultati delle ultime gare giocate dalla squadra.
+*/
 function renderForma(){
+  // Mappa delle abbreviazioni dei risultati (w = Win/Vittoria, d = Draw/Pareggio, l = Loss/Sconfitta)
   const esito={w:'V',d:'P',l:'S'};
+
+  // Seleziona gli elementi contenitori del DOM per i pallini dello stato di forma e la tabella dei dati
   const containerDots = document.getElementById('form-dots');
   const containerTable = document.getElementById('results-tbody');
   
+  // Gestisce il caso in cui l'array delle partite ricevute dal server sia vuoto
   if(MATCHES.length === 0) {
       containerDots.innerHTML = "<p>Nessun match recente registrato.</p>";
       containerTable.innerHTML = "<tr><td colspan='6' style='text-align:center'>Nessun dato</td></tr>";
       return;
   }
 
+  // Genera i pallini visibili dello stato di forma con classi CSS dinamiche e tooltip informativo
   containerDots.innerHTML=MATCHES.map(m=>`
     <div class="form-dot ${m.esito}" title="${m.avv} ${m.gf}-${m.gs}">${esito[m.esito] || 'P'}</div>
   `).join('');
   
+  // Mappe di conversione per le etichette e le classi di stile pillole di testo dei risultati
   const pill={w:'pill-green',d:'pill-amber',l:'pill-red'};
   const label={w:'Vittoria',d:'Pareggio',l:'Sconfitta'};
+
+  // Popola le righe della tabella (<tr>) con la data, l'avversario, il punteggio ed il badge esito
   containerTable.innerHTML=MATCHES.map(m=>`
     <tr>
       <td>${m.data}</td>
