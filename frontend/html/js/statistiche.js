@@ -407,20 +407,35 @@ function renderConfronto(){
   const pa=PLAYERS[ia],pb=PLAYERS[ib];
   if(!pa || !pb) return;
   
+  // Statistiche diverse per portiere vs movimento (come richiesto dalla spec)
+  const cats = (pa.portiere && pb.portiere) ? [
+    {lbl:'Presenze',key:'pres',max:25},
+    {lbl:'Parate',key:'parate',max:80},
+    {lbl:'Clean sheet',key:'cleanSheet',max:15},
+    {lbl:'Passaggi %',key:'pass',max:100},
+    {lbl:'Duelli vinti %',key:'duelli',max:100},
+  ] : COMPARE_CATS;
+
   const grid=document.getElementById('compare-grid');
   let leftH='',centerH='',rightH='';
-  COMPARE_CATS.forEach(c=>{
+  cats.forEach(c=>{
     const va=pa[c.key] || 0, vb=pb[c.key] || 0;
     const pctA=Math.min(va/c.max*100,100),pctB=Math.min(vb/c.max*100,100);
     const unitSuffix=c.lbl.includes('%')?'%':'';
+
+    // Verde per il valore migliore, rosso per il peggiore (a parità: nessun colore)
+    let colA = 'var(--text,#e6edf3)', colB = 'var(--text,#e6edf3)';
+    if (va > vb)      { colA = '#4caf50'; colB = '#f87171'; }
+    else if (vb > va) { colB = '#4caf50'; colA = '#f87171'; }
+
     leftH+=`<div class="compare-row">
-      <div class="val" style="text-align:right">${va}${unitSuffix}</div>
-      <div class="bar-wrap"><div class="bar-inner" style="width:${pctA}%;background:var(--green-l)"></div></div>
+      <div class="val" style="text-align:right;color:${colA};font-weight:700">${va}${unitSuffix}</div>
+      <div class="bar-wrap"><div class="bar-inner" style="width:${pctA}%;background:${colA}"></div></div>
     </div>`;
     centerH+=`<div class="cat-lbl">${c.lbl}</div>`;
     rightH+=`<div class="compare-row">
-      <div class="val" style="text-align:left">${vb}${unitSuffix}</div>
-      <div class="bar-wrap"><div class="bar-inner" style="width:${pctB}%;background:#60a5fa"></div></div>
+      <div class="val" style="text-align:left;color:${colB};font-weight:700">${vb}${unitSuffix}</div>
+      <div class="bar-wrap"><div class="bar-inner" style="width:${pctB}%;background:${colB}"></div></div>
     </div>`;
   });
   grid.innerHTML=`
