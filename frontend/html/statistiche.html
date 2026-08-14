@@ -11,7 +11,7 @@
 <body>
 <div class="app">
 
-  <!-- SIDEBAR (Allineata a rosa.html per il caricamento dinamico) -->
+  <!-- BARRA DI NAVIGAZIONE LATERALE (SIDEBAR) -->
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="icon">⚽</div>
@@ -34,13 +34,12 @@
 
     <div class="sidebar-footer">
       <div class="user-card">
-        <!-- Gli ID ora corrispondono perfettamente a rosa.html e calendario.html -->
+        <!-- Profilo utente in sessione -->
         <div class="avatar" id="sb-avatar">?</div>
         <div class="user-info">
           <strong id="sb-nome">—</strong>
           <small id="sb-ruolo">—</small>
         </div>
-        <!-- Richiama la funzione centralizzata di logout -->
         <button class="btn-logout" onclick="logout()">Esci</button>
       </div>
     </div>
@@ -50,12 +49,10 @@
   <div class="main">
     <div class="topbar">
       <h1>Statistiche Avanzate</h1>
-      
     </div>
 
     <div class="content">
-
-      <!-- KPI SQUADRA -->
+      <!-- PANNELLO INDICATORI DI PRESTAZIONE (KPI SQUADRA) -->
       <div class="kpi-strip">
         <div class="kpi-box"><div class="v" id="kpi-gol-fatti" style="color:var(--green-l)">--</div><div class="l">Gol fatti</div></div>
         <div class="kpi-box"><div class="v" id="kpi-gol-subiti" style="color:#f87171">--</div><div class="l">Gol subiti</div></div>
@@ -65,7 +62,7 @@
         <div class="kpi-box"><div class="v" id="kpi-sconfitte" style="color:#f87171">--</div><div class="l">Sconfitte</div></div>
       </div>
 
-      <!-- TABS -->
+      <!-- SELEZIONE SCHEDE (TABS) -->
       <div class="tabs">
         <div class="tab active" onclick="switchTab('squadra')">Squadra</div>
         <div class="tab" onclick="switchTab('individuale')">Individuale</div>
@@ -73,11 +70,11 @@
         <div class="tab" onclick="switchTab('forma')">Forma</div>
       </div>
 
-      <!-- TAB SQUADRA -->
+      <!-- SCHEDA: STATISTICHE SQUADRA -->
       <div class="tab-panel active" id="tab-squadra">
         <div class="grid-2">
 
-          <!-- Rendimento offensivo -->
+          <!-- Grafico: Rendimento offensivo -->
           <div class="card">
             <div class="card-header"><h2>⚽ Rendimento offensivo</h2></div>
             <div class="card-body">
@@ -106,7 +103,7 @@
             </div>
           </div>
 
-          <!-- Rendimento difensivo -->
+          <!-- Grafico: Rendimento difensivo -->
           <div class="card">
             <div class="card-header"><h2>🛡 Rendimento difensivo</h2></div>
             <div class="card-body">
@@ -138,7 +135,85 @@
         </div>
       </div>
 
-      <!-- Gol per giornata (line chart SVG) -->
+<!-- SCHEDA: STATISTICHE INDIVIDUALI -->
+      <div class="tab-panel" id="tab-individuale">
+        <div class="player-selector" id="player-selector"></div>
+        <div class="grid-2">
+          <!-- Grafico Radar delle abilità -->
+          <div class="card">
+            <div class="card-header"><h2>🕸 Profilo tecnico</h2><span id="radar-name" style="font-size:.85rem;color:var(--muted)"></span></div>
+            <div class="card-body radar-wrap">
+              <svg id="radar-svg" viewBox="-130 -130 260 260" width="280" height="280"></svg>
+            </div>
+          </div>
+          <!-- Dettaglio metriche giocatore selezionato -->
+          <div class="card">
+            <div class="card-header"><h2>📋 Statistiche dettagliate</h2></div>
+            <div class="card-body">
+              <div class="bar-chart" id="indiv-bars"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Classifica dei migliori marcatori -->
+        <div class="card" id="card-classifica-marcatori">
+          <div class="card-header"><h2>🏅 Classifica marcatori</h2></div>
+          <div class="card-body">
+            <div class="hbar-chart" id="top-scorers"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCHEDA: CONFRONTO GIOCATORI -->
+      <div class="tab-panel" id="tab-confronto">
+        <div class="card" style="margin-bottom:1.5rem">
+          <div class="card-header">
+            <h2>⚖️ Confronto giocatori</h2>
+            <div style="display:flex;gap:8px">
+              <select class="select-styled" id="cmp-a" onchange="renderConfronto()">
+                <option value="0">L. Rossi</option><option value="1">M. Bianchi</option>
+                <option value="2">A. Ferrari</option><option value="3">G. Esposito</option>
+                <option value="4">P. Romano</option>
+              </select>
+              <span style="color:var(--muted);padding:.4rem">vs</span>
+              <select class="select-styled" id="cmp-b" onchange="renderConfronto()">
+                <option value="2">A. Ferrari</option><option value="0">L. Rossi</option>
+                <option value="1">M. Bianchi</option><option value="3">G. Esposito</option>
+                <option value="4">P. Romano</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="compare-grid" id="compare-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCHEDA: FORMA E STORICO PARTITE -->
+      <div class="tab-panel" id="tab-forma">
+        <div class="card" style="margin-bottom:1.5rem">
+          <div class="card-header"><h2>🔥 Forma recente squadra (ultime 10 partite)</h2></div>
+          <div class="card-body">
+            <div class="form-dots" id="form-dots"></div>
+            <div style="margin-top:1.25rem;display:flex;gap:20px;font-size:.8rem;color:var(--muted)">
+              <span><span style="display:inline-block;width:12px;height:12px;background:rgba(76,175,80,.3);border-radius:3px;vertical-align:middle;margin-right:4px"></span>Vittoria</span>
+              <span><span style="display:inline-block;width:12px;height:12px;background:rgba(234,179,8,.2);border-radius:3px;vertical-align:middle;margin-right:4px"></span>Pareggio</span>
+              <span><span style="display:inline-block;width:12px;height:12px;background:rgba(239,68,68,.15);border-radius:3px;vertical-align:middle;margin-right:4px"></span>Sconfitta</span>
+            </div>
+          </div>
+        </div>
+        <!-- Tabella con lo storico dei risultati -->
+        <div class="card">
+          <div class="card-header"><h2>📅 Risultati recenti</h2></div>
+          <div class="card-body" style="padding:0">
+            <table>
+              <thead><tr><th>Data</th><th>Avversario</th><th>Ris.</th><th>Gol fatti</th><th>Gol sub.</th><th>Esito</th></tr></thead>
+              <tbody id="results-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Grafico temporale: Gol segnati e subiti per giornata -->
       <div class="card" id="card-line-chart" style="margin-bottom:1.5rem">
         <div class="card-header"><h2>📈 Gol segnati per giornata</h2></div>
         <div class="card-body">
@@ -152,7 +227,7 @@
         </div>
       </div>
 
-      <!-- Possesso + Passaggi -->
+      <!-- Indicatori: Possesso palla, Passaggi e Disciplina -->
       <div class="grid-3" id="grid-possesso-disciplina">
         <div class="card">
           <div class="card-header"><h2>🔵 Possesso</h2></div>
@@ -192,81 +267,7 @@
         </div>
       </div>
 
-      <!-- TAB INDIVIDUALE -->
-      <div class="tab-panel" id="tab-individuale">
-        <div class="player-selector" id="player-selector"></div>
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-header"><h2>🕸 Profilo tecnico</h2><span id="radar-name" style="font-size:.85rem;color:var(--muted)"></span></div>
-            <div class="card-body radar-wrap">
-              <svg id="radar-svg" viewBox="-130 -130 260 260" width="280" height="280"></svg>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header"><h2>📋 Statistiche dettagliate</h2></div>
-            <div class="card-body">
-              <div class="bar-chart" id="indiv-bars"></div>
-            </div>
-          </div>
-        </div>
-        <div class="card" id="card-classifica-marcatori">
-          <div class="card-header"><h2>🏅 Classifica marcatori</h2></div>
-          <div class="card-body">
-            <div class="hbar-chart" id="top-scorers"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB CONFRONTO -->
-      <div class="tab-panel" id="tab-confronto">
-        <div class="card" style="margin-bottom:1.5rem">
-          <div class="card-header">
-            <h2>⚖️ Confronto giocatori</h2>
-            <div style="display:flex;gap:8px">
-              <select class="select-styled" id="cmp-a" onchange="renderConfronto()">
-                <option value="0">L. Rossi</option><option value="1">M. Bianchi</option>
-                <option value="2">A. Ferrari</option><option value="3">G. Esposito</option>
-                <option value="4">P. Romano</option>
-              </select>
-              <span style="color:var(--muted);padding:.4rem">vs</span>
-              <select class="select-styled" id="cmp-b" onchange="renderConfronto()">
-                <option value="2">A. Ferrari</option><option value="0">L. Rossi</option>
-                <option value="1">M. Bianchi</option><option value="3">G. Esposito</option>
-                <option value="4">P. Romano</option>
-              </select>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="compare-grid" id="compare-grid"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB FORMA -->
-      <div class="tab-panel" id="tab-forma">
-        <div class="card" style="margin-bottom:1.5rem">
-          <div class="card-header"><h2>🔥 Forma recente squadra (ultime 10 partite)</h2></div>
-          <div class="card-body">
-            <div class="form-dots" id="form-dots"></div>
-            <div style="margin-top:1.25rem;display:flex;gap:20px;font-size:.8rem;color:var(--muted)">
-              <span><span style="display:inline-block;width:12px;height:12px;background:rgba(76,175,80,.3);border-radius:3px;vertical-align:middle;margin-right:4px"></span>Vittoria</span>
-              <span><span style="display:inline-block;width:12px;height:12px;background:rgba(234,179,8,.2);border-radius:3px;vertical-align:middle;margin-right:4px"></span>Pareggio</span>
-              <span><span style="display:inline-block;width:12px;height:12px;background:rgba(239,68,68,.15);border-radius:3px;vertical-align:middle;margin-right:4px"></span>Sconfitta</span>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><h2>📅 Risultati recenti</h2></div>
-          <div class="card-body" style="padding:0">
-            <table>
-              <thead><tr><th>Data</th><th>Avversario</th><th>Ris.</th><th>Gol fatti</th><th>Gol sub.</th><th>Esito</th></tr></thead>
-              <tbody id="results-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /content -->
+    </div>
   </div>
 </div>
 
