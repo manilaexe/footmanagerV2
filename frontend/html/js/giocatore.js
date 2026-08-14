@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     caricaMessaggi();          // ← carica dal DB
     caricaEventi();            // ← carica dal DB
     caricaQuizGiornaliero();   // ← gamification: quiz del primo accesso del giorno
+    caricaBadge();             // ← gamification: badge ottenuti/da sbloccare
 });
 
 // ─── 2. SIDEBAR ───────────────────────────────────────────────────────────
@@ -584,7 +585,9 @@ async function inviaRispostaQuiz(rispostaScelta) {
 
         if (esito.corretta) {
             aggiornaPuntiSchermo(esito.puntiTotali);
-            if (esito.nuoviBadge && esito.nuoviBadge.length) mostraNuoviBadge(esito.nuoviBadge);
+            // Se sono stati sbloccati nuovi badge, ricarica l'intera sezione
+            // badge (griglia + mini-lista nel profilo) coi dati reali dal backend.
+            if (esito.nuoviBadge && esito.nuoviBadge.length) caricaBadge();
         }
 
     } catch (err) {
@@ -628,11 +631,123 @@ function aggiornaPuntiSchermo(nuovoTotale) {
     if (el && typeof nuovoTotale === 'number') el.textContent = nuovoTotale;
 }
 
-// Mostra i badge appena sbloccati (se ce ne sono) accanto ai punti
-function mostraNuoviBadge(badges) {
+// ─── 10. GAMIFICATION: BADGE ────────────────────────────────────────────────
+/*
+ * Endpoint: GET /api/badge                 → elenco di TUTTI i badge esistenti
+ *   (id, nomeBadge, sogliaPunti, iconaBase64) — GET aperto a qualsiasi utente
+ *   autenticato, usato qui per sapere anche quali badge esistono ma NON sono
+ *   ancora stati sbloccati dal giocatore.
+ * Endpoint: GET /api/badge/giocatore/{id}  → badge già ottenuti dal giocatore
+ *   corrente (giocatoreId, badgeId, nomeBadge, dataOttenimento).
+ *
+ * L'assegnazione vera e propria è automatica lato backend
+ * (QuizService.verificaBadge): ogni risposta corretta al quiz del giorno
+ * fa scattare il controllo e, se la soglia di risposte corrette totali
+ * viene raggiunta, il badge viene salvato per il giocatore. Qui ci
+ * limitiamo a MOSTRARLI: uniamo l'elenco completo con quelli ottenuti,
+ * evidenziando gli sbloccati e lasciando in grigio quelli ancora da
+ * raggiungere (con la soglia richiesta).
+ */
+async function caricaBadge() {
+    const loader = document.getElementById('badges-loading');
+    const grid   = document.getElementById('badges-grid');
+    const empty  = document.getElementById('badges-empty');
+    const count  = document.getElementById('badges-count');
+    if (!grid) return; // pagina senza sezione badge
+
+    const idGiocatore = localStorage.getItem('idGiocatore');
+    const headers = typeof getAuthHeaders === 'function'
+        ? getAuthHeaders()
+        : { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') };
+
+    if (loader)  loader.style.display  = 'block';
+    if (grid)    grid.style.display    = 'none';
+    if (empty)   empty.style.display   = 'none';
+
+    try {
+        const [resTutti, resMiei] = await Promise.all([
+            fetch(`${API}/api/badge`, { headers }),
+            idGiocatore
+                ? fetch(`${API}/api/badge/giocatore/${idGiocatore}`, { headers })
+                : Promise.resolve(null)
+        ]);
+
+        if (resTutti.status === 401 || (resMiei && resMiei.status === 401)) { logout(); return; }
+
+        if (!resTutti.ok) {
+            console.error('Errore caricamento badge:', resTutti.status);
+            if (loader) loader.textContent = 'Impossibile caricare i badge.';
+            return;
+        }
+
+        const tutti = await resTutti.json();
+        const miei  = (resMiei && resMiei.ok) ? await resMiei.json() : [];
+
+        if (loader) loader.style.display = 'none';
+
+        if (!tutti || tutti.length === 0) {
+            if (empty) empty.style.display = 'block';
+            if (count) count.textContent = '';
+            return;
+        }
+
+        renderizzaBadge(tutti, miei, grid);
+        if (grid) grid.style.display = 'grid';
+        if (count) count.textContent = `${miei.length}/${tutti.length} sbloccati`;
+
+        // Aggiorna anche la mini-lista badge nella card profilo in alto
+        renderizzaBadgeProfilo(miei);
+
+    } catch (err) {
+        console.error('Errore di rete badge:', err);
+        if (loader) loader.textContent = 'Server non raggiungibile.';
+    }
+}
+
+// Disegna la griglia completa: un tile per ogni badge esistente, ordinati
+// per soglia crescente, sbloccato/bloccato in base a ciò che il giocatore
+// ha già ottenuto.
+function renderizzaBadge(tutti, miei, container) {
+    if (!container) return;
+    container.innerHTML = '';
+
+    const ottenutiMap = new Map((miei || []).map(m => [m.badgeId, m]));
+    const ordinati = [...tutti].sort((a, b) => (a.sogliaPunti || 0) - (b.sogliaPunti || 0));
+
+    ordinati.forEach(b => {
+        const ottenuto = ottenutiMap.get(b.id);
+
+        const tile = document.createElement('div');
+        tile.className = `badge-tile ${ottenuto ? 'unlocked' : 'locked'}`;
+
+        const iconaHtml = b.iconaBase64
+            ? `<img src="data:image/png;base64,${b.iconaBase64}" alt="">`
+            : '🎖';
+
+        const infoTxt = ottenuto
+            ? `Ottenuto il ${new Date(ottenuto.dataOttenimento).toLocaleDateString('it-IT')}`
+            : `Richiede ${b.sogliaPunti} risposte corrette`;
+
+        tile.innerHTML = `
+            <div class="badge-tile-icon">${iconaHtml}</div>
+            <div class="badge-tile-name">${esc(b.nomeBadge)}</div>
+            <div class="badge-tile-info">${esc(infoTxt)}</div>`;
+        container.appendChild(tile);
+    });
+}
+
+// Mini-lista compatta accanto ai punti nella card profilo in alto
+// (solo i badge già ottenuti, al massimo i 3 più recenti).
+function renderizzaBadgeProfilo(miei) {
     const container = document.getElementById('profile-badge-list');
     if (!container) return;
-    badges.forEach(b => {
+    container.innerHTML = '';
+
+    const recenti = [...(miei || [])]
+        .sort((a, b) => new Date(b.dataOttenimento) - new Date(a.dataOttenimento))
+        .slice(0, 3);
+
+    recenti.forEach(b => {
         const el = document.createElement('div');
         el.className = 'badge-icon';
         el.textContent = `🎖 ${b.nomeBadge}`;

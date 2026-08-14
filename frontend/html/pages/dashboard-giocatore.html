@@ -24,7 +24,7 @@
       <a class="nav-item" href="/html/statistiche.html"><span class="ico">📊</span> Le mie statistiche</a>
       <a class="nav-item" href="/html/messaggi.html"><span class="ico">💬</span> Messaggi</a>
       <a class="nav-item" href="/html/classifica.html"><span class="ico">🏆</span> Classifica</a>
-      <a class="nav-item" href="#quiz-card"><span class="ico">🎮</span> Quiz del giorno</a>
+      <a class="nav-item" href="#badges-card"><span class="ico">🎖️</span> I miei badge</a>
     </nav>
 
     <div class="sidebar-footer">
@@ -85,6 +85,27 @@
         <div class="quiz-body" id="quiz-body">
           <div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.85rem" id="quiz-loading">
             Caricamento quiz del giorno…
+          </div>
+        </div>
+      </div>
+
+      <!-- I MIEI BADGE -->
+      <!-- Elenco di tutti i badge esistenti: sbloccati (già ottenuti dal
+           giocatore, in evidenza con data di ottenimento) e bloccati (in
+           grigio, con la soglia di risposte corrette necessaria).
+           Popolato dinamicamente da giocatore.js -> caricaBadge() -->
+      <div class="card badges-card" id="badges-card">
+        <div class="card-header">
+          <h2>🎖️ I miei badge</h2>
+          <span style="font-size:0.75rem;color:var(--muted)" id="badges-count">—</span>
+        </div>
+        <div class="card-body">
+          <div id="badges-loading" style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.85rem">
+            Caricamento badge…
+          </div>
+          <div id="badges-grid" class="badges-grid" style="display:none"></div>
+          <div id="badges-empty" style="display:none;text-align:center;padding:1.5rem;color:var(--muted);font-size:0.85rem">
+            Nessun badge disponibile al momento.
           </div>
         </div>
       </div>

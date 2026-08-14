@@ -8,17 +8,6 @@
             "mainClass": "it.footmanager.FootManagerApplication",
             "projectName": "footmanager",
             "args": "",
-            "envFile": "${workspaceFolder}/.env",
-            "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=57587 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=footmanager"
-        },
-        {
-            "type": "java",
-            "name": "Spring Boot-PasswordGenerator<footmanager>",
-            "request": "launch",
-            "cwd": "${workspaceFolder}",
-            "mainClass": "it.footmanager.PasswordGenerator",
-            "projectName": "footmanager",
-            "args": "",
             "envFile": "${workspaceFolder}/.env"
         }
     ]
