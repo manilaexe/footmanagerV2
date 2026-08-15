@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FootManager – I Miei Badge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="/html/css/stylebadge.css" rel="stylesheet" />
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR: pagina riservata ai giocatori, niente voce "Rosa" -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="icon">⚽</div>
+      <span>FootManager</span>
+    </div>
+
+    <nav class="nav-section">
+      <div class="nav-label">Principale</div>
+      <a class="nav-item" id="nav-dashboard" href="/html/pages/dashboard-giocatore.html"><span class="ico">🏠</span>Dashboard</a>
+      <a class="nav-item" href="calendario.html"><span class="ico">📅</span>Calendario</a>
+      <a class="nav-item" href="statistiche.html"><span class="ico">📊</span>Statistiche</a>
+      <a class="nav-item" href="messaggi.html"><span class="ico">💬</span>Messaggi</a>
+      <a class="nav-item" href="classifica.html"><span class="ico">🏆</span>Classifica</a>
+      <a class="nav-item active" href="#"><span class="ico">🎖️</span>I miei badge</a>
+    </nav>
+
+    <nav class="nav-section">
+      <div class="nav-label">Impostazioni</div>
+      <a class="nav-item" href="#"><span class="ico">⚙️</span>Impostazioni</a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar" id="sb-avatar">?</div>
+        <div class="user-info">
+          <strong id="sb-nome">—</strong>
+          <small id="sb-ruolo">—</small>
+        </div>
+        <button class="btn-logout" onclick="logout()">Esci</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <h1>I Miei Badge</h1>
+    </div>
+
+    <div class="content">
+
+      <!-- Elenco di tutti i badge esistenti: sbloccati (già ottenuti dal
+           giocatore, in evidenza con data di ottenimento) e bloccati (in
+           grigio, con la soglia di risposte corrette necessaria).
+           Popolato dinamicamente da badge.js -> caricaBadge() -->
+      <div class="card badges-card" id="badges-card">
+        <div class="card-header">
+          <h2>🎖️ I miei badge</h2>
+          <span style="font-size:0.75rem;color:var(--muted)" id="badges-count">—</span>
+        </div>
+        <div class="card-body">
+          <div id="badges-loading" style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.85rem">
+            Caricamento badge…
+          </div>
+          <div id="badges-grid" class="badges-grid" style="display:none"></div>
+          <div id="badges-empty" style="display:none;text-align:center;padding:1.5rem;color:var(--muted);font-size:0.85rem">
+            Nessun badge disponibile al momento.
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div>
+</div>
+
+<script src="js/utils.js"></script>
+<script src="js/badge.js"></script>
+</body>
+</html>
