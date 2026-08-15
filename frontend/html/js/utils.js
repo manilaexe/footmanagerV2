@@ -67,8 +67,9 @@ function impostaLinkDashboard() {
 
 // Adatta le voci della sidebar in base al ruolo, così la sidebar non "salta" più
 // da una pagina all'altra: i giocatori non devono vedere "Rosa", ma devono
-// ritrovare sempre "Quiz del giorno" e "Classifica" (presenti nella loro dashboard)
-// anche quando sono su calendario/statistiche/messaggi.
+// ritrovare sempre "I miei badge" e "Classifica" anche quando sono su
+// calendario/statistiche/messaggi.
+// Adatta le voci della sidebar in base al ruolo del giocatore
 function adattaSidebarPerRuolo() {
     const ruolo = localStorage.getItem('ruolo');
     if (ruolo !== 'GIOCATORE') return;
@@ -80,15 +81,20 @@ function adattaSidebarPerRuolo() {
     const linkRosa = nav.querySelector('a[href$="rosa.html"]');
     if (linkRosa) linkRosa.remove();
 
-    // Aggiunge "Quiz del giorno" e "Classifica" solo se non già presenti in questa
-    // pagina (es. sulla dashboard giocatore c'è già "Quiz del giorno", su
-    // classifica.html c'è già "Classifica": si evitano così duplicati)
     const testiPresenti = [...nav.querySelectorAll('a')].map(a => a.textContent);
 
-    if (!testiPresenti.some(t => t.includes('Quiz del giorno'))) {
-        nav.insertAdjacentHTML('beforeend',
-            `<a class="nav-item" href="/html/pages/dashboard-giocatore.html#quiz-card"><span class="ico">🎮</span> Quiz del giorno</a>`);
+    // Inserisce "I miei badge" PRIMA di "Classifica" se Classifica è già presente
+    if (!testiPresenti.some(t => t.includes('I miei badge'))) {
+        const linkClassifica = nav.querySelector('a[href*="classifica.html"]');
+        if (linkClassifica) {
+            linkClassifica.insertAdjacentHTML('beforebegin',
+                `<a class="nav-item" href="/html/badge.html"><span class="ico">🎖️</span> I miei badge</a>`);
+        } else {
+            nav.insertAdjacentHTML('beforeend',
+                `<a class="nav-item" href="/html/badge.html"><span class="ico">🎖️</span> I miei badge</a>`);
+        }
     }
+
     if (!testiPresenti.some(t => t.includes('Classifica'))) {
         nav.insertAdjacentHTML('beforeend',
             `<a class="nav-item" href="/html/classifica.html"><span class="ico">🏆</span> Classifica</a>`);
