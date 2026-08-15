@@ -24,8 +24,8 @@
       <a class="nav-item" href="calendario.html"><span class="ico">📅</span>Calendario</a>
       <a class="nav-item" href="statistiche.html"><span class="ico">📊</span>Statistiche</a>
       <a class="nav-item" href="messaggi.html"><span class="ico">💬</span>Messaggi</a>
-      <a class="nav-item active" href="#"><span class="ico">🎖️</span>I miei badge</a>      
       <a class="nav-item" href="classifica.html"><span class="ico">🏆</span>Classifica</a>
+      <a class="nav-item active" href="#"><span class="ico">🎖️</span>I miei badge</a>
     </nav>
 
     <nav class="nav-section">
@@ -74,6 +74,26 @@
       </div>
 
     </div><!-- /content -->
+  </div>
+
+  <!-- MODAL DETTAGLIO BADGE: aperto al click su una tile, popolato da badge.js -->
+  <div class="badge-modal-overlay" id="badge-modal-overlay" onclick="chiudiDettaglioBadge(event)">
+    <div class="badge-modal" id="badge-modal">
+      <button class="badge-modal-close" onclick="chiudiDettaglioBadge()">✕</button>
+      <div class="badge-modal-icon" id="modal-badge-icon">🎖</div>
+      <h2 class="badge-modal-name" id="modal-badge-nome">—</h2>
+      <div class="badge-modal-status" id="modal-badge-status">—</div>
+      <div class="badge-modal-details">
+        <div class="badge-modal-row">
+          <span class="lbl">Soglia richiesta</span>
+          <span class="val" id="modal-badge-soglia">—</span>
+        </div>
+        <div class="badge-modal-row" id="modal-badge-data-row" style="display:none">
+          <span class="lbl">Ottenuto il</span>
+          <span class="val" id="modal-badge-data">—</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 

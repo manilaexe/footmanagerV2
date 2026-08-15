@@ -97,21 +97,33 @@ async function caricaBadge() {
     }
 }
 
+// Mappa id badge → { badge, ottenuto } usata dal modal di dettaglio quando
+// si clicca su una tile (evita di dover rifare le fetch al click).
+let badgeDataMap = new Map();
+
 // Disegna la griglia completa: un tile per ogni badge esistente, ordinati
 // per soglia crescente, sbloccato/bloccato in base a ciò che il giocatore
-// ha già ottenuto.
+// ha già ottenuto. Ogni tile è cliccabile e apre il modal di dettaglio.
 function renderizzaBadge(tutti, miei, container) {
     if (!container) return;
     container.innerHTML = '';
+    badgeDataMap = new Map();
 
     const ottenutiMap = new Map((miei || []).map(m => [m.badgeId, m]));
     const ordinati = [...tutti].sort((a, b) => (a.sogliaPunti || 0) - (b.sogliaPunti || 0));
 
     ordinati.forEach(b => {
         const ottenuto = ottenutiMap.get(b.id);
+        badgeDataMap.set(b.id, { badge: b, ottenuto });
 
         const tile = document.createElement('div');
         tile.className = `badge-tile ${ottenuto ? 'unlocked' : 'locked'}`;
+        tile.setAttribute('role', 'button');
+        tile.setAttribute('tabindex', '0');
+        tile.addEventListener('click', () => apriDettaglioBadge(b.id));
+        tile.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); apriDettaglioBadge(b.id); }
+        });
 
         const iconaHtml = b.iconaBase64
             ? `<img src="data:image/png;base64,${b.iconaBase64}" alt="">`
@@ -128,6 +140,61 @@ function renderizzaBadge(tutti, miei, container) {
         container.appendChild(tile);
     });
 }
+
+// ─── MODAL DETTAGLIO BADGE ──────────────────────────────────────────────
+// Al click su una tile mostra un ingrandimento con le info complete:
+// icona, nome, stato (sbloccato/bloccato), soglia richiesta e, se già
+// ottenuto, la data esatta di sblocco. Nessuna nuova chiamata al backend:
+// usa i dati già scaricati da caricaBadge()/renderizzaBadge().
+function apriDettaglioBadge(badgeId) {
+    const dati = badgeDataMap.get(badgeId);
+    if (!dati) return;
+    const { badge: b, ottenuto } = dati;
+
+    const overlay   = document.getElementById('badge-modal-overlay');
+    const modal     = document.getElementById('badge-modal');
+    const icona     = document.getElementById('modal-badge-icon');
+    const nome      = document.getElementById('modal-badge-nome');
+    const status    = document.getElementById('modal-badge-status');
+    const soglia    = document.getElementById('modal-badge-soglia');
+    const dataRow   = document.getElementById('modal-badge-data-row');
+    const dataVal   = document.getElementById('modal-badge-data');
+    if (!overlay || !modal) return;
+
+    modal.className = `badge-modal ${ottenuto ? 'unlocked' : 'locked'}`;
+    icona.innerHTML = b.iconaBase64
+        ? `<img src="data:image/png;base64,${b.iconaBase64}" alt="">`
+        : '🎖';
+    nome.textContent   = b.nomeBadge;
+    status.textContent = ottenuto ? '✔ Badge sbloccato' : '🔒 Badge non ancora sbloccato';
+    soglia.textContent = `${b.sogliaPunti} risposte corrette al quiz del giorno`;
+
+    if (ottenuto) {
+        dataRow.style.display = 'flex';
+        dataVal.textContent = new Date(ottenuto.dataOttenimento).toLocaleDateString('it-IT', {
+            day: 'numeric', month: 'long', year: 'numeric'
+        });
+    } else {
+        dataRow.style.display = 'none';
+    }
+
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+// Chiude il modal: sia dal bottone ✕ sia cliccando fuori dalla card
+// (event.target === overlay), ma non se il click parte da dentro la card.
+function chiudiDettaglioBadge(event) {
+    if (event && event.target !== event.currentTarget) return;
+    const overlay = document.getElementById('badge-modal-overlay');
+    if (overlay) overlay.classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+// Chiude anche con il tasto ESC
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') chiudiDettaglioBadge();
+});
 
 // ─── UTILITY ────────────────────────────────────────────────────────────
 function esc(s) {
