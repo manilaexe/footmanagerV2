@@ -24,7 +24,7 @@ html, body { height: 100%; font-family: 'Barlow', sans-serif; background: var(--
 .nav-item { display: flex; align-items: center; gap: 10px; padding: 0.6rem 1.25rem; cursor: pointer; font-size: 0.9rem; color: var(--muted); border-left: 3px solid transparent; transition: all 0.15s; text-decoration: none; }
 .nav-item:hover { background: var(--dark3); color: var(--text); }
 .nav-item.active { color: var(--green-l); border-left-color: var(--green); background: rgba(58,125,68,0.1); }
-.nav-item .ico { width: 18px; text-align: center; }
+.nav-item .ico { width: 18px; text-align: center; font-size: 1rem; }
 .sidebar-footer { margin-top: auto; padding: 1rem 1.25rem 0; border-top: 1px solid var(--border); }
 .user-card { display: flex; align-items: center; gap: 10px; padding: 0.75rem 0; }
 .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.9rem; overflow: hidden; }
