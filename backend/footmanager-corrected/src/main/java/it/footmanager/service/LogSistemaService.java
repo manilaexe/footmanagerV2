@@ -7,10 +7,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-
 
 @Service
 public class LogSistemaService {
@@ -18,6 +19,20 @@ public class LogSistemaService {
     @Autowired
     private LogSistemaRepository logRepo;
 
+    // --- Metodi con estrazione automatica dell'utente e ruolo corrente ---
+    public void info(String modulo, String azione, String dettagli) {
+        saveLog("INFO", getCurrentUsername(), getCurrentRole(), modulo, azione, dettagli);
+    }
+
+    public void warn(String modulo, String azione, String dettagli) {
+        saveLog("WARN", getCurrentUsername(), getCurrentRole(), modulo, azione, dettagli);
+    }
+
+    public void error(String modulo, String azione, String dettagli) {
+        saveLog("ERROR", getCurrentUsername(), getCurrentRole(), modulo, azione, dettagli);
+    }
+
+    // --- Metodi esistenti ---
     public void info(String utente, String ruolo, String modulo, String azione, String dettagli) {
         saveLog("INFO", utente, ruolo, modulo, azione, dettagli);
     }
@@ -35,7 +50,6 @@ public class LogSistemaService {
         LogSistema log = new LogSistema(livello, utente, ruolo, modulo, azione, dettagli, ipAddress);
         logRepo.save(log);
     }
-
 
     public Page<LogSistemaDto> getLogs(int page, int size) {
         return logRepo.findAllByOrderByTimestampDesc(PageRequest.of(page, size))
@@ -65,7 +79,23 @@ public class LogSistemaService {
                 return request.getRemoteAddr();
             }
         } catch (Exception e) {
-            // Nessun contesto web (es. task schedulati interni)
+            // Nessun contesto web (es. task schedulati)
+        }
+        return "SYSTEM";
+    }
+
+    private String getCurrentUsername() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+            return auth.getName();
+        }
+        return "SYSTEM";
+    }
+
+    private String getCurrentRole() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !auth.getAuthorities().isEmpty()) {
+            return auth.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
         }
         return "SYSTEM";
     }
