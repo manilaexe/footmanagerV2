@@ -483,4 +483,17 @@ public class Dtos {
         private List<EventoDto> prossimiEventi;   // prossimi 5, non limitati al mese corrente
         private EventoDto       prossimaPartita;  // null se nessuna partita futura pianificata
     }
+    // ── Log Sistema ────────────────────────────────────────────────────────
+    @Data @Builder
+    public static class LogSistemaDto {
+        private Long          id;
+        private LocalDateTime timestamp;
+        private String        livello;
+        private String        utente;
+        private String        ruolo;
+        private String        modulo;
+        private String        azione;
+        private String        dettagli;
+        private String        ipAddress;
+    }
 }

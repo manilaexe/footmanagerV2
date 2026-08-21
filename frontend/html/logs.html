@@ -6,25 +6,28 @@
   <title>FootManager – Log di Sistema</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
-  <!-- I tuoi fogli di stile -->
-  <link href="/css/styleclassifica.css" rel="stylesheet" /> 
-  <link href="/css/stylelogs.css" rel="stylesheet" />
+  
+
+  <link href="/html/css/stylestaff.css" rel="stylesheet" />
 </head>
 <body>
 <div class="app">
+
 
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="icon">⚽</div>
       <span>FootManager</span>
     </div>
-
-    <nav class="nav-section">
-      <div class="nav-label">Amministrazione</div>
-      <a class="nav-item" href="/html/pages/dashboard-dirigenza.html"><span class="ico">🏠</span>Dashboard</a>
-      <a class="nav-item active" href="#"><span class="ico">📜</span>Log di Sistema</a>
-    </nav>
-
+    <div class="nav-label">Gestione sistema</div>
+    <a class="nav-item" href="/html/pages/dashboardfull.html"><span>🏠</span> Dashboard</a>
+    <a class="nav-item" href="/html/pages/dashboardfull.html"><span>👤</span> Utenti</a>
+    <a class="nav-item" href="/html/pages/dashboardfull.html"><span>🛡</span> Squadre</a>
+    <a class="nav-item" href="/html/pages/dashboardfull.html"><span>🎮</span> Quiz</a>
+    <a class="nav-item" href="/html/pages/dashboardfull.html"><span>🏅</span> Badge</a>
+    <a class="nav-item active" href="/html/logs.html"><span>📋</span> Log sistema</a>
+    <a class="nav-item" href="#"><span>⚙️</span> Impostazioni</a>
+    
     <div class="sidebar-footer">
       <div class="user-card">
         <div class="avatar" id="sb-avatar">?</div>
@@ -37,44 +40,48 @@
     </div>
   </aside>
 
+  <!-- CONTENUTO PRINCIPALE -->
   <div class="main">
     <div class="topbar">
-      <h1>Log di Sistema</h1>
-      <div style="font-size:0.85rem;color:var(--muted)">Monitoraggio Attività Server</div>
+      <h1>Pannello Admin — Log di Sistema</h1>
+      <div class="topbar-right">
+        <button class="btn-primary" id="btn-refresh">🔄 Aggiorna Log</button>
+      </div>
     </div>
 
     <div class="content">
-      <div class="card">
-        <div class="card-header">
-          <h2>📜 Registro Eventi</h2>
-          <button id="btn-refresh" style="padding:4px 8px; cursor:pointer;">🔄 Aggiorna</button>
+      <div class="table-card">
+        <div class="table-card-header">
+          <h2>Registro Eventi Server</h2>
         </div>
-        <div class="card-body" style="padding: 0;">
-          <table class="table-logs">
-            <thead>
-              <tr>
-                <th>Data / Ora</th>
-                <th>Livello</th>
-                <th>Modulo</th>
-                <th>Utente / IP</th>
-                <th>Azione</th>
-                <th>Dettagli</th>
-              </tr>
-            </thead>
-            <tbody id="logs-table-body">
-              <tr><td colspan="6" style="text-align:center; padding: 2rem;">Caricamento log…</td></tr>
-            </tbody>
-          </table>
-          
-          <div class="pagination-controls" style="padding: 15px;">
-            <button id="btn-prev" onclick="cambiaPagina(-1)">Precedente</button>
-            <span id="page-info">Pagina 1</span>
-            <button id="btn-next" onclick="cambiaPagina(1)">Successiva</button>
-          </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Data / Ora</th>
+              <th>Livello</th>
+              <th>Modulo</th>
+              <th>Utente / IP</th>
+              <th>Azione</th>
+              <th>Dettagli</th>
+            </tr>
+          </thead>
+          <tbody id="logs-table-body">
+            <tr>
+              <td colspan="6" style="text-align:center; color:var(--muted); padding: 2rem;">Caricamento log in corso…</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- PAGINAZIONE -->
+        <div style="display:flex; justify-space-between; align-items:center; padding: 1rem 1.25rem; border-top: 1px solid var(--border, #30363d);">
+          <button class="btn-sm" id="btn-prev" onclick="cambiaPagina(-1)" disabled>← Precedente</button>
+          <span id="page-info" style="font-size: 0.85rem; color: var(--muted);">Pagina 1</span>
+          <button class="btn-sm" id="btn-next" onclick="cambiaPagina(1)">Successiva →</button>
         </div>
       </div>
     </div>
   </div>
+
 </div>
 
 <script src="/js/utils.js"></script>

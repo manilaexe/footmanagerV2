@@ -1,5 +1,6 @@
 package it.footmanager.service;
 
+import it.footmanager.dto.Dtos.LogSistemaDto;
 import it.footmanager.entity.LogSistema;
 import it.footmanager.repository.LogSistemaRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -9,6 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+
 
 @Service
 public class LogSistemaService {
@@ -34,8 +36,21 @@ public class LogSistemaService {
         logRepo.save(log);
     }
 
-    public Page<LogSistema> getLogs(int page, int size) {
-        return logRepo.findAllByOrderByTimestampDesc(PageRequest.of(page, size));
+
+    public Page<LogSistemaDto> getLogs(int page, int size) {
+        return logRepo.findAllByOrderByTimestampDesc(PageRequest.of(page, size))
+            .map(log -> LogSistemaDto.builder()
+                .id(log.getId())
+                .timestamp(log.getTimestamp())
+                .livello(log.getLivello())
+                .utente(log.getUtente())
+                .ruolo(log.getRuolo())
+                .modulo(log.getModulo())
+                .azione(log.getAzione())
+                .dettagli(log.getDettagli())
+                .ipAddress(log.getIpAddress())
+                .build()
+            );
     }
 
     private String getClientIp() {

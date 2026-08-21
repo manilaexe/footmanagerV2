@@ -1,6 +1,6 @@
 package it.footmanager.controller;
 
-import it.footmanager.entity.LogSistema;
+import it.footmanager.dto.Dtos.LogSistemaDto;
 import it.footmanager.service.LogSistemaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -15,9 +15,10 @@ public class LogSistemaController {
     private LogSistemaService logService;
 
     @GetMapping
-    public ResponseEntity<Page<LogSistema>> getLogs(
+    public ResponseEntity<Page<LogSistemaDto>> getLogs(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        
         return ResponseEntity.ok(logService.getLogs(page, size));
     }
 }
