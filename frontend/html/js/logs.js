@@ -1,16 +1,16 @@
+const API_URL = 'http://localhost:8080/api/logs';
+
 let currentPage = 0;
 const pageSize = 15;
 let totalPages = 1;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Verifica che la funzione di autenticazione esista prima di chiamarla
     if (typeof verificaAutenticazione === 'function') {
         verificaAutenticazione(); 
     }
     
     caricaLogs();
     
-    // Aggancio dei listener per tutti i pulsanti
     document.getElementById('btn-refresh')?.addEventListener('click', () => {
         currentPage = 0;
         caricaLogs();
@@ -22,12 +22,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function caricaLogs() {
     try {
-        // Recupera gli header di autenticazione (con fallback se non definiti)
         const headers = typeof getAuthHeaders === 'function' 
             ? getAuthHeaders() 
             : { 'Authorization': 'Bearer ' + localStorage.getItem('token') };
 
-        const response = await fetch(`/api/logs?page=${currentPage}&size=${pageSize}`, {
+        // Puntiamo all'URL completo di Spring Boot (localhost:8080)
+        const response = await fetch(`${API_URL}?page=${currentPage}&size=${pageSize}`, {
             headers: headers
         });
 
@@ -78,7 +78,6 @@ function disegnaTabella(logs) {
     });
 }
 
-// Gestisce sia stringhe ISO che array inviati da Spring Boot per le date
 function formattaData(ts) {
     if (!ts) return 'N/A';
     if (Array.isArray(ts)) {

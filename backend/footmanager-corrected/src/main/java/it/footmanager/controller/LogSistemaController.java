@@ -10,7 +10,8 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/logs")
-@PreAuthorize("hasAnyRole('IT', 'STAFF')") // Riserva l'accesso solo ai ruoli amministrativi
+@CrossOrigin(origins = "*") // Permette le richieste da Live Server (porta 5500)
+@PreAuthorize("hasAnyRole('IT', 'STAFF')")
 public class LogSistemaController {
 
     @Autowired
