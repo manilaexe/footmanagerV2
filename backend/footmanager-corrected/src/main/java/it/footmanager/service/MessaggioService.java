@@ -9,13 +9,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
-@Service @RequiredArgsConstructor @Transactional
+@Service 
+@RequiredArgsConstructor 
+@Transactional
 public class MessaggioService {
 
     private final MessaggioRepository  mesRepo;
     private final GiocatoreRepository  giocatoreRepo;
     private final AllenatoreRepository allenatoreRepo;
     private final UtenteRepository     utenteRepo;
+    
+    // Iniezione automatica tramite @RequiredArgsConstructor (essendo 'final')
+    private final LogSistemaService    logService; 
 
     // ── Messaggi ricevuti da un giocatore (usato dalla view giocatore) ────
     @Transactional(readOnly = true)
@@ -87,12 +92,6 @@ public class MessaggioService {
     }
 
     // ── Risolve l'Allenatore "di squadra" per l'utente autenticato ────────
-    // Usato SOLO per risalire alla squadra (es. quando si invia "per ruolo").
-    // NON rappresenta più "chi ha scritto il messaggio" — quello è
-    // utenteMittente, vedi invia()/inviaPerRuolo() e resolveUtente() sotto.
-    // Se l'utente è davvero un allenatore usa il suo record; se è STAFF/IT
-    // (che non hanno una riga propria in "allenatore" — l'app assume un solo
-    // club/una sola squadra) usa l'unico allenatore del club.
     @Transactional(readOnly = true)
     public Allenatore resolveMittente(String username) {
         Integer uid = utenteRepo.findByUsername(username)
@@ -103,7 +102,6 @@ public class MessaggioService {
                         .orElseThrow(() -> new ResourceNotFoundException("Nessun allenatore configurato nel DB")));
     }
 
-    // Comoda per il controller: evita di dover esporre/gestire l'entity Allenatore lì.
     @Transactional(readOnly = true)
     public Integer resolveMittenteId(String username) {
         return resolveMittente(username).getId();
@@ -128,14 +126,20 @@ public class MessaggioService {
         m.setAllenatore(all);
         m.setUtenteMittente(mittente);
         m.setGiocatore(g);
-        // dataOra e stato impostati da @PrePersist
-        return toDto(mesRepo.save(m));
+
+        MessaggioDto salvato = toDto(mesRepo.save(m));
+
+        // Tracciamento evento
+        logService.info(
+            "MESSAGGI", 
+            "INVIO_SINGOLO", 
+            "Inviato messaggio ID " + salvato.getId() + " al giocatore " + g.getNome() + " " + g.getCognome() + " (ID: " + g.getId() + ")"
+        );
+
+        return salvato;
     }
 
     // ── Invia lo stesso messaggio a tutti i giocatori di un ruolo ─────────
-    // (es. tutti i "Portiere", tutti gli "Attaccante"...) della squadra
-    // dell'allenatore. Viene creata una riga Messaggio per ogni giocatore,
-    // così ognuno ha il proprio stato di lettura indipendente.
     public List<MessaggioDto> inviaPerRuolo(InviaMessaggioRuoloRequest req, String usernameAllenatore) {
         Utente mittente = resolveUtente(usernameAllenatore);
         Allenatore all = resolveMittente(usernameAllenatore);
@@ -147,7 +151,7 @@ public class MessaggioService {
             throw new ResourceNotFoundException("Nessun giocatore trovato con ruolo: " + req.getRuolo());
         }
 
-        return destinatari.stream()
+        List<MessaggioDto> risultati = destinatari.stream()
                 .map(g -> {
                     Messaggio m = new Messaggio();
                     m.setTesto(req.getTesto());
@@ -157,11 +161,18 @@ public class MessaggioService {
                     return toDto(mesRepo.save(m));
                 })
                 .toList();
+
+        // Tracciamento evento
+        logService.info(
+            "MESSAGGI", 
+            "INVIO_RUOLO", 
+            "Inviato messaggio di gruppo al ruolo " + req.getRuolo() + " (" + risultati.size() + " destinatari)"
+        );
+
+        return risultati;
     }
 
     // ── Segna il messaggio come letto ─────────────────────────────────────
-    // giocatoreId è quello del giocatore autenticato che ha fatto la richiesta:
-    // si può segnare come letto solo un messaggio indirizzato a sé stessi.
     public MessaggioDto segnaLetto(Integer id, Integer giocatoreId) {
         Messaggio m = mesRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Messaggio", Long.valueOf(id)));
@@ -171,12 +182,19 @@ public class MessaggioService {
         }
 
         m.setStato("LETTO");
-        return toDto(mesRepo.save(m));
+        MessaggioDto aggiornato = toDto(mesRepo.save(m));
+
+        // Tracciamento evento
+        logService.info(
+            "MESSAGGI", 
+            "LETTURA_MESSAGGIO", 
+            "Messaggio ID " + id + " segnato come letto dal giocatore ID: " + giocatoreId
+        );
+
+        return aggiornato;
     }
 
     // ── Ruolo dell'utente autenticato ──────────────────────────────────────
-    // Usato dal controller per decidere se mostrare solo i messaggi scritti
-    // da questo utente (ALLENATORE) oppure tutti quelli del club (STAFF/IT).
     @Transactional(readOnly = true)
     public String ruoloDi(String username) {
         return resolveUtente(username).getRuolo().getNomeRuolo().name();
@@ -190,9 +208,6 @@ public class MessaggioService {
                 ? m.getGiocatore().getNome()  + " " + m.getGiocatore().getCognome()  : null;
         Integer gid    = m.getGiocatore() != null ? m.getGiocatore().getId() : null;
 
-        // Nome del mittente reale: se è l'allenatore, usa nome/cognome (più
-        // familiare); altrimenti (STAFF/IT) usa lo username, non essendoci
-        // un nome anagrafico per quei ruoli nello schema attuale.
         String mittenteNome = null, mittenteRuolo = null;
         if (m.getUtenteMittente() != null) {
             var ruolo = m.getUtenteMittente().getRuolo();
@@ -201,7 +216,6 @@ public class MessaggioService {
                     ? nomeAll
                     : m.getUtenteMittente().getUsername();
         } else if (nomeAll != null) {
-            // Messaggi storici pre-migrazione, senza utenteMittente valorizzato
             mittenteNome = nomeAll;
             mittenteRuolo = "ALLENATORE";
         }
