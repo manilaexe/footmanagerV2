@@ -4,6 +4,8 @@ import it.footmanager.dto.Dtos.*;
 import it.footmanager.repository.GiocatoreRepository;
 import it.footmanager.repository.UtenteRepository;
 import it.footmanager.service.QuizService;
+import it.footmanager.service.LogSistemaService; // Aggiunto
+import jakarta.servlet.http.HttpServletRequest; // Aggiunto
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,10 +21,8 @@ public class QuizController {
     private final QuizService         svc;
     private final GiocatoreRepository giocatoreRepo;
     private final UtenteRepository    utenteRepo;
+    private final LogSistemaService   logService; // Iniezione LogService
 
-    // ── GAMIFICATION: quiz del giorno ───────────────────────────────────────
-    // GET  /api/quiz/oggi           → la domanda assegnata per oggi (o l'esito se già risposto)
-    // POST /api/quiz/oggi/risposta  → invia la risposta al quiz di oggi
     @GetMapping("/oggi")
     @PreAuthorize("hasRole('GIOCATORE')")
     public QuizGiornalieroDto quizDiOggi(@AuthenticationPrincipal UserDetails ud) {
@@ -32,11 +32,13 @@ public class QuizController {
     @PostMapping("/oggi/risposta")
     @PreAuthorize("hasRole('GIOCATORE')")
     public RispostaQuizResponse rispondiOggi(@Valid @RequestBody RispondiQuizGiornalieroRequest req,
-                                              @AuthenticationPrincipal UserDetails ud) {
-        return svc.rispondiOggi(req, getGiocatoreId(ud));
+                                              @AuthenticationPrincipal UserDetails ud, HttpServletRequest request) { // Aggiunta request
+        RispostaQuizResponse res = svc.rispondiOggi(req, getGiocatoreId(ud));
+        // Log: Risposta Quiz
+        logService.registraLog("INFO", "Quiz", "SUBMIT_QUIZ", "Inviata risposta per il quiz giornaliero", ud.getUsername(), request.getRemoteAddr());
+        return res;
     }
 
-    // ── Endpoint legacy (lista completa, uso admin/staff) ───────────────────
     @GetMapping
     @PreAuthorize("hasAnyRole('GIOCATORE','STAFF','IT')")
     public List<QuizDto> tutti(@AuthenticationPrincipal UserDetails ud) {
@@ -52,8 +54,11 @@ public class QuizController {
     @PostMapping("/risposta")
     @PreAuthorize("hasRole('GIOCATORE')")
     public RispostaQuizResponse rispondi(@Valid @RequestBody RispostaQuizRequest req,
-                                          @AuthenticationPrincipal UserDetails ud) {
-        return svc.rispondi(req, getGiocatoreId(ud));
+                                          @AuthenticationPrincipal UserDetails ud, HttpServletRequest request) { // Aggiunta request
+        RispostaQuizResponse res = svc.rispondi(req, getGiocatoreId(ud));
+        // Log: Risposta Quiz Generico
+        logService.registraLog("INFO", "Quiz", "SUBMIT_QUIZ", "Inviata risposta per il quiz ID: " + req.getQuizId(), ud.getUsername(), request.getRemoteAddr());
+        return res;
     }
 
     @GetMapping("/classifica/{squadraId}")
@@ -61,10 +66,6 @@ public class QuizController {
         return svc.classifica(squadraId);
     }
 
-    // ── PANNELLO ADMIN (STAFF/IT) — CRUD domande quiz ───────────────────────
-    // Unico punto dell'app da cui aggiungere/correggere/eliminare una domanda
-    // senza scrivere query SQL a mano. La risposta corretta va sempre passata
-    // come lettera 'A'/'B'/'C' (vedi CreaQuizRequest), mai come testo.
     @GetMapping("/admin")
     @PreAuthorize("hasAnyRole('STAFF','IT')")
     public List<QuizAdminDto> tuttiAdmin() {
@@ -73,20 +74,28 @@ public class QuizController {
 
     @PostMapping("/admin")
     @PreAuthorize("hasAnyRole('STAFF','IT')")
-    public ResponseEntity<QuizAdminDto> creaAdmin(@Valid @RequestBody CreaQuizRequest req) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(svc.creaAdmin(req));
+    public ResponseEntity<QuizAdminDto> creaAdmin(@Valid @RequestBody CreaQuizRequest req, @AuthenticationPrincipal UserDetails ud, HttpServletRequest request) { // Aggiunti UserDetails e request
+        QuizAdminDto dto = svc.creaAdmin(req);
+        // Log: Creazione domanda
+        logService.registraLog("INFO", "Quiz", "CREATE_QUIZ", "Aggiunta nuova domanda al database quiz", ud.getUsername(), request.getRemoteAddr());
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
     @PutMapping("/admin/{id}")
     @PreAuthorize("hasAnyRole('STAFF','IT')")
-    public QuizAdminDto aggiornaAdmin(@PathVariable Integer id, @Valid @RequestBody CreaQuizRequest req) {
-        return svc.aggiornaAdmin(id, req);
+    public QuizAdminDto aggiornaAdmin(@PathVariable Integer id, @Valid @RequestBody CreaQuizRequest req, @AuthenticationPrincipal UserDetails ud, HttpServletRequest request) { // Aggiunti UserDetails e request
+        QuizAdminDto dto = svc.aggiornaAdmin(id, req);
+        // Log: Modifica domanda
+        logService.registraLog("INFO", "Quiz", "UPDATE_QUIZ", "Modificata domanda quiz ID: " + id, ud.getUsername(), request.getRemoteAddr());
+        return dto;
     }
 
     @DeleteMapping("/admin/{id}")
     @PreAuthorize("hasAnyRole('STAFF','IT')")
-    public ResponseEntity<Void> eliminaAdmin(@PathVariable Integer id) {
+    public ResponseEntity<Void> eliminaAdmin(@PathVariable Integer id, @AuthenticationPrincipal UserDetails ud, HttpServletRequest request) { // Aggiunti UserDetails e request
         svc.eliminaAdmin(id);
+        // Log: Eliminazione domanda
+        logService.registraLog("WARN", "Quiz", "DELETE_QUIZ", "Eliminata domanda quiz ID: " + id, ud.getUsername(), request.getRemoteAddr());
         return ResponseEntity.noContent().build();
     }
 

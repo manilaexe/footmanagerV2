@@ -10,6 +10,8 @@ import it.footmanager.repository.GiocatoreRepository;
 import it.footmanager.repository.UtenteRepository;
 import it.footmanager.service.GiocatoreService;
 import it.footmanager.service.UtenteService;
+import it.footmanager.service.LogSistemaService; // Aggiunto
+import jakarta.servlet.http.HttpServletRequest; // Aggiunto
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -31,11 +33,8 @@ public class UtenteController {
     private final AllenatoreRepository allenatoreRepo;
     private final GiocatoreRepository  giocatoreRepo;
     private final GiocatoreService     giocatoreService;
+    private final LogSistemaService    logService; // Iniezione LogService
 
-    // ── Profilo proprio, risolto dal JWT (nessun ID passato dal client) ────
-    // Restituiscono DTO, non le entity JPA: evita LazyInitializationException
-    // sulle relazioni LAZY (squadra, statistiche...) e non espone la
-    // struttura interna del DB.
     @GetMapping("/me/allenatore")
     public AllenatoreDto meAllenatore(@AuthenticationPrincipal UserDetails ud) {
         Integer uid = utenteRepo.findByUsername(ud.getUsername())
@@ -60,7 +59,6 @@ public class UtenteController {
         return giocatoreService.toDto(g);
     }
 
-    // ── CRUD utenti (pannello IT/STAFF) ─────────────────────────────────────
     @GetMapping
     @PreAuthorize("hasAnyRole('STAFF','ALLENATORE','DIRIGENZA','IT')")
     public List<UtenteDto> tutti() { return svc.findAll(); }
@@ -71,24 +69,28 @@ public class UtenteController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('STAFF','IT')")
-    public ResponseEntity<UtenteDto> crea(@Valid @RequestBody CreaUtenteRequest req) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(svc.crea(req));
+    public ResponseEntity<UtenteDto> crea(@Valid @RequestBody CreaUtenteRequest req, @AuthenticationPrincipal UserDetails ud, HttpServletRequest request) { // Aggiunti UserDetails e request
+        UtenteDto dto = svc.crea(req);
+        // Log: Creazione utente
+        logService.registraLog("INFO", "Utenti", "CREATE_USER", "Creato nuovo utente: " + req.getUsername(), ud.getUsername(), request.getRemoteAddr());
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
-    // Niente @Valid qui: a differenza della creazione, l'aggiornamento è
-    // parziale (username/password/ruolo possono anche non essere presenti
-    // nel body — il service li lascia invariati). CreaUtenteRequest ha
-    // @NotBlank su password, che romperebbe un update "solo username".
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('STAFF','IT')")
-    public UtenteDto aggiorna(@PathVariable Integer id, @RequestBody CreaUtenteRequest req) {
-        return svc.aggiorna(id, req);
+    public UtenteDto aggiorna(@PathVariable Integer id, @RequestBody CreaUtenteRequest req, @AuthenticationPrincipal UserDetails ud, HttpServletRequest request) { // Aggiunti UserDetails e request
+        UtenteDto dto = svc.aggiorna(id, req);
+        // Log: Modifica utente (inclusi permessi/ruoli)
+        logService.registraLog("INFO", "Utenti", "UPDATE_ROLE", "Modificato utente ID: " + id, ud.getUsername(), request.getRemoteAddr());
+        return dto;
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('STAFF','IT')")
-    public ResponseEntity<Void> elimina(@PathVariable Integer id) {
+    public ResponseEntity<Void> elimina(@PathVariable Integer id, @AuthenticationPrincipal UserDetails ud, HttpServletRequest request) { // Aggiunti UserDetails e request
         svc.elimina(id);
+        // Log: Eliminazione utente
+        logService.registraLog("WARN", "Utenti", "DELETE_USER", "Eliminato utente ID: " + id, ud.getUsername(), request.getRemoteAddr());
         return ResponseEntity.noContent().build();
     }
 }

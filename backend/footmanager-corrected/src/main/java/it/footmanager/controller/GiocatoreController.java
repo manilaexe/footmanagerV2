@@ -2,6 +2,8 @@ package it.footmanager.controller;
 
 import it.footmanager.dto.Dtos.*;
 import it.footmanager.service.GiocatoreService;
+import it.footmanager.service.LogSistemaService; // Aggiunto
+import jakarta.servlet.http.HttpServletRequest; // Aggiunto
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,11 +17,8 @@ import java.util.List;
 public class GiocatoreController {
 
     private final GiocatoreService svc;
+    private final LogSistemaService logService; // Iniezione LogService
 
-    // ── GET /api/giocatori/me ──────────────────────────────────────────────
-    // Profilo del giocatore autenticato (usato dalla card in alto della
-    // dashboard giocatore). Il giocatore è sempre risolto dal token JWT,
-    // non da un id passato dal client.
     @GetMapping("/me")
     public GiocatoreDto me(@AuthenticationPrincipal UserDetails ud) {
         return svc.findMyProfile(ud.getUsername());
@@ -42,17 +41,18 @@ public class GiocatoreController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public GiocatoreDto crea(@RequestBody CreaGiocatoreRequest req) {
-        return svc.creaGiocatore(req);
+    public GiocatoreDto crea(@RequestBody CreaGiocatoreRequest req, @AuthenticationPrincipal UserDetails ud, HttpServletRequest request) { // Aggiunti UserDetails e request
+        GiocatoreDto dto = svc.creaGiocatore(req);
+        // Log: Creazione giocatore
+        logService.registraLog("INFO", "Rosa", "CREATE_GIOCATORE", "Inserito nuovo giocatore in rosa", ud.getUsername(), request.getRemoteAddr());
+        return dto;
     }
 
-    // ── PUT /api/giocatori/{id} ─────────────────────────────────────────────
-    // Aggiorna i dati anagrafici di un giocatore esistente (nome, cognome,
-    // numero, posizione, piede, nazionalità, altezza, peso, data nascita).
-    // Permessi già garantiti da SecurityConfig sulla regola generale
-    // "/api/giocatori/**" per i metodi non-GET: STAFF, ALLENATORE, IT.
     @PutMapping("/{id}")
-    public GiocatoreDto aggiorna(@PathVariable Integer id, @RequestBody CreaGiocatoreRequest req) {
-        return svc.aggiornaGiocatore(id, req);
+    public GiocatoreDto aggiorna(@PathVariable Integer id, @RequestBody CreaGiocatoreRequest req, @AuthenticationPrincipal UserDetails ud, HttpServletRequest request) { // Aggiunti UserDetails e request
+        GiocatoreDto dto = svc.aggiornaGiocatore(id, req);
+        // Log: Modifica giocatore
+        logService.registraLog("INFO", "Rosa", "UPDATE_GIOCATORE", "Aggiornati dati anagrafici giocatore ID: " + id, ud.getUsername(), request.getRemoteAddr());
+        return dto;
     }
 }

@@ -3,100 +3,80 @@ package it.footmanager.service;
 import it.footmanager.dto.Dtos.LogSistemaDto;
 import it.footmanager.entity.LogSistema;
 import it.footmanager.repository.LogSistemaRepository;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
+
+import java.time.LocalDateTime;
 
 @Service
 public class LogSistemaService {
 
     @Autowired
-    private LogSistemaRepository logRepo;
+    private LogSistemaRepository logRepository;
 
-    // --- Metodi con estrazione automatica dell'utente e ruolo corrente ---
+    // =========================================================================
+    // METODO COMPLETO CON RUOLO (7 Parametri)
+    // =========================================================================
+    public void registraLog(String livello, String modulo, String azione, String dettagli, String utente, String ruolo, String ipAddress) {
+        try {
+            LogSistema log = new LogSistema();
+            log.setTimestamp(LocalDateTime.now());
+            log.setLivello(livello);
+            log.setModulo(modulo);
+            log.setAzione(azione);
+            log.setDettagli(dettagli);
+            log.setUtente(utente != null ? utente : "ANONIMO");
+            log.setRuolo(ruolo); // Valorizza il campo ruolo
+            log.setIpAddress(ipAddress != null ? ipAddress : "127.0.0.1");
+
+            logRepository.save(log);
+        } catch (Exception e) {
+            System.err.println("Errore durante il salvataggio del log: " + e.getMessage());
+        }
+    }
+
+    // Overload per chiamate a 6 parametri (senza ruolo specificato)
+    public void registraLog(String livello, String modulo, String azione, String dettagli, String utente, String ipAddress) {
+        registraLog(livello, modulo, azione, dettagli, utente, null, ipAddress);
+    }
+
+    // Overload a 4 parametri (per chiamate di sistema)
+    public void registraLog(String livello, String modulo, String azione, String dettagli) {
+        registraLog(livello, modulo, azione, dettagli, "SISTEMA", null, "127.0.0.1");
+    }
+
+    // Scorciatoie
     public void info(String modulo, String azione, String dettagli) {
-        saveLog("INFO", getCurrentUsername(), getCurrentRole(), modulo, azione, dettagli);
+        registraLog("INFO", modulo, azione, dettagli);
     }
 
     public void warn(String modulo, String azione, String dettagli) {
-        saveLog("WARN", getCurrentUsername(), getCurrentRole(), modulo, azione, dettagli);
+        registraLog("WARN", modulo, azione, dettagli);
     }
 
     public void error(String modulo, String azione, String dettagli) {
-        saveLog("ERROR", getCurrentUsername(), getCurrentRole(), modulo, azione, dettagli);
-    }
-
-    // --- Metodi esistenti ---
-    public void info(String utente, String ruolo, String modulo, String azione, String dettagli) {
-        saveLog("INFO", utente, ruolo, modulo, azione, dettagli);
-    }
-
-    public void warn(String utente, String ruolo, String modulo, String azione, String dettagli) {
-        saveLog("WARN", utente, ruolo, modulo, azione, dettagli);
-    }
-
-    public void error(String utente, String ruolo, String modulo, String azione, String dettagli) {
-        saveLog("ERROR", utente, ruolo, modulo, azione, dettagli);
-    }
-
-    private void saveLog(String livello, String utente, String ruolo, String modulo, String azione, String dettagli) {
-        String ipAddress = getClientIp();
-        LogSistema log = new LogSistema(livello, utente, ruolo, modulo, azione, dettagli, ipAddress);
-        logRepo.save(log);
+        registraLog("ERROR", modulo, azione, dettagli);
     }
 
     public Page<LogSistemaDto> getLogs(int page, int size) {
-        return logRepo.findAllByOrderByTimestampDesc(PageRequest.of(page, size))
-            .map(log -> LogSistemaDto.builder()
-                .id(log.getId())
-                .timestamp(log.getTimestamp())
-                .livello(log.getLivello())
-                .utente(log.getUtente())
-                .ruolo(log.getRuolo())
-                .modulo(log.getModulo())
-                .azione(log.getAzione())
-                .dettagli(log.getDettagli())
-                .ipAddress(log.getIpAddress())
-                .build()
-            );
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("timestamp").descending());
+        return logRepository.findAll(pageRequest).map(this::toDto);
     }
 
-    private String getClientIp() {
-        try {
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes != null) {
-                HttpServletRequest request = attributes.getRequest();
-                String xForwardedFor = request.getHeader("X-Forwarded-For");
-                if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-                    return xForwardedFor.split(",")[0];
-                }
-                return request.getRemoteAddr();
-            }
-        } catch (Exception e) {
-            // Nessun contesto web (es. task schedulati)
-        }
-        return "SYSTEM";
-    }
-
-    private String getCurrentUsername() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
-            return auth.getName();
-        }
-        return "SYSTEM";
-    }
-
-    private String getCurrentRole() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && !auth.getAuthorities().isEmpty()) {
-            return auth.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
-        }
-        return "SYSTEM";
+    private LogSistemaDto toDto(LogSistema entity) {
+        return LogSistemaDto.builder()
+                .id(entity.getId())
+                .timestamp(entity.getTimestamp())
+                .livello(entity.getLivello())
+                .modulo(entity.getModulo())
+                .azione(entity.getAzione())
+                .dettagli(entity.getDettagli())
+                .utente(entity.getUtente())
+                .ruolo(entity.getRuolo())
+                .ipAddress(entity.getIpAddress())
+                .build();
     }
 }
