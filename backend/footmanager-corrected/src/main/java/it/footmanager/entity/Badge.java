@@ -19,7 +19,6 @@ public class Badge {
     @Column(name = "soglia_punti")
     private int sogliaPunti = 0;
 
-    @Lob
-    @Column(name = "icona", columnDefinition = "BLOB")
-    private byte[] icona;
+    @Column(name = "icona", length = 255)
+    private String icona;
 }

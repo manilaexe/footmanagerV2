@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Base64;
 import java.util.List;
 
 /**
@@ -44,15 +43,12 @@ public class BadgeService {
                 .toList();
     }
 
-    // Crea un nuovo badge (pannello IT/STAFF). L'icona, se fornita, arriva
-    // come stringa Base64 dal frontend e viene decodificata in BLOB.
+    // Crea un nuovo badge (pannello IT/STAFF).
     public BadgeDto crea(CreaBadgeRequest req) {
         Badge b = new Badge();
         b.setNomeBadge(req.getNomeBadge());
         b.setSogliaPunti(req.getSogliaPunti());
-        if (req.getIconaBase64() != null && !req.getIconaBase64().isBlank()) {
-            b.setIcona(Base64.getDecoder().decode(req.getIconaBase64()));
-        }
+        b.setIcona(req.getIcona());
         return toDto(badgeRepo.save(b));
     }
 
@@ -61,9 +57,7 @@ public class BadgeService {
                 .orElseThrow(() -> new ResourceNotFoundException("Badge", Long.valueOf(id)));
         b.setNomeBadge(req.getNomeBadge());
         b.setSogliaPunti(req.getSogliaPunti());
-        if (req.getIconaBase64() != null && !req.getIconaBase64().isBlank()) {
-            b.setIcona(Base64.getDecoder().decode(req.getIconaBase64()));
-        }
+        b.setIcona(req.getIcona());
         return toDto(badgeRepo.save(b));
     }
 
@@ -73,8 +67,10 @@ public class BadgeService {
 
     private BadgeDto toDto(Badge b) {
         return BadgeDto.builder()
-                .id(b.getId()).nomeBadge(b.getNomeBadge()).sogliaPunti(b.getSogliaPunti())
-                .iconaBase64(b.getIcona() != null ? Base64.getEncoder().encodeToString(b.getIcona()) : null)
+                .id(b.getId())
+                .nomeBadge(b.getNomeBadge())
+                .sogliaPunti(b.getSogliaPunti())
+                .icona(b.getIcona())
                 .build();
     }
 }

@@ -285,22 +285,21 @@ public class Dtos {
         @Min(0)   private int    secondiImpiegati;
     }
 
-    // ── Badge (icona è BLOB -> esposta come Base64 String nel DTO) ───────
+    // ── Badge ─────────────────────────────────────────────────────────────
     @Data @Builder
     public static class BadgeDto {
         private Integer id;
         private String  nomeBadge;
         private int     sogliaPunti;
-        private String  iconaBase64;   // null se il giocatore non ha ancora icona caricata
+        private String  icona;   // Percorso, URL o nome del file dell'icona (VARCHAR)
     }
 
     // Richiesta di creazione/modifica badge (pannello STAFF/IT).
-    // L'icona, se fornita, arriva come stringa Base64 e viene decodificata in BLOB.
     @Data
     public static class CreaBadgeRequest {
         @NotBlank private String nomeBadge;
         private int    sogliaPunti;
-        private String iconaBase64;
+        private String icona;
     }
 
     // Badge ottenuto da un giocatore specifico, con data di ottenimento

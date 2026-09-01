@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // 3. Popola la sidebar con nome/ruolo/avatar dal localStorage (stessa logica delle altre pagine)
+    // 3. Popola la sidebar con nome/ruolo/avatar dal localStorage
     const sbName = document.getElementById('sb-nome');
     const sbRole = document.getElementById('sb-ruolo');
     const sbAv   = document.getElementById('sb-avatar');
@@ -32,19 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /*
  * Endpoint: GET /api/badge                 → elenco di TUTTI i badge esistenti
- *   (id, nomeBadge, sogliaPunti, iconaBase64) — GET aperto a qualsiasi utente
- *   autenticato, usato qui per sapere anche quali badge esistono ma NON sono
- *   ancora stati sbloccati dal giocatore.
+ *   (id, nomeBadge, sogliaPunti, icona) — GET aperto a qualsiasi utente autenticato.
  * Endpoint: GET /api/badge/giocatore/{id}  → badge già ottenuti dal giocatore
  *   corrente (giocatoreId, badgeId, nomeBadge, dataOttenimento).
- *
- * L'assegnazione vera e propria è automatica lato backend
- * (QuizService.verificaBadge): ogni risposta corretta al quiz del giorno
- * fa scattare il controllo e, se la soglia di risposte corrette totali
- * viene raggiunta, il badge viene salvato per il giocatore. Qui ci
- * limitiamo a MOSTRARLI: uniamo l'elenco completo con quelli ottenuti,
- * evidenziando gli sbloccati e lasciando in grigio quelli ancora da
- * raggiungere (con la soglia richiesta).
  */
 async function caricaBadge() {
     const loader = document.getElementById('badges-loading');
@@ -97,13 +87,10 @@ async function caricaBadge() {
     }
 }
 
-// Mappa id badge → { badge, ottenuto } usata dal modal di dettaglio quando
-// si clicca su una tile (evita di dover rifare le fetch al click).
+// Mappa id badge → { badge, ottenuto } usata dal modal di dettaglio
 let badgeDataMap = new Map();
 
-// Disegna la griglia completa: un tile per ogni badge esistente, ordinati
-// per soglia crescente, sbloccato/bloccato in base a ciò che il giocatore
-// ha già ottenuto. Ogni tile è cliccabile e apre il modal di dettaglio.
+// Disegna la griglia completa
 function renderizzaBadge(tutti, miei, container) {
     if (!container) return;
     container.innerHTML = '';
@@ -125,9 +112,7 @@ function renderizzaBadge(tutti, miei, container) {
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); apriDettaglioBadge(b.id); }
         });
 
-        const iconaHtml = b.iconaBase64
-            ? `<img src="data:image/png;base64,${b.iconaBase64}" alt="">`
-            : '🎖';
+        const iconaHtml = creaIconaHtml(b.icona, b.nomeBadge);
 
         const infoTxt = ottenuto
             ? `Ottenuto il ${new Date(ottenuto.dataOttenimento).toLocaleDateString('it-IT')}`
@@ -142,10 +127,6 @@ function renderizzaBadge(tutti, miei, container) {
 }
 
 // ─── MODAL DETTAGLIO BADGE ──────────────────────────────────────────────
-// Al click su una tile mostra un ingrandimento con le info complete:
-// icona, nome, stato (sbloccato/bloccato), soglia richiesta e, se già
-// ottenuto, la data esatta di sblocco. Nessuna nuova chiamata al backend:
-// usa i dati già scaricati da caricaBadge()/renderizzaBadge().
 function apriDettaglioBadge(badgeId) {
     const dati = badgeDataMap.get(badgeId);
     if (!dati) return;
@@ -162,9 +143,7 @@ function apriDettaglioBadge(badgeId) {
     if (!overlay || !modal) return;
 
     modal.className = `badge-modal ${ottenuto ? 'unlocked' : 'locked'}`;
-    icona.innerHTML = b.iconaBase64
-        ? `<img src="data:image/png;base64,${b.iconaBase64}" alt="">`
-        : '🎖';
+    icona.innerHTML = creaIconaHtml(b.icona, b.nomeBadge);
     nome.textContent   = b.nomeBadge;
     status.textContent = ottenuto ? '✔ Badge sbloccato' : '🔒 Badge non ancora sbloccato';
     soglia.textContent = `${b.sogliaPunti} risposte corrette al quiz del giorno`;
@@ -182,8 +161,6 @@ function apriDettaglioBadge(badgeId) {
     document.body.style.overflow = 'hidden';
 }
 
-// Chiude il modal: sia dal bottone ✕ sia cliccando fuori dalla card
-// (event.target === overlay), ma non se il click parte da dentro la card.
 function chiudiDettaglioBadge(event) {
     if (event && event.target !== event.currentTarget) return;
     const overlay = document.getElementById('badge-modal-overlay');
@@ -191,12 +168,23 @@ function chiudiDettaglioBadge(event) {
     document.body.style.overflow = '';
 }
 
-// Chiude anche con il tasto ESC
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') chiudiDettaglioBadge();
 });
 
-// ─── UTILITY ────────────────────────────────────────────────────────────
+// ─── UTILITY PER L'ICONA ────────────────────────────────────────────────
+function creaIconaHtml(iconaPath, nomeBadge) {
+    if (!iconaPath || iconaPath.trim() === '') return '🎖';
+    
+    let src = iconaPath;
+    // Se non è un URL assoluto o base64 e non comincia con '/', aggiunge la barra iniziale
+    if (!src.startsWith('http://') && !src.startsWith('https://') && !src.startsWith('data:') && !src.startsWith('/')) {
+        src = '/' + src;
+    }
+    
+    return `<img src="${src}" alt="${esc(nomeBadge)}" onerror="this.onerror=null; this.parentElement.innerHTML='🎖';">`;
+}
+
 function esc(s) {
     return String(s || '')
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
