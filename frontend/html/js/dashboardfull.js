@@ -516,6 +516,7 @@ function apriModalNuovoBadge() {
     document.getElementById('badge-id-editing').value = '';
     document.getElementById('badge-nome').value = '';
     document.getElementById('badge-soglia').value = 100;
+    document.getElementById('badge-icona').value = ''; // Aggiunto
     openModal('modal-badge');
 }
 
@@ -526,6 +527,7 @@ function apriModalModificaBadge(id) {
     document.getElementById('badge-id-editing').value = b.id;
     document.getElementById('badge-nome').value = b.nomeBadge || '';
     document.getElementById('badge-soglia').value = b.sogliaPunti ?? 0;
+    document.getElementById('badge-icona').value = b.icona || ''; // Aggiunto
     openModal('modal-badge');
 }
 
@@ -533,6 +535,7 @@ async function salvaBadge() {
     const idEditing = document.getElementById('badge-id-editing').value;
     const nomeBadge = document.getElementById('badge-nome').value.trim();
     const sogliaPunti = parseInt(document.getElementById('badge-soglia').value, 10) || 0;
+    const icona = document.getElementById('badge-icona').value.trim(); // Aggiunto
 
     if (!nomeBadge) { alert('Il nome del badge è obbligatorio.'); return; }
 
@@ -541,7 +544,8 @@ async function salvaBadge() {
     const method = isModifica ? 'PUT' : 'POST';
 
     try {
-        const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify({ nomeBadge, sogliaPunti }) });
+        // Aggiunto "icona" dentro JSON.stringify
+        const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify({ nomeBadge, sogliaPunti, icona }) });
         if (res.ok) {
             closeModal('modal-badge');
             await caricaBadgeDisponibili();

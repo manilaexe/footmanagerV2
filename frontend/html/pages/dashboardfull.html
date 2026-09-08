@@ -264,14 +264,23 @@
     <h3 id="modal-badge-titolo">Nuovo Badge</h3>
     <input type="hidden" id="badge-id-editing" value="" />
     <div class="form-grid" style="grid-template-columns:1fr">
-      <div class="form-group"><label>Nome badge</label><input type="text" id="badge-nome" placeholder="es. 🌱 Apprendista storico" /></div>
+      <div class="form-group"><label>Nome badge</label><input type="text" id="badge-nome" placeholder="es. Apprendista storico" /></div>
       <div class="form-group"><label>Soglia punti</label><input type="number" id="badge-soglia" value="100" min="0" /></div>
+      
+      <!-- INIZIO NUOVO CAMPO ICONA -->
+      <div class="form-group">
+        <label>File Icona (es. img/badge.png)</label>
+        <input type="text" id="badge-icona" placeholder="Lascia vuoto per usare l'emoji standard 🎖" />
+      </div>
+      <!-- FINE NUOVO CAMPO ICONA -->
+      
     </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeModal('modal-badge')">Annulla</button>
       <button class="btn-primary" onclick="salvaBadge()">Salva Badge</button>
     </div>
   </div>
+</div>
 </div>
 
 <script src="/html/js/utils.js"></script>

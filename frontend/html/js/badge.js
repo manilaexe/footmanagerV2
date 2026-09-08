@@ -167,15 +167,17 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') chiudiDettaglioBadge();
 });
 
+
 // ─── UTILITY PER L'ICONA ────────────────────────────────────────────────
 function creaIconaHtml(iconaPath, nomeBadge) {
     if (!iconaPath || iconaPath.trim() === '') return '🎖';
     
-    // Punta alla cartella uploads del frontend.
-    // Trasforma "uploads/primo_gol.png" in "/uploads/primo_gol.png"
-    let src = iconaPath.startsWith('/') ? iconaPath : '/' + iconaPath;
+    // Aggiungiamo /html/ se non c'è già, per allinearci a utils.js e trovare l'immagine
+    let src = iconaPath.startsWith('/html/') ? iconaPath : 
+              (iconaPath.startsWith('/') ? '/html' + iconaPath : '/html/' + iconaPath);
     
-    return `<img src="${src}" alt="${esc(nomeBadge)}" onerror="this.onerror=null; this.parentElement.innerHTML='🎖';">`;
+    // Aggiunto "style" per farla adattare perfettamente al cerchio
+    return `<img src="${src}" alt="${esc(nomeBadge)}" style="width:100%; height:100%; object-fit:contain;" onerror="this.onerror=null; this.parentElement.innerHTML='🎖';">`;
 }
 
 function esc(s) {
