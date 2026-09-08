@@ -107,3 +107,36 @@ function cambiaPagina(offset) {
         caricaLogs();
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof verificaAutenticazione === 'function') {
+        verificaAutenticazione(); 
+    }
+    
+    // --- AGGIUNTA PER CARICARE I DATI NELLA SIDEBAR ---
+    // Recuperi i dati salvati al login
+    const username = localStorage.getItem('username') || 'admin';
+    const ruolo = localStorage.getItem('ruolo') || 'IT';
+    
+    // Aggiorni il nome e il ruolo nell'HTML
+    document.getElementById('sb-nome').textContent = username;
+    document.getElementById('sb-ruolo').textContent = ruolo;
+    
+    // Usi la TUA utility già presente in utils.js per sistemare l'avatar
+    const avatarContainer = document.getElementById('sb-avatar');
+    if (avatarContainer) {
+        const iniziali = username.substring(0, 2).toUpperCase();
+        renderAvatar(avatarContainer, iniziali);
+    }
+    // --------------------------------------------------
+    
+    caricaLogs();
+    
+    document.getElementById('btn-refresh')?.addEventListener('click', () => {
+        currentPage = 0;
+        caricaLogs();
+    });
+
+    document.getElementById('btn-prev')?.addEventListener('click', () => cambiaPagina(-1));
+    document.getElementById('btn-next')?.addEventListener('click', () => cambiaPagina(1));
+});

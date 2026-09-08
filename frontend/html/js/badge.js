@@ -5,16 +5,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Controllo login
     if (typeof verificaAutenticazione === 'function') verificaAutenticazione();
 
-    // 2. Questa pagina ha senso solo per un GIOCATORE (i badge sono legati
-    // alle sue risposte ai quiz): chi ha un ruolo diverso viene rimandato
-    // alla propria dashboard
+    // 2. Controllo ruolo
     const ruolo = localStorage.getItem('ruolo') || '';
     if (ruolo !== 'GIOCATORE') {
         window.location.href = dashboardUrlPerRuolo(ruolo);
         return;
     }
 
-    // 3. Popola la sidebar con nome/ruolo/avatar dal localStorage
+    // 3. Popola la sidebar 
     const sbName = document.getElementById('sb-nome');
     const sbRole = document.getElementById('sb-ruolo');
     const sbAv   = document.getElementById('sb-avatar');
@@ -30,12 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
     caricaBadge();
 });
 
-/*
- * Endpoint: GET /api/badge                 → elenco di TUTTI i badge esistenti
- *   (id, nomeBadge, sogliaPunti, icona) — GET aperto a qualsiasi utente autenticato.
- * Endpoint: GET /api/badge/giocatore/{id}  → badge già ottenuti dal giocatore
- *   corrente (giocatoreId, badgeId, nomeBadge, dataOttenimento).
- */
 async function caricaBadge() {
     const loader = document.getElementById('badges-loading');
     const grid   = document.getElementById('badges-grid');
@@ -44,7 +36,9 @@ async function caricaBadge() {
     if (!grid) return;
 
     const idGiocatore = localStorage.getItem('idGiocatore');
-    const headers = getAuthHeaders();
+    const headers = typeof getAuthHeaders === 'function' 
+        ? getAuthHeaders() 
+        : { 'Authorization': `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json' };
 
     if (loader) loader.style.display = 'block';
     if (grid)   grid.style.display   = 'none';
@@ -87,10 +81,8 @@ async function caricaBadge() {
     }
 }
 
-// Mappa id badge → { badge, ottenuto } usata dal modal di dettaglio
 let badgeDataMap = new Map();
 
-// Disegna la griglia completa
 function renderizzaBadge(tutti, miei, container) {
     if (!container) return;
     container.innerHTML = '';
@@ -112,6 +104,7 @@ function renderizzaBadge(tutti, miei, container) {
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); apriDettaglioBadge(b.id); }
         });
 
+        // QUI ORA CHIAMA LA FUNZIONE CORRETTA
         const iconaHtml = creaIconaHtml(b.icona, b.nomeBadge);
 
         const infoTxt = ottenuto
@@ -126,7 +119,6 @@ function renderizzaBadge(tutti, miei, container) {
     });
 }
 
-// ─── MODAL DETTAGLIO BADGE ──────────────────────────────────────────────
 function apriDettaglioBadge(badgeId) {
     const dati = badgeDataMap.get(badgeId);
     if (!dati) return;
@@ -143,7 +135,10 @@ function apriDettaglioBadge(badgeId) {
     if (!overlay || !modal) return;
 
     modal.className = `badge-modal ${ottenuto ? 'unlocked' : 'locked'}`;
+    
+    // QUI ORA CHIAMA LA FUNZIONE CORRETTA
     icona.innerHTML = creaIconaHtml(b.icona, b.nomeBadge);
+    
     nome.textContent   = b.nomeBadge;
     status.textContent = ottenuto ? '✔ Badge sbloccato' : '🔒 Badge non ancora sbloccato';
     soglia.textContent = `${b.sogliaPunti} risposte corrette al quiz del giorno`;
@@ -176,11 +171,9 @@ document.addEventListener('keydown', (e) => {
 function creaIconaHtml(iconaPath, nomeBadge) {
     if (!iconaPath || iconaPath.trim() === '') return '🎖';
     
-    let src = iconaPath;
-    // Se non è un URL assoluto o base64 e non comincia con '/', aggiunge la barra iniziale
-    if (!src.startsWith('http://') && !src.startsWith('https://') && !src.startsWith('data:') && !src.startsWith('/')) {
-        src = '/' + src;
-    }
+    // Punta alla cartella uploads del frontend.
+    // Trasforma "uploads/primo_gol.png" in "/uploads/primo_gol.png"
+    let src = iconaPath.startsWith('/') ? iconaPath : '/' + iconaPath;
     
     return `<img src="${src}" alt="${esc(nomeBadge)}" onerror="this.onerror=null; this.parentElement.innerHTML='🎖';">`;
 }
