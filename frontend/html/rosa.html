@@ -46,7 +46,6 @@
       <h1>Rosa della Squadra</h1>
       <div class="topbar-right">
         <button class="btn-ghost" id="btn-export">↓ Esporta CSV</button>
-        <button class="btn-primary" onclick="apriModalAggiungi()">+ Aggiungi Giocatore</button>
       </div>
     </div>
 
@@ -118,43 +117,72 @@
   </div>
 </div>
 
-<!-- MODAL AGGIUNGI / MODIFICA GIOCATORE -->
-<!-- Stesso modal riusato per creazione e modifica: form-id-giocatore vuoto = crea,
-     valorizzato = modifica. Il titolo e il testo del pulsante Salva cambiano
-     dinamicamente via JS (vedi apriModalAggiungi()/apriModalModifica() in rosa.js). -->
-<div class="modal-overlay" id="modal-add">
-  <div class="modal">
+<!-- MODAL MODIFICA STATISTICHE COMPLETE -->
+<div class="modal-overlay" id="modal-edit">
+  <div class="modal" style="max-width: 720px; max-height: 90vh; overflow-y: auto;">
     <div style="padding:1.5rem 2rem 0">
-      <h3 id="form-titolo" style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;text-transform:uppercase;margin-bottom:1.25rem">Aggiungi Giocatore</h3>
+      <h3 id="form-titolo" style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;text-transform:uppercase;margin-bottom:1.25rem">Modifica Statistiche</h3>
       <div id="form-errore" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);border-radius:8px;padding:.6rem .9rem;font-size:.82rem;color:#f87171;margin-bottom:1rem"></div>
       <input type="hidden" id="form-id-giocatore" value="" />
-      <div class="form-grid">
-        <div class="form-group"><label>Nome</label><input type="text" id="form-nome" placeholder="Mario" /></div>
-        <div class="form-group"><label>Cognome</label><input type="text" id="form-cognome" placeholder="Rossi" /></div>
-        <div class="form-group"><label>Numero maglia</label><input type="number" id="form-numero" placeholder="10" /></div>
-        <div class="form-group"><label>Posizione</label>
-          <select id="form-posizione">
-            <option value="Attaccante">Attaccante</option>
-            <option value="Centrocampista">Centrocampista</option>
-            <option value="Difensore">Difensore</option>
-            <option value="Portiere">Portiere</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Piede</label>
-          <select id="form-piede">
-            <option value="Destro">Destro</option>
-            <option value="Sinistro">Sinistro</option>
-            <option value="Ambidestro">Ambidestro</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Nazionalità</label><input type="text" id="form-nazionalita" placeholder="ITA" /></div>
-        <div class="form-group"><label>Altezza (cm)</label><input type="number" id="form-altezza" placeholder="180" /></div>
-        <div class="form-group"><label>Peso (kg)</label><input type="number" id="form-peso" placeholder="75" /></div>
+      
+      <!-- STATISTICHE COMUNI / GENERALI -->
+      <h4 style="color: var(--primary, #60a5fa); margin-bottom: 10px; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px;">Statistiche Generali</h4>
+      <div class="form-grid" style="grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+        <div class="form-group"><label>Presenze</label><input type="number" id="stat-presenze" min="0" /></div>
+        <div class="form-group"><label>Pres. Titolare</label><input type="number" id="stat-presenzeTitolare" min="0" /></div>
+        <div class="form-group"><label>Minuti Giocati</label><input type="number" id="stat-minutiGiocati" min="0" /></div>
+        <div class="form-group"><label>Ammonizioni</label><input type="number" id="stat-ammonizioni" min="0" /></div>
+        <div class="form-group"><label>Espulsioni</label><input type="number" id="stat-espulsioni" min="0" /></div>
+        <div class="form-group"><label>Assist</label><input type="number" id="stat-assist" min="0" /></div>
+        <div class="form-group"><label>Falli Commessi</label><input type="number" id="stat-falliCommessi" min="0" /></div>
+        <div class="form-group"><label>Falli Subiti</label><input type="number" id="stat-falliSubiti" min="0" /></div>
+        <div class="form-group"><label>Passaggi Tentati</label><input type="number" id="stat-passaggiTentati" min="0" /></div>
+        <div class="form-group"><label>Passaggi Riusciti</label><input type="number" id="stat-passaggiRiusciti" min="0" /></div>
+        <div class="form-group"><label>Passaggi Chiave</label><input type="number" id="stat-passaggiChiave" min="0" /></div>
+        <div class="form-group"><label>Palloni Intercettati</label><input type="number" id="stat-palloniIntercettati" min="0" /></div>
+        <div class="form-group"><label>Duelli Vinti</label><input type="number" id="stat-duelliVinti" min="0" /></div>
+        <div class="form-group"><label>Duelli Persi</label><input type="number" id="stat-duelliPersi" min="0" /></div>
+        <div class="form-group"><label>Duelli Aerei Vinti</label><input type="number" id="stat-duelliAereiVinti" min="0" /></div>
+        <div class="form-group"><label>Duelli Aerei Persi</label><input type="number" id="stat-duelliAereiPersi" min="0" /></div>
+        <div class="form-group"><label>Dribbling Tentati</label><input type="number" id="stat-dribblingTentati" min="0" /></div>
+        <div class="form-group"><label>Dribbling Riusciti</label><input type="number" id="stat-dribblingRiusciti" min="0" /></div>
       </div>
+
+      <!-- STATISTICHE MOVIMENTO (Visibile solo se NON è portiere) -->
+      <div id="sezione-movimento" style="display: none;">
+        <h4 style="color: var(--primary, #60a5fa); margin-bottom: 10px; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px;">Statistiche Movimento</h4>
+        <div class="form-grid" style="grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+          <div class="form-group"><label>Gol Rigore</label><input type="number" id="stat-goalRigore" min="0" /></div>
+          <div class="form-group"><label>Gol Testa</label><input type="number" id="stat-goalTesta" min="0" /></div>
+          <div class="form-group"><label>Gol Punizione</label><input type="number" id="stat-goalPunizione" min="0" /></div>
+          <div class="form-group"><label>Tiri Totali</label><input type="number" id="stat-tiriTotali" min="0" /></div>
+          <div class="form-group"><label>Tiri in Porta</label><input type="number" id="stat-tiriInPorta" min="0" /></div>
+          <div class="form-group"><label>Pali / Traverse</label><input type="number" id="stat-paliTraverse" min="0" /></div>
+          <div class="form-group"><label>Big Chance Create</label><input type="number" id="stat-bigChanceCreate" min="0" /></div>
+          <div class="form-group"><label>Big Chance Mancate</label><input type="number" id="stat-bigChanceMancate" min="0" /></div>
+          <div class="form-group"><label>Cross Tentati</label><input type="number" id="stat-crossTentati" min="0" /></div>
+          <div class="form-group"><label>Cross Riusciti</label><input type="number" id="stat-crossRiusciti" min="0" /></div>
+          <div class="form-group"><label>Tackle</label><input type="number" id="stat-tackle" min="0" /></div>
+          <div class="form-group"><label>Palloni Rubati</label><input type="number" id="stat-palloniRubati" min="0" /></div>
+        </div>
+      </div>
+
+      <!-- STATISTICHE PORTIERE (Visibile solo se È portiere) -->
+      <div id="sezione-portiere" style="display: none;">
+        <h4 style="color: var(--primary, #60a5fa); margin-bottom: 10px; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px;">Statistiche Portiere</h4>
+        <div class="form-grid" style="grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+          <div class="form-group"><label>Parate</label><input type="number" id="stat-parate" min="0" /></div>
+          <div class="form-group"><label>Clean Sheet</label><input type="number" id="stat-cleanSheet" min="0" /></div>
+          <div class="form-group"><label>Gol Subiti</label><input type="number" id="stat-goalSubiti" min="0" /></div>
+          <div class="form-group"><label>Rigori Parati</label><input type="number" id="stat-rigoriParati" min="0" /></div>
+          <div class="form-group"><label>Rigori Subiti</label><input type="number" id="stat-rigoriSubiti" min="0" /></div>
+        </div>
+      </div>
+
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="closeModal('modal-add')">Annulla</button>
-      <button class="btn-primary" id="btn-salva-giocatore" onclick="salvaGiocatore()">Salva Giocatore</button>
+      <button class="btn-ghost" onclick="closeModal('modal-edit')">Annulla</button>
+      <button class="btn-primary" id="btn-salva-stats" onclick="salvaStatistiche()">Salva Modifiche</button>
     </div>
   </div>
 </div>

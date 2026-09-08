@@ -1,15 +1,13 @@
-// Variabile globale per salvare i giocatori scaricati e filtrarli in locale senza rifare chiamate al DB
+// Variabile globale per salvare i giocatori scaricati e filtrarli in locale
 let tuttiGiocatori = [];
 let filtroRuolo = 'tutti';
-let idGiocatoreDettaglioCorrente = null;  // usato da apriModalModifica() per sapere chi modificare
+let idGiocatoreDettaglioCorrente = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Esegue il controllo sulla validità del login
     if (typeof verificaAutenticazione === 'function') {
         verificaAutenticazione();
     }
 
-    // 2. Popola la sidebar con nome/ruolo dal localStorage
     const sbName = document.getElementById('sb-nome');
     const sbRole = document.getElementById('sb-ruolo');
     const sbAv   = document.getElementById('sb-avatar');
@@ -18,7 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const cognome = localStorage.getItem('cognomeReale') || '';
     const ruolo   = localStorage.getItem('ruolo')        || '';
 
-    // I giocatori non devono poter vedere la rosa: vengono rimandati alla loro dashboard
     if (ruolo === 'GIOCATORE') {
         window.location.href = '/html/pages/dashboard-giocatore.html';
         return;
@@ -28,30 +25,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sbRole) sbRole.textContent = ruolo;
     if (sbAv)   renderAvatar(sbAv, (nome[0]||('')).toUpperCase() + (cognome[0]||nome[1]||'').toUpperCase());
 
-    // La DIRIGENZA vede la rosa in sola lettura: niente aggiunta/modifica giocatori
-    // (il backend rifiuterebbe comunque POST/PUT, ma nascondiamo i pulsanti per UX pulita)
     if (ruolo === 'DIRIGENZA') {
         document.querySelectorAll('.topbar-right .btn-primary').forEach(b => b.style.display = 'none');
         const btnMod = document.getElementById('btn-apri-modifica');
         if (btnMod) btnMod.style.display = 'none';
     }
 
-    // Imposta la vista di base (Griglia) all'avvio della pagina
     setView('grid');
-
-    // 3. Scarica la rosa e le statistiche dal backend
     caricaRosa(); 
 });
 
-/**
- * Funzione di Logout richiesta dal pulsante "Esci"
- */
 function logout() {
     localStorage.clear();
     window.location.href = '/html/login.html';
 }
 
-// --- 1. RECUPERO DATI DAL BACKEND (GIOCATORI + STATISTICHE) ---
+// --- 1. RECUPERO DATI DAL BACKEND (Logica originale ripristinata) ---
 async function caricaRosa() {
     try {
         const idSquadra = localStorage.getItem('idSquadra'); 
@@ -66,10 +55,9 @@ async function caricaRosa() {
             ? getAuthHeaders() 
             : { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-        // Scarichiamo sia la rosa sia le statistiche in parallelo
         const [resGiocatori, resStats] = await Promise.all([
             fetch(`http://localhost:8080/api/giocatori/squadra/${idSquadra}`, { headers }).catch(() => null),
-            fetch('http://localhost:8080/api/statistiche/giocatori',          { headers }).catch(() => null)
+            fetch('http://localhost:8080/api/statistiche/giocatori',           { headers }).catch(() => null)
         ]);
 
         if (resGiocatori?.status === 401 || resGiocatori?.status === 403) {
@@ -82,7 +70,7 @@ async function caricaRosa() {
         let giocatori = await resGiocatori.json();
         const stats   = (resStats?.ok) ? await resStats.json() : [];
 
-        // Unisci i dati delle statistiche a ciascun giocatore
+        // Condizione di matching originale che funzionava per associare le statistiche
         if (Array.isArray(stats) && stats.length > 0) {
             giocatori = giocatori.map(g => {
                 const s = stats.find(st => 
@@ -95,21 +83,18 @@ async function caricaRosa() {
 
                 return {
                     ...g,
-                    gol:      s?.gol   ?? s?.golTotali   ?? g.gol   ?? 0,
-                    assist:   s?.ass   ?? s?.assist      ?? g.assist ?? 0,
-                    presenze: s?.pres  ?? s?.presenze    ?? g.presenze ?? 0,
-                    puntiTotali: s?.puntiTotali ?? g.puntiTotali ?? g.punti_totali ?? 0,
+                    ...(s || {}), 
+                    gol:          s?.gol       ?? s?.golTotali     ?? g.gol       ?? 0,
+                    assist:       s?.ass       ?? s?.assist        ?? g.assist    ?? 0,
+                    presenze:     s?.pres      ?? s?.presenze      ?? g.presenze  ?? 0,
+                    puntiTotali:  s?.puntiTotali  ?? g.puntiTotali  ?? g.punti_totali  ?? 0,
                     puntiSettimanali: s?.puntiSettimanali ?? g.puntiSettimanali ?? g.punti_settimanali ?? 0
                 };
             });
         }
 
         tuttiGiocatori = giocatori;
-
-        // Aggiorna i contatori del sommario in cima alla pagina
         aggiornaSommario(tuttiGiocatori);
-
-        // Renderizza i giocatori a schermo
         renderizzaGiocatori(tuttiGiocatori);
 
     } catch (error) {
@@ -117,7 +102,7 @@ async function caricaRosa() {
     }
 }
 
-// --- 2. AGGIORNAMENTO DINAMICO DEL SOMMARIO ---
+// --- 2. SOMMARIO ---
 function aggiornaSommario(giocatori) {
     const tot = giocatori.length;
     const att = giocatori.filter(g => (g.posizione || g.ruolo || '').toLowerCase().includes('att')).length;
@@ -135,28 +120,42 @@ function aggiornaSommario(giocatori) {
     }
 }
 
-// --- 3. RENDERIZZAZIONE (GRIGLIA & TABELLA) ---
+// --- 3. RENDERIZZAZIONE SICURA (GRIGLIA & TABELLA) ---
 function renderizzaGiocatori(giocatori) {
     const gridView = document.getElementById('view-grid');
     const listBody = document.getElementById('list-body');
 
-    // Svuotiamo i contenitori prima di popolarli
     if (gridView) gridView.innerHTML = '';
     if (listBody) listBody.innerHTML = '';
 
     giocatori.forEach(g => {
-        const playerImg = g.img ? g.img : '../css/placeholder-player.png'; 
         const idGiocatoreCorrente = g.idGiocatore || g.id;
         const ruoloStr = g.posizione || g.ruolo || 'N/D';
 
-        // Determina il colore del badge del ruolo
         let posClass = 'pos-cen';
         const posPura = ruoloStr.toLowerCase();
         if (posPura.includes('att')) posClass = 'pos-att';
         else if (posPura.includes('dif')) posClass = 'pos-dif';
         else if (posPura.includes('por')) posClass = 'pos-por';
 
-        // 3a. Generazione HTML per la Griglia (Grid View)
+        const imgElement = document.createElement('img');
+        imgElement.alt = g.nome || 'Giocatore';
+        imgElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 50%;';
+
+        let imageSrc = '/html/css/placeholder-player.png';
+        if (g.img) {
+            let cleanImg = g.img.replace(/\\/g, '/').replace('luploads', 'uploads').replace(/^\/+/, '');
+            if (cleanImg.startsWith('html/')) cleanImg = cleanImg.replace(/^html\//, '');
+            if (!cleanImg.startsWith('uploads/')) cleanImg = 'uploads/' + cleanImg;
+            imageSrc = `/html/${cleanImg}`;
+        }
+        imgElement.src = imageSrc;
+
+        imgElement.onerror = function() {
+            this.onerror = null;
+            this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23222"/%3E%3Ctext x="50%25" y="55%25" dominant-baseline="middle" text-anchor="middle" font-size="35" fill="%23aaa"%3E⚽%3C/text%3E%3C/svg%3E';
+        };
+
         if (gridView) {
             const card = document.createElement('div');
             card.className = 'player-card';
@@ -165,45 +164,29 @@ function renderizzaGiocatori(giocatori) {
             card.innerHTML = `
                 <div class="player-card-top">
                     <div class="number">#${g.numero || '-'}</div>
-                    
-                    <div class="player-pic" style="overflow: hidden; padding: 0;">
-                        <img src="${playerImg}" alt="${g.nome}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="this.src='../css/placeholder-player.png'">
-                    </div>
-                    
+                    <div class="player-pic" style="overflow: hidden; padding: 0;" id="pic-grid-${idGiocatoreCorrente}"></div>
                     <div class="name">${g.nome} ${g.cognome}</div>
                     <span class="pos-badge ${posClass}">${ruoloStr}</span>
                 </div>
-                
                 <div class="player-card-body">
                     <div class="mini-stats">
-                        <div class="mini-stat">
-                            <div class="v">${g.presenze || 0}</div>
-                            <div class="l">Presenze</div>
-                        </div>
-                        <div class="mini-stat">
-                            <div class="v">${g.gol || 0}</div>
-                            <div class="l">Gol</div>
-                        </div>
-                        <div class="mini-stat">
-                            <div class="v">${g.assist || 0}</div>
-                            <div class="l">Assist</div>
-                        </div>
+                        <div class="mini-stat"><div class="v">${g.presenze || 0}</div><div class="l">Presenze</div></div>
+                        <div class="mini-stat"><div class="v">${g.gol || 0}</div><div class="l">Gol</div></div>
+                        <div class="mini-stat"><div class="v">${g.assist || 0}</div><div class="l">Assist</div></div>
                     </div>
-                    
                     <div class="player-meta">
                         <span class="meta-tag">Piede: ${g.piede || '-'}</span>
                         <span class="meta-tag">H: ${g.altezza ? g.altezza + ' cm' : '-'}</span>
                     </div>
-                    
                     <div class="card-actions">
                         <button class="btn-card primary">Visualizza Info</button>
                     </div>
                 </div>
             `;
             gridView.appendChild(card);
+            card.querySelector(`#pic-grid-${idGiocatoreCorrente}`).appendChild(imgElement.cloneNode(true));
         }
 
-        // 3b. Generazione HTML per la Tabella (List View)
         if (listBody) {
             const tr = document.createElement('tr');
             tr.setAttribute('onclick', `mostraDettaglio(${idGiocatoreCorrente})`);
@@ -212,9 +195,7 @@ function renderizzaGiocatori(giocatori) {
                 <td><strong>#${g.numero || '-'}</strong></td>
                 <td>
                     <div class="player-name-cell">
-                        <div class="list-avatar" style="overflow: hidden; padding: 0;">
-                            <img src="${playerImg}" alt="${g.nome}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="this.src='../css/placeholder-player.png'">
-                        </div>
+                        <div class="list-avatar" style="overflow: hidden; padding: 0;" id="pic-list-${idGiocatoreCorrente}"></div>
                         <span>${g.nome} ${g.cognome}</span>
                     </div>
                 </td>
@@ -228,17 +209,17 @@ function renderizzaGiocatori(giocatori) {
                 </td>
             `;
             listBody.appendChild(tr);
+            tr.querySelector(`#pic-list-${idGiocatoreCorrente}`).appendChild(imgElement.cloneNode(true));
         }
     });
 }
 
-// --- 4. GESTIONE FILTRI E RICERCA ---
+// --- 4. FILTRI E RICERCA ---
 function filterPlayers() {
     const searchVal = (document.getElementById('search-input')?.value || '').toLowerCase();
 
     const giocatoriFiltrati = tuttiGiocatori.filter(g => {
         const ruolo = (g.posizione || g.ruolo || '').toLowerCase();
-        
         const matchRicerca = 
             g.nome?.toLowerCase().includes(searchVal) ||
             g.cognome?.toLowerCase().includes(searchVal) ||
@@ -256,20 +237,15 @@ function filterPlayers() {
     renderizzaGiocatori(giocatoriFiltrati);
 }
 
-// Cambia il ruolo selezionato dai bottoni
 function setFilter(ruolo, btn) {
     filtroRuolo = ruolo;
-    
     if (btn && btn.parentElement) {
-        const fratelli = btn.parentElement.querySelectorAll('.filter-btn');
-        fratelli.forEach(b => b.classList.remove('active'));
+        btn.parentElement.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
     }
-    
     filterPlayers();
 }
 
-// --- 5. CAMBIO VISTA (GRIGLIA VS LISTA) ---
 function setView(viewType) {
     const gridDiv = document.getElementById('view-grid');
     const listDiv = document.getElementById('view-list');
@@ -289,13 +265,12 @@ function setView(viewType) {
     }
 }
 
-// --- 6. MODALE DETTAGLI DEL SINGOLO GIOCATORE ---
+// --- 5. DETTAGLI E MODALI ---
 function mostraDettaglio(idGiocatore) {
     const giocatore = tuttiGiocatori.find(g => (g.idGiocatore === idGiocatore || g.id === idGiocatore));
     if (!giocatore) return;
 
     idGiocatoreDettaglioCorrente = giocatore.idGiocatore || giocatore.id;
-
     const dataNascitaFormatted = giocatore.dataNascita || giocatore.data_nascita;
 
     const detailHero = document.getElementById('detail-hero');
@@ -338,151 +313,185 @@ function closeModal(id) {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
 }
-// --- 7. MODAL AGGIUNGI / MODIFICA GIOCATORE ---
-// Stesso modal, stesso form: form-id-giocatore vuoto = creazione (POST),
-// valorizzato = modifica (PUT). Titolo e testo del pulsante cambiano di conseguenza.
 
-function resetFormGiocatore() {
-    document.getElementById('form-id-giocatore').value = '';
-    ['form-nome','form-cognome','form-numero','form-nazionalita','form-altezza','form-peso']
-        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-    const pos = document.getElementById('form-posizione');
-    if (pos) pos.value = 'Attaccante';
-    const piede = document.getElementById('form-piede');
-    if (piede) piede.value = 'Destro';
-    const err = document.getElementById('form-errore');
-    if (err) err.style.display = 'none';
-}
-
-function apriModalAggiungi() {
-    resetFormGiocatore();
-    const titolo = document.getElementById('form-titolo');
-    if (titolo) titolo.textContent = 'Aggiungi Giocatore';
-    const btn = document.getElementById('btn-salva-giocatore');
-    if (btn) btn.textContent = 'Salva Giocatore';
-    openModal('modal-add');
-}
-
-// Chiamata dal pulsante "✏️ Modifica" nel modal dettaglio: precompila il
-// form con i dati del giocatore attualmente aperto (idGiocatoreDettaglioCorrente,
-// impostato da mostraDettaglio()).
+// --- 6. MODIFICA STATISTICHE ---
 function apriModalModifica() {
     const g = tuttiGiocatori.find(x => (x.idGiocatore === idGiocatoreDettaglioCorrente || x.id === idGiocatoreDettaglioCorrente));
     if (!g) return;
 
-    resetFormGiocatore();
-
     document.getElementById('form-id-giocatore').value = idGiocatoreDettaglioCorrente;
-    document.getElementById('form-nome').value        = g.nome || '';
-    document.getElementById('form-cognome').value      = g.cognome || '';
-    document.getElementById('form-numero').value       = g.numero || '';
-    document.getElementById('form-nazionalita').value  = g.nazionalita || '';
-    document.getElementById('form-altezza').value      = g.altezza || '';
-    document.getElementById('form-peso').value         = g.peso || '';
 
-    const posSelect = document.getElementById('form-posizione');
-    if (posSelect) {
-        const posValore = g.posizione || g.ruolo || 'Attaccante';
-        // Se la posizione salvata non corrisponde esattamente a una delle opzioni
-        // (es. "ATT" invece di "Attaccante"), la aggiunge al volo per non perderla.
-        if (![...posSelect.options].some(o => o.value === posValore)) {
-            const opt = document.createElement('option');
-            opt.value = posValore; opt.textContent = posValore;
-            posSelect.appendChild(opt);
-        }
-        posSelect.value = posValore;
+    const ruoloStr = (g.posizione || g.ruolo || '').toLowerCase();
+    const isPortiere = g.portiere === true || ruoloStr.includes('por');
+
+    const secMovimento = document.getElementById('sezione-movimento');
+    const secPortiere = document.getElementById('sezione-portiere');
+    if (isPortiere) {
+        if (secMovimento) secMovimento.style.display = 'none';
+        if (secPortiere) secPortiere.style.display = 'block';
+    } else {
+        if (secMovimento) secMovimento.style.display = 'block';
+        if (secPortiere) secPortiere.style.display = 'none';
     }
 
-    const piedeSelect = document.getElementById('form-piede');
-    if (piedeSelect) piedeSelect.value = g.piede || 'Destro';
+    // Popolamento diretto usando i nomi esatti del StatisticheDto (camelCase)
+    document.getElementById('stat-presenze').value           = g.presenze ?? 0;
+    document.getElementById('stat-presenzeTitolare').value   = g.presenzeTitolare ?? 0;
+    document.getElementById('stat-minutiGiocati').value      = g.minutiGiocati ?? 0;
+    document.getElementById('stat-ammonizioni').value        = g.ammonizioni ?? 0;
+    document.getElementById('stat-espulsioni').value         = g.espulsioni ?? 0;
+    document.getElementById('stat-assist').value             = g.assist ?? 0;
+    document.getElementById('stat-falliCommessi').value      = g.falliCommessi ?? 0;
+    document.getElementById('stat-falliSubiti').value        = g.falliSubiti ?? 0;
+    document.getElementById('stat-passaggiTentati').value    = g.passaggiTentati ?? 0;
+    document.getElementById('stat-passaggiRiusciti').value   = g.passaggiRiusciti ?? 0;
+    document.getElementById('stat-passaggiChiave').value     = g.passaggiChiave ?? 0;
+    document.getElementById('stat-palloniIntercettati').value = g.palloniIntercettati ?? 0;
+    document.getElementById('stat-duelliVinti').value        = g.duelliVinti ?? 0;
+    document.getElementById('stat-duelliPersi').value        = g.duelliPersi ?? 0;
+    document.getElementById('stat-duelliAereiVinti').value   = g.duelliAereiVinti ?? 0;
+    document.getElementById('stat-duelliAereiPersi').value   = g.duelliAereiPersi ?? 0;
+    document.getElementById('stat-dribblingTentati').value   = g.dribblingTentati ?? 0;
+    document.getElementById('stat-dribblingRiusciti').value  = g.dribblingRiusciti ?? 0;
+
+    if (!isPortiere) {
+        document.getElementById('stat-goalRigore').value       = g.goalRigore ?? 0;
+        document.getElementById('stat-goalTesta').value        = g.goalTesta ?? 0;
+        document.getElementById('stat-goalPunizione').value    = g.goalPunizione ?? 0;
+        document.getElementById('stat-tiriTotali').value       = g.tiriTotali ?? 0;
+        document.getElementById('stat-tiriInPorta').value      = g.tiriInPorta ?? 0;
+        document.getElementById('stat-paliTraverse').value     = g.paliTraverse ?? 0;
+        document.getElementById('stat-bigChanceCreate').value  = g.bigChanceCreate ?? 0;
+        document.getElementById('stat-bigChanceMancate').value = g.bigChanceMancate ?? 0;
+        document.getElementById('stat-crossTentati').value     = g.crossTentati ?? 0;
+        document.getElementById('stat-crossRiusciti').value    = g.crossRiusciti ?? 0;
+        document.getElementById('stat-tackle').value           = g.tackle ?? 0;
+        document.getElementById('stat-palloniRubati').value    = g.palloniRubati ?? 0;
+    } else {
+        document.getElementById('stat-parate').value         = g.parate ?? 0;
+        document.getElementById('stat-cleanSheet').value       = g.cleanSheet ?? 0;
+        document.getElementById('stat-goalSubiti').value       = g.goalSubiti ?? 0;
+        document.getElementById('stat-rigoriParati').value     = g.rigoriParati ?? 0;
+        document.getElementById('stat-rigoriSubiti').value     = g.rigoriSubiti ?? 0;
+    }
+
+    const err = document.getElementById('form-errore');
+    if (err) err.style.display = 'none';
 
     closeModal('modal-detail');
 
     const titolo = document.getElementById('form-titolo');
-    if (titolo) titolo.textContent = `Modifica ${g.nome} ${g.cognome}`;
-    const btn = document.getElementById('btn-salva-giocatore');
-    if (btn) btn.textContent = 'Salva Modifiche';
+    if (titolo) titolo.textContent = `Modifica Statistiche: ${g.nome} ${g.cognome}`;
 
-    openModal('modal-add');
+    openModal('modal-edit');
 }
 
-function mostraErroreForm(msg) {
-    const err = document.getElementById('form-errore');
-    if (!err) return;
-    err.textContent = '⚠️ ' + msg;
-    err.style.display = 'block';
+
+function getValNum(id) {
+    const val = document.getElementById(id)?.value;
+    return val ? parseInt(val, 10) : 0;
 }
 
-// Crea (POST) o aggiorna (PUT) un giocatore a seconda che form-id-giocatore
-// sia vuoto o valorizzato. Stesso payload in entrambi i casi: il backend
-// (CreaGiocatoreRequest) accetta la stessa struttura per crea() e aggiorna().
-async function salvaGiocatore() {
-    const idModifica = document.getElementById('form-id-giocatore').value;
-    const nome       = document.getElementById('form-nome').value.trim();
-    const cognome    = document.getElementById('form-cognome').value.trim();
-    const numero     = document.getElementById('form-numero').value;
-    const posizione  = document.getElementById('form-posizione').value;
-    const piede      = document.getElementById('form-piede').value;
-    const nazionalita = document.getElementById('form-nazionalita').value.trim();
-    const altezza    = document.getElementById('form-altezza').value;
-    const peso       = document.getElementById('form-peso').value;
+async function salvaStatistiche() {
+    const idGiocatore = document.getElementById('form-id-giocatore').value;
+    if (!idGiocatore) return;
 
-    if (!nome || !cognome) {
-        mostraErroreForm('Nome e cognome sono obbligatori.');
-        return;
-    }
+    const g = tuttiGiocatori.find(x => (x.idGiocatore === parseInt(idGiocatore, 10) || x.id === parseInt(idGiocatore, 10)));
+    if (!g) return;
 
-    const idSquadra = localStorage.getItem('idSquadra');
+    const ruoloStr = (g.posizione || g.ruolo || '').toLowerCase();
+    const isPortiere = ruoloStr.includes('por') || g.portiere === true;
+
     const payload = {
-        nome, cognome,
-        numero: numero ? parseInt(numero, 10) : null,
-        posizione, piede,
-        nazionalita: nazionalita || null,
-        altezza: altezza ? parseInt(altezza, 10) : null,
-        peso: peso ? parseInt(peso, 10) : null,
-        squadraId: idSquadra ? parseInt(idSquadra, 10) : null
+        nome: g.nome,
+        cognome: g.cognome,
+        numero: g.numero,
+        posizione: g.posizione || g.ruolo,
+        piede: g.piede,
+        nazionalita: g.nazionalita,
+        altezza: g.altezza,
+        peso: g.peso,
+        squadraId: g.squadraId || parseInt(localStorage.getItem('idSquadra'), 10),
+
+        presenze: getValNum('stat-presenze'),
+        presenzeTitolare: getValNum('stat-presenzeTitolare'),
+        minutiGiocati: getValNum('stat-minutiGiocati'),
+        ammonizioni: getValNum('stat-ammonizioni'),
+        espulsioni: getValNum('stat-espulsioni'),
+        assist: getValNum('stat-assist'),
+        falliCommessi: getValNum('stat-falliCommessi'),
+        falliSubiti: getValNum('stat-falliSubiti'),
+        passaggiTentati: getValNum('stat-passaggiTentati'),
+        passaggiRiusciti: getValNum('stat-passaggiRiusciti'),
+        passaggiChiave: getValNum('stat-passaggiChiave'),
+        palloniIntercettati: getValNum('stat-palloniIntercettati'),
+        duelliVinti: getValNum('stat-duelliVinti'),
+        duelliPersi: getValNum('stat-duelliPersi'),
+        duelliAereiVinti: getValNum('stat-duelliAereiVinti'),
+        duelliAereiPersi: getValNum('stat-duelliAereiPersi'),
+        dribblingTentati: getValNum('stat-dribblingTentati'),
+        dribblingRiusciti: getValNum('stat-dribblingRiusciti')
     };
+
+    if (!isPortiere) {
+        payload.goalRigore = getValNum('stat-goalRigore');
+        payload.goalTesta = getValNum('stat-goalTesta');
+        payload.goalPunizione = getValNum('stat-goalPunizione');
+        payload.tiriTotali = getValNum('stat-tiriTotali');
+        payload.tiriInPorta = getValNum('stat-tiriInPorta');
+        payload.paliTraverse = getValNum('stat-paliTraverse');
+        payload.bigChanceCreate = getValNum('stat-bigChanceCreate');
+        payload.bigChanceMancate = getValNum('stat-bigChanceMancate');
+        payload.crossTentati = getValNum('stat-crossTentati');
+        payload.crossRiusciti = getValNum('stat-crossRiusciti');
+        payload.tackle = getValNum('stat-tackle');
+        payload.palloniRubati = getValNum('stat-palloniRubati');
+        payload.gol = payload.goalRigore + payload.goalTesta + payload.goalPunizione;
+    } else {
+        payload.parate = getValNum('stat-parate');
+        payload.cleanSheet = getValNum('stat-cleanSheet');
+        payload.goalSubiti = getValNum('stat-goalSubiti');
+        payload.rigoriParati = getValNum('stat-rigoriParati');
+        payload.rigoriSubiti = getValNum('stat-rigoriSubiti');
+    }
 
     const headers = typeof getAuthHeaders === 'function'
         ? getAuthHeaders()
         : { 'Authorization': `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json' };
 
-    const btn = document.getElementById('btn-salva-giocatore');
-    if (btn) { btn.disabled = true; btn.textContent = idModifica ? 'Salvataggio…' : 'Creazione…'; }
+    const btn = document.getElementById('btn-salva-stats');
+    if (btn) { btn.disabled = true; btn.textContent = 'Salvataggio…'; }
 
     try {
-        const url    = idModifica ? `http://localhost:8080/api/giocatori/${idModifica}` : 'http://localhost:8080/api/giocatori';
-        const method = idModifica ? 'PUT' : 'POST';
-
-        const res = await fetch(url, { method, headers, body: JSON.stringify(payload) });
+        const url = `http://localhost:8080/api/giocatori/${idGiocatore}`;
+        const res = await fetch(url, { method: 'PUT', headers, body: JSON.stringify(payload) });
 
         if (res.status === 401 || res.status === 403) {
-            mostraErroreForm('Non hai i permessi per questa operazione.');
+            const errEl = document.getElementById('form-errore');
+            if (errEl) { errEl.textContent = '⚠️ Non hai i permessi.'; errEl.style.display = 'block'; }
             return;
         }
         if (!res.ok) {
-            mostraErroreForm(`Errore dal server (${res.status}). Riprova.`);
+            const errEl = document.getElementById('form-errore');
+            if (errEl) { errEl.textContent = `⚠️ Errore dal server (${res.status}).`; errEl.style.display = 'block'; }
             return;
         }
 
         const giocatoreSalvato = await res.json();
-
-        if (idModifica) {
-            // Sostituisce il giocatore modificato nella cache locale
-            const idx = tuttiGiocatori.findIndex(g => (g.idGiocatore || g.id) === parseInt(idModifica, 10));
-            if (idx > -1) tuttiGiocatori[idx] = { ...tuttiGiocatori[idx], ...giocatoreSalvato };
-        } else {
-            tuttiGiocatori.push(giocatoreSalvato);
+        const idx = tuttiGiocatori.findIndex(item => (item.idGiocatore || item.id) === parseInt(idGiocatore, 10));
+        if (idx > -1) {
+            tuttiGiocatori[idx] = { ...tuttiGiocatori[idx], ...giocatoreSalvato };
         }
 
         aggiornaSommario(tuttiGiocatori);
-        filterPlayers();   // ri-renderizza rispettando eventuali filtri/ricerca attivi
-        closeModal('modal-add');
+        filterPlayers(); 
+        closeModal('modal-edit');
 
     } catch (err) {
-        console.error('Errore salvataggio giocatore:', err);
-        mostraErroreForm('Server non raggiungibile.');
+        console.error('Errore salvataggio:', err);
+        const errEl = document.getElementById('form-errore');
+        if (errEl) { errEl.textContent = '⚠️ Server non raggiungibile.'; errEl.style.display = 'block'; }
     } finally {
-        if (btn) { btn.disabled = false; btn.textContent = idModifica ? 'Salva Modifiche' : 'Salva Giocatore'; }
+        if (btn) { btn.disabled = false; btn.textContent = 'Salva Modifiche'; }
     }
 }
