@@ -136,9 +136,25 @@ function renderizzaTabellaUtenti() {
     if (!tbody) return;
 
     const query = (document.getElementById('utenti-search')?.value || '').trim().toLowerCase();
-    const lista = query
+    
+    // --- INIZIO MODIFICA PER ORDINAMENTO ALFABETICO ---
+    
+    // 1. Applichiamo prima l'eventuale filtro di ricerca testuale
+    let lista = query
         ? cacheUtenti.filter(u => (u.username || '').toLowerCase().includes(query) || (u.ruolo || '').toLowerCase().includes(query))
-        : cacheUtenti;
+        : [...cacheUtenti]; // Usiamo lo spread operator [...] per creare una copia ed evitare di modificare l'array originale
+        
+    // 2. Ordiniamo la lista alfabeticamente basandoci sullo username
+    lista.sort((a, b) => {
+        const usernameA = (a.username || '').toLowerCase();
+        const usernameB = (b.username || '').toLowerCase();
+        
+        // localeCompare è il metodo migliore per l'ordine alfabetico perché 
+        // gestisce correttamente maiuscole, minuscole e caratteri speciali
+        return usernameA.localeCompare(usernameB);
+    });
+    
+    // --- FINE MODIFICA ---
 
     if (lista.length === 0) {
         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--muted);">Nessun utente trovato.</td></tr>`;
