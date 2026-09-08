@@ -9,11 +9,24 @@ import java.util.List;
 public class Dtos {
 
     // ── Utente ────────────────────────────────────────────────────────────
+// ── Utente ────────────────────────────────────────────────────────────
     @Data @Builder
     public static class UtenteDto {
         private Integer id;
         private String  username;
         private String  ruolo;   // nome dell'enum NomeRuolo
+        
+        // --- NUOVI CAMPI AGGIUNTI PER IL PANNELLO ADMIN ---
+        private String nome;
+        private String cognome;
+        private Integer squadraId;
+        private String posizione;
+        private String piede;
+        private String nazionalita;
+        private Integer altezza;
+        private Integer peso;
+        private Integer numero;
+        private LocalDate dataNascita;
     }
 
     @Data

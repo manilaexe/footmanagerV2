@@ -224,34 +224,71 @@ function apriModalModificaUtente(id) {
     const u = cacheUtenti.find(x => x.id === id);
     if (!u) return;
 
-    // Il backend permette di modificare solo username/password su un utente
-    // esistente (cambiare ruolo/nome/squadra romperebbe i collegamenti già
-    // fatti a giocatore/allenatore) — quindi qui blocchiamo quei campi.
     document.getElementById('modal-utente-titolo').textContent = `Modifica ${u.username}`;
     document.getElementById('utente-id-editing').value = u.id;
-    document.getElementById('utente-username').value = u.username;
+    
+    // Popola prima la select delle squadre per poter assegnare la squadra dell'utente
+    popolaSelectSquadraUtente();
+
+    // Sblocca e compila tutti i campi
+    document.getElementById('utente-username').value = u.username || '';
     document.getElementById('utente-username').disabled = false;
+    
     document.getElementById('utente-password').value = '';
     document.getElementById('utente-password-label').textContent = 'Nuova password (lascia vuoto per non cambiarla)';
-    document.getElementById('utente-nome').value = '';
-    document.getElementById('utente-nome').disabled = true;
-    document.getElementById('utente-cognome').value = '';
-    document.getElementById('utente-cognome').disabled = true;
-    document.getElementById('utente-ruolo').value = u.ruolo;
-    document.getElementById('utente-ruolo').disabled = true;
-    document.getElementById('utente-posizione').disabled = true;
-    document.getElementById('utente-piede').disabled = true;
-    document.getElementById('utente-altezza').value = '';
-    document.getElementById('utente-altezza').disabled = true;
-    document.getElementById('utente-nazionalita').value = '';
-    document.getElementById('utente-nazionalita').disabled = true;
-    document.getElementById('utente-numero').value = '';
-    document.getElementById('utente-numero').disabled = true;
-    document.getElementById('utente-peso').value = '';
-    document.getElementById('utente-peso').disabled = true;
-    document.getElementById('utente-datanascita').value = '';
-    document.getElementById('utente-datanascita').disabled = true;
+    
+    document.getElementById('utente-nome').value = u.nome || '';
+    document.getElementById('utente-nome').disabled = false;
+    
+    document.getElementById('utente-cognome').value = u.cognome || '';
+    document.getElementById('utente-cognome').disabled = false;
+    
+    // Assicura di mappare correttamente il ruolo (se 'nomeRuolo' o 'ruolo' in base all'API)
+    document.getElementById('utente-ruolo').value = u.ruolo || u.nomeRuolo || 'GIOCATORE';
+    document.getElementById('utente-ruolo').disabled = false;
+    
+    if (u.squadraId) {
+        document.getElementById('utente-squadra').value = u.squadraId;
+    }
+
+    document.getElementById('utente-posizione').value = u.posizione || 'Attaccante';
+    document.getElementById('utente-posizione').disabled = false;
+    
+    document.getElementById('utente-piede').value = u.piede || 'Destro';
+    document.getElementById('utente-piede').disabled = false;
+    
+    document.getElementById('utente-altezza').value = u.altezza || '';
+    document.getElementById('utente-altezza').disabled = false;
+    
+    document.getElementById('utente-nazionalita').value = u.nazionalita || '';
+    document.getElementById('utente-nazionalita').disabled = false;
+    
+    document.getElementById('utente-numero').value = u.numero || '';
+    document.getElementById('utente-numero').disabled = false;
+    
+    document.getElementById('utente-peso').value = u.peso || '';
+    document.getElementById('utente-peso').disabled = false;
+    
+    // Converte la data nel formato YYYY-MM-DD riconosciuto dagli input type="date"
+    let dataNascita = '';
+    if (u.dataNascita) {
+        // Se arriva come array [YYYY, MM, DD] dal backend Spring
+        if (Array.isArray(u.dataNascita)) {
+            const y = u.dataNascita[0];
+            const m = String(u.dataNascita[1]).padStart(2, '0');
+            const d = String(u.dataNascita[2]).padStart(2, '0');
+            dataNascita = `${y}-${m}-${d}`;
+        } else {
+            // Se arriva già come stringa ISO
+            dataNascita = u.dataNascita.substring(0, 10);
+        }
+    }
+    document.getElementById('utente-datanascita').value = dataNascita;
+    document.getElementById('utente-datanascita').disabled = false;
+
+    // Aggiorna l'interfaccia in base al ruolo (es. nasconde altezza/peso se è un allenatore)
     aggiornaVisibilitaSquadraUtente();
+    
     openModal('modal-utente');
 }
 

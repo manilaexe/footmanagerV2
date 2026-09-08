@@ -97,6 +97,10 @@ public class UtenteService {
      * toccati da questo endpoint: restano di competenza di
      * GiocatoreService/AllenatoreService, che già li gestiscono.
      */
+   /**
+     * Aggiorna username/password di un utente esistente E i dati anagrafici
+     * del profilo associato (Giocatore o Allenatore).
+     */
     public UtenteDto aggiorna(Integer id, CreaUtenteRequest req) {
         Utente u = utenteRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Utente", Long.valueOf(id)));
@@ -112,12 +116,40 @@ public class UtenteService {
             u.setPassword(encoder.encode(req.getPassword()));
         }
 
+        String ruoloAttuale = u.getRuolo() != null ? u.getRuolo().getNomeRuolo().name() : null;
         if (req.getNomeRuolo() != null && !req.getNomeRuolo().isBlank()) {
-            String ruoloAttuale = u.getRuolo() != null ? u.getRuolo().getNomeRuolo().name() : null;
             if (!req.getNomeRuolo().toUpperCase().equals(ruoloAttuale)) {
                 throw new BadRequestException(
                     "Non è possibile cambiare il ruolo di un utente esistente (elimina e ricrea l'utente).");
             }
+        }
+
+        // --- SALVATAGGIO DEI DATI ANAGRAFICI ---
+        if ("GIOCATORE".equals(ruoloAttuale)) {
+            giocatoreRepo.findByUtente_Id(id).ifPresent(g -> {
+                g.setNome(req.getNome() != null ? req.getNome() : "");
+                g.setCognome(req.getCognome() != null ? req.getCognome() : "");
+                g.setPosizione(req.getPosizione());
+                g.setPiede(req.getPiede());
+                g.setNazionalita(req.getNazionalita());
+                g.setAltezza(req.getAltezza());
+                g.setPeso(req.getPeso());
+                g.setNumero(req.getNumero());
+                g.setDataNascita(req.getDataNascita());
+                if (req.getSquadraId() != null) {
+                    g.setSquadra(getSquadra(req.getSquadraId()));
+                }
+                giocatoreRepo.save(g);
+            });
+        } else if ("ALLENATORE".equals(ruoloAttuale)) {
+            allenatoreRepo.findByUtente_Id(id).ifPresent(a -> {
+                a.setNome(req.getNome() != null ? req.getNome() : "");
+                a.setCognome(req.getCognome() != null ? req.getCognome() : "");
+                if (req.getSquadraId() != null) {
+                    a.setSquadra(getSquadra(req.getSquadraId()));
+                }
+                allenatoreRepo.save(a);
+            });
         }
 
         return toDto(utenteRepo.save(u));
@@ -133,11 +165,37 @@ public class UtenteService {
                 .orElseThrow(() -> new ResourceNotFoundException("Squadra", Long.valueOf(id)));
     }
 
-    public UtenteDto toDto(Utente u) {
-        return UtenteDto.builder()
+public UtenteDto toDto(Utente u) {
+        UtenteDto.UtenteDtoBuilder builder = UtenteDto.builder()
                 .id(u.getId())
                 .username(u.getUsername())
-                .ruolo(u.getRuolo() != null ? u.getRuolo().getNomeRuolo().name() : null)
-                .build();
+                .ruolo(u.getRuolo() != null ? u.getRuolo().getNomeRuolo().name() : null);
+
+        // --- POPOLA I DATI ANAGRAFICI PER L'INVIO AL FRONTEND ---
+        if (u.getRuolo() != null) {
+            String ruoloNome = u.getRuolo().getNomeRuolo().name();
+            if ("GIOCATORE".equals(ruoloNome)) {
+                giocatoreRepo.findByUtente_Id(u.getId()).ifPresent(g -> {
+                    builder.nome(g.getNome())
+                           .cognome(g.getCognome())
+                           .squadraId(g.getSquadra() != null ? g.getSquadra().getId() : null)
+                           .posizione(g.getPosizione())
+                           .piede(g.getPiede())
+                           .nazionalita(g.getNazionalita())
+                           .altezza(g.getAltezza())
+                           .peso(g.getPeso())
+                           .numero(g.getNumero())
+                           .dataNascita(g.getDataNascita());
+                });
+            } else if ("ALLENATORE".equals(ruoloNome)) {
+                allenatoreRepo.findByUtente_Id(u.getId()).ifPresent(a -> {
+                    builder.nome(a.getNome())
+                           .cognome(a.getCognome())
+                           .squadraId(a.getSquadra() != null ? a.getSquadra().getId() : null);
+                });
+            }
+        }
+        
+        return builder.build();
     }
 }
