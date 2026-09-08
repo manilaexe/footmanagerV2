@@ -3,6 +3,7 @@ package it.footmanager.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.scheduling.annotation.Scheduled; // <-- IMPORT AGGIUNTO PER IL CRON JOB
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -429,5 +430,17 @@ public class GiocatoreService {
         StatisticaPortiere p = new StatisticaPortiere();
         p.setGiocatore(g);
         return statPortiereRepo.save(p);
+    }
+
+    // ── NUOVO METODO: RESET SETTIMANALE ──────────────────────────────────────
+    /**
+     * Eseguito automaticamente ogni lunedì alle 00:00.
+     * La sintassi cron è: SECONDO MINUTO ORA GIORNO MESE GIORNO_SETTIMANA
+     * Usa la query appena creata nel repository per azzerare i punti in un colpo solo.
+     */
+    @Scheduled(cron = "0 0 0 * * MON") // Esegue ogni lunedì alle 00:00
+    public void eseguiResetSettimanale() {
+        giocatoreRepo.azzeraPuntiSettimanaliTutti();
+        System.out.println("Reset settimanale completato: i punti_settimanali dei giocatori sono stati azzerati.");
     }
 }

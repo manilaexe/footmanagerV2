@@ -2,9 +2,12 @@ package it.footmanager.repository;
 
 import it.footmanager.entity.Giocatore;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying; // <-- IMPORT AGGIUNTO
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional; // <-- IMPORT AGGIUNTO
+
 import java.util.List;
 import java.util.Optional;
 
@@ -34,4 +37,11 @@ public interface GiocatoreRepository extends JpaRepository<Giocatore, Integer> {
     // Classifica per punti settimanali (campo Java è "punti_settimanali")
     @Query("SELECT g FROM Giocatore g WHERE g.squadra.id = :squadraId ORDER BY g.punti_settimanali DESC")
     List<Giocatore> classificaSettimanale(@Param("squadraId") Integer squadraId);
+
+    // ── NUOVA QUERY PER IL RESET SETTIMANALE ──
+    // Esegue un aggiornamento di massa (bulk update) su tutto il DB
+    @Modifying
+    @Transactional
+    @Query("UPDATE Giocatore g SET g.punti_settimanali = 0")
+    void azzeraPuntiSettimanaliTutti();
 }
