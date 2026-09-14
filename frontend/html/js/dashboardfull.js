@@ -144,14 +144,22 @@ function renderizzaTabellaUtenti() {
         ? cacheUtenti.filter(u => (u.username || '').toLowerCase().includes(query) || (u.ruolo || '').toLowerCase().includes(query))
         : [...cacheUtenti]; // Usiamo lo spread operator [...] per creare una copia ed evitare di modificare l'array originale
         
-    // 2. Ordiniamo la lista alfabeticamente basandoci sullo username
+    // 2. Ordiniamo la lista basandoci sul ruolo e poi sullo username
     lista.sort((a, b) => {
-        const usernameA = (a.username || '').toLowerCase();
-        const usernameB = (b.username || '').toLowerCase();
+        const ruoloA = (a.ruolo || '').toLowerCase();
+        const ruoloB = (b.ruolo || '').toLowerCase();
         
-        // localeCompare è il metodo migliore per l'ordine alfabetico perché 
-        // gestisce correttamente maiuscole, minuscole e caratteri speciali
-        return usernameA.localeCompare(usernameB);
+        // Confrontiamo prima i ruoli
+        const confrontoRuolo = ruoloA.localeCompare(ruoloB);
+        
+        // Se i ruoli sono uguali, ordiniamo per username
+        if (confrontoRuolo === 0) {
+            const usernameA = (a.username || '').toLowerCase();
+            const usernameB = (b.username || '').toLowerCase();
+            return usernameA.localeCompare(usernameB);
+        }
+        
+        return confrontoRuolo;
     });
     
     // --- FINE MODIFICA ---

@@ -127,36 +127,47 @@ async function popolaSelectDestinatario() {
 }
 
 // ─── 5. RENDERING ─────────────────────────────────────────────────────────
-
 function renderizzaKPI() {
-    // Prossimo evento
+    // KPI: Prossimo evento
     const kpiEvData = document.getElementById('kpi-prossimo-evento-data');
     const kpiEvDet  = document.getElementById('kpi-prossimo-evento-dettaglio');
-    if (tuttiEventiDashboard.length > 0) {
-        const prossimi = [...tuttiEventiDashboard].sort((a, b) =>
+    
+    // Filtro per prendere solo gli eventi da ora in poi (uguale a sopra)
+    const ora = new Date();
+    const eventiFuturi = tuttiEventiDashboard.filter(e => {
+        const d = new Date(e.dataOraInizio || e.dataInizio || 0);
+        return d >= ora;
+    });
+
+    if (eventiFuturi.length > 0) {
+        // Ordina dal più vicino al più lontano e prendi il primo assoluto
+        const prossimi = eventiFuturi.sort((a, b) =>
             new Date(a.dataOraInizio || a.dataInizio || 0) - new Date(b.dataOraInizio || b.dataInizio || 0));
+        
         const ev = prossimi[0];
         const d  = new Date(ev.dataOraInizio || ev.dataInizio || 0);
         if (kpiEvData) kpiEvData.textContent = isNaN(d) ? '—' : d.toLocaleDateString('it-IT', { weekday:'short', day:'numeric', month:'short' });
         if (kpiEvDet)  kpiEvDet.textContent  = `${ev.titolo} – ${ev.luogo || 'Sede'}`;
     } else {
         if (kpiEvData) kpiEvData.textContent = '—';
-        if (kpiEvDet)  kpiEvDet.textContent  = 'Nessun evento';
+        if (kpiEvDet)  kpiEvDet.textContent  = 'Nessun evento in programma';
     }
 
-    // Messaggi inviati (KPI count)
+    // KPI: Messaggi inviati
     const kpiMsg = document.getElementById('kpi-messaggi');
     if (kpiMsg) kpiMsg.textContent = tuttiMessaggiDashboard.length;
 
-    // Giocatori
+    // KPI: Giocatori
     const kpiG = document.getElementById('kpi-giocatori');
     if (kpiG) kpiG.textContent = tuttiGiocatoriDashboard.length;
 
-    // Media gol
+    // KPI: Media gol
     const kpiGol = document.getElementById('kpi-media-gol');
     if (kpiGol && tuttiGiocatoriDashboard.length > 0) {
         const tot = tuttiGiocatoriDashboard.reduce((s, g) => s + (g.gol || 0), 0);
         kpiGol.textContent = (tot / tuttiGiocatoriDashboard.length).toFixed(1);
+    } else if (kpiGol) {
+        kpiGol.textContent = '0.0';
     }
 }
 
@@ -194,19 +205,29 @@ function renderizzaListaEventi() {
     if (!container) return;
     container.innerHTML = '';
 
-    if (!tuttiEventiDashboard.length) {
+    // 1. Calcola la data e l'ora attuale
+    const ora = new Date();
+
+    // 2. Filtra l'array globale mantenendo SOLO gli eventi futuri
+    const eventiFuturi = tuttiEventiDashboard.filter(e => {
+        const d = new Date(e.dataOraInizio || e.dataInizio || 0);
+        return d >= ora;
+    });
+
+    if (!eventiFuturi.length) {
         container.innerHTML = `<div style="text-align:center;padding:20px;color:#888;">Nessun evento in programma.</div>`;
         return;
     }
 
-    [...tuttiEventiDashboard]
-        .sort((a, b) => new Date(a.dataOraInizio || 0) - new Date(b.dataOraInizio || 0))
+    // 3. Ordina gli eventi futuri e prendi i primi 4
+    eventiFuturi
+        .sort((a, b) => new Date(a.dataOraInizio || a.dataInizio || 0) - new Date(b.dataOraInizio || b.dataInizio || 0))
         .slice(0, 4)
         .forEach(e => {
             const d    = new Date(e.dataOraInizio || e.dataInizio || 0);
             const gg   = isNaN(d) ? '–' : d.getDate();
             const mm   = isNaN(d) ? '–' : d.toLocaleDateString('it-IT',{month:'short'}).replace('.','');
-            const ora  = isNaN(d) ? '–' : d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+            const hhmm = isNaN(d) ? '–' : d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
             const tipo = (e.tipo || '').toLowerCase();
             const stripe = tipo === 'partita' ? 'stripe-blue' : tipo === 'riunione' ? 'stripe-amber' : 'stripe-green';
 
@@ -217,7 +238,7 @@ function renderizzaListaEventi() {
                 <div class="event-stripe ${stripe}"></div>
                 <div class="event-info">
                     <div class="event-title">${e.titolo || 'Evento'}</div>
-                    <div class="event-meta">${ora} – ${e.luogo || 'Sede'}</div>
+                    <div class="event-meta">${hhmm} – ${e.luogo || 'Sede'}</div>
                 </div>`;
             container.appendChild(item);
         });
