@@ -5,11 +5,14 @@ let tuttiGiocatoriDashboard = [];
 let tuttiEventiDashboard    = [];
 let tuttiMessaggiDashboard  = [];
 
+// Stato per l'ordinamento interattivo delle tabelle
+let currentSortColumn = 'ruolo';
+let currentSortDirection = 'asc'; // 'asc' o 'desc'
+
 // ─── 1. INIZIALIZZAZIONE ───────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof verificaAutenticazione === 'function') verificaAutenticazione();
 
-    // Popola sidebar con nome/ruolo dal localStorage
     const nome    = localStorage.getItem('nomeReale')    || localStorage.getItem('username') || 'Utente';
     const cognome = localStorage.getItem('cognomeReale') || '';
     const ruolo   = localStorage.getItem('ruolo')        || '';
@@ -95,7 +98,7 @@ async function caricaDatiDashboard() {
     }
 }
 
-// ─── 4. POPOLA SELECT DESTINATARIO CON GIOCATORI REALI ───────────────────
+// ─── 4. POPOLA SELECT DESTINATARIO ─────────────────────────────────────────
 async function popolaSelectDestinatario() {
     const sel = document.getElementById('msg-dest');
     if (!sel) return;
@@ -126,13 +129,25 @@ async function popolaSelectDestinatario() {
         ).join('');
 }
 
-// ─── 5. RENDERING ─────────────────────────────────────────────────────────
+// ─── 5. GESTIONE ORDINAMENTO AL CLICK SULLE INTESTAZIONI ───────────────────
+function sortDashboardRosa(column) {
+    if (currentSortColumn === column) {
+        // Se clicchi di nuovo sulla stessa colonna, inverte la direzione
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSortColumn = column;
+        // Per il ruolo partiamo di default da Portiere->Attaccante (asc)
+        // Per presenze, gol e assist partiamo dal valore più alto (desc)
+        currentSortDirection = (column === 'ruolo') ? 'asc' : 'desc';
+    }
+    renderizzaTabellaRosa();
+}
+
+// ─── 6. RENDERING ─────────────────────────────────────────────────────────
 function renderizzaKPI() {
-    // KPI: Prossimo evento
     const kpiEvData = document.getElementById('kpi-prossimo-evento-data');
     const kpiEvDet  = document.getElementById('kpi-prossimo-evento-dettaglio');
     
-    // Filtro per prendere solo gli eventi da ora in poi (uguale a sopra)
     const ora = new Date();
     const eventiFuturi = tuttiEventiDashboard.filter(e => {
         const d = new Date(e.dataOraInizio || e.dataInizio || 0);
@@ -140,7 +155,6 @@ function renderizzaKPI() {
     });
 
     if (eventiFuturi.length > 0) {
-        // Ordina dal più vicino al più lontano e prendi il primo assoluto
         const prossimi = eventiFuturi.sort((a, b) =>
             new Date(a.dataOraInizio || a.dataInizio || 0) - new Date(b.dataOraInizio || b.dataInizio || 0));
         
@@ -153,15 +167,12 @@ function renderizzaKPI() {
         if (kpiEvDet)  kpiEvDet.textContent  = 'Nessun evento in programma';
     }
 
-    // KPI: Messaggi inviati
     const kpiMsg = document.getElementById('kpi-messaggi');
     if (kpiMsg) kpiMsg.textContent = tuttiMessaggiDashboard.length;
 
-    // KPI: Giocatori
     const kpiG = document.getElementById('kpi-giocatori');
     if (kpiG) kpiG.textContent = tuttiGiocatoriDashboard.length;
 
-    // KPI: Media gol
     const kpiGol = document.getElementById('kpi-media-gol');
     if (kpiGol && tuttiGiocatoriDashboard.length > 0) {
         const tot = tuttiGiocatoriDashboard.reduce((s, g) => s + (g.gol || 0), 0);
@@ -181,7 +192,42 @@ function renderizzaTabellaRosa() {
         return;
     }
 
-    tuttiGiocatoriDashboard.slice(0, 5).forEach(g => {
+    let giocatoriOrdinati = [...tuttiGiocatoriDashboard];
+
+    // Logica di ordinamento in base alla colonna cliccata e direzione
+    if (currentSortColumn === 'ruolo') {
+        const ordineAsc  = { 'por': 1, 'dif': 2, 'cen': 3, 'att': 4 };
+        const ordineDesc = { 'att': 1, 'cen': 2, 'dif': 3, 'por': 4 };
+        const mapping    = currentSortDirection === 'asc' ? ordineAsc : ordineDesc;
+
+        giocatoriOrdinati.sort((a, b) => {
+            const ruoloA = (a.posizione || a.ruolo || '').toLowerCase();
+            const ruoloB = (b.posizione || b.ruolo || '').toLowerCase();
+            const pesoA = Object.keys(mapping).find(r => ruoloA.includes(r)) ? mapping[Object.keys(mapping).find(r => ruoloA.includes(r))] : 99;
+            const pesoB = Object.keys(mapping).find(r => ruoloB.includes(r)) ? mapping[Object.keys(mapping).find(r => ruoloB.includes(r))] : 99;
+            return pesoA - pesoB;
+        });
+    } else if (currentSortColumn === 'presenze') {
+        giocatoriOrdinati.sort((a, b) => {
+            const valA = a.presenze || 0;
+            const valB = b.presenze || 0;
+            return currentSortDirection === 'desc' ? valB - valA : valA - valB;
+        });
+    } else if (currentSortColumn === 'gol') {
+        giocatoriOrdinati.sort((a, b) => {
+            const valA = a.gol || 0;
+            const valB = b.gol || 0;
+            return currentSortDirection === 'desc' ? valB - valA : valA - valB;
+        });
+    } else if (currentSortColumn === 'assist') {
+        giocatoriOrdinati.sort((a, b) => {
+            const valA = a.assist || 0;
+            const valB = b.assist || 0;
+            return currentSortDirection === 'desc' ? valB - valA : valA - valB;
+        });
+    }
+
+    giocatoriOrdinati.slice(0, 5).forEach(g => {
         const ini  = g.nome && g.cognome ? (g.nome[0] + g.cognome[0]).toUpperCase() : 'GP';
         const pos  = (g.posizione || '').toLowerCase();
         let posClass = 'pill-blue';
@@ -205,10 +251,7 @@ function renderizzaListaEventi() {
     if (!container) return;
     container.innerHTML = '';
 
-    // 1. Calcola la data e l'ora attuale
     const ora = new Date();
-
-    // 2. Filtra l'array globale mantenendo SOLO gli eventi futuri
     const eventiFuturi = tuttiEventiDashboard.filter(e => {
         const d = new Date(e.dataOraInizio || e.dataInizio || 0);
         return d >= ora;
@@ -219,7 +262,6 @@ function renderizzaListaEventi() {
         return;
     }
 
-    // 3. Ordina gli eventi futuri e prendi i primi 4
     eventiFuturi
         .sort((a, b) => new Date(a.dataOraInizio || a.dataInizio || 0) - new Date(b.dataOraInizio || b.dataInizio || 0))
         .slice(0, 4)
@@ -286,7 +328,7 @@ function renderizzaListaMessaggi() {
     });
 }
 
-// ─── 6. INVIA MESSAGGIO → POST /api/messaggi ─────────────────────────────
+// ─── 7. INVIA MESSAGGIO ───────────────────────────────────────────────────
 async function sendMsg() {
     const selDest = document.getElementById('msg-dest');
     const testo   = (document.getElementById('msg-text')?.value || '').trim();
@@ -365,7 +407,7 @@ function mostraFeedbackMsg(testo, successo) {
     fb._timer = setTimeout(() => { if (fb.parentNode) fb.remove(); }, 4000);
 }
 
-// ─── 7. SALVA EVENTO ──────────────────────────────────────────────────────
+// ─── 8. SALVA EVENTO ──────────────────────────────────────────────────────
 async function saveEvento() {
     const idSquadra = localStorage.getItem('idSquadra');
     if (!idSquadra) { alert('Errore: ID Squadra non trovato.'); return; }
@@ -375,8 +417,8 @@ async function saveEvento() {
     if (!rawStart || !rawEnd) { alert('Inserisci data di inizio e fine.'); return; }
 
     const payload = {
-        titolo:        document.getElementById('evt-title')?.value    || '',
-        tipo:          document.getElementById('evt-type')?.value     || 'allenamento',
+        titolo:        document.getElementById('evt-title')?.value     || '',
+        tipo:          document.getElementById('evt-type')?.value      || 'allenamento',
         dataOraInizio: rawStart.length === 16 ? `${rawStart}:00` : rawStart,
         dataOraFine:   rawEnd.length   === 16 ? `${rawEnd}:00`   : rawEnd,
         luogo:         document.getElementById('evt-location')?.value || '',
@@ -406,7 +448,7 @@ async function saveEvento() {
     }
 }
 
-// ─── 8. SALVA GIOCATORE ───────────────────────────────────────────────────
+// ─── 9. SALVA GIOCATORE ───────────────────────────────────────────────────
 async function saveGiocatore() {
     const idSquadra = localStorage.getItem('idSquadra');
     if (!idSquadra) { alert('Errore: ID Squadra non trovato.'); return; }
@@ -448,7 +490,7 @@ async function saveGiocatore() {
     }
 }
 
-// ─── 9. MODAL & LOGOUT ────────────────────────────────────────────────────
+// ─── 10. MODAL & LOGOUT ───────────────────────────────────────────────────
 function openModal(id)  { const m = document.getElementById(id); if (m) m.style.display = 'flex'; }
 function closeModal(id) { const m = document.getElementById(id); if (m) m.style.display = 'none'; }
 function logout()       { localStorage.clear(); window.location.href = '/html/login.html'; }

@@ -40,7 +40,7 @@ function logout() {
     window.location.href = '/html/login.html';
 }
 
-// --- 1. RECUPERO DATI DAL BACKEND (Logica originale ripristinata) ---
+// --- 1. RECUPERO DATI DAL BACKEND (Ordinati per ruolo: Portiere -> Difensore -> Centrocampista -> Attaccante) ---
 async function caricaRosa() {
     try {
         const idSquadra = localStorage.getItem('idSquadra'); 
@@ -84,14 +84,27 @@ async function caricaRosa() {
                 return {
                     ...g,
                     ...(s || {}), 
-                    gol:          s?.gol       ?? s?.golTotali     ?? g.gol       ?? 0,
-                    assist:       s?.ass       ?? s?.assist        ?? g.assist    ?? 0,
-                    presenze:     s?.pres      ?? s?.presenze      ?? g.presenze  ?? 0,
-                    puntiTotali:  s?.puntiTotali  ?? g.puntiTotali  ?? g.punti_totali  ?? 0,
+                    gol:              s?.gol          ?? s?.golTotali     ?? g.gol          ?? 0,
+                    assist:           s?.ass          ?? s?.assist        ?? g.assist       ?? 0,
+                    presenze:         s?.pres         ?? s?.presenze      ?? g.presenze     ?? 0,
+                    puntiTotali:      s?.puntiTotali  ?? g.puntiTotali    ?? g.punti_totali ?? 0,
                     puntiSettimanali: s?.puntiSettimanali ?? g.puntiSettimanali ?? g.punti_settimanali ?? 0
                 };
             });
         }
+
+        // --- ORDINAMENTO PER RUOLO: Portiere -> Difensore -> Centrocampista -> Attaccante ---
+        const ordineRuoli = { 'por': 1, 'dif': 2, 'cen': 3, 'att': 4 };
+        
+        giocatori.sort((a, b) => {
+            const ruoloA = (a.posizione || a.ruolo || '').toLowerCase();
+            const ruoloB = (b.posizione || b.ruolo || '').toLowerCase();
+
+            const pesoA = Object.keys(ordineRuoli).find(r => ruoloA.includes(r)) ? ordineRuoli[Object.keys(ordineRuoli).find(r => ruoloA.includes(r))] : 99;
+            const pesoB = Object.keys(ordineRuoli).find(r => ruoloB.includes(r)) ? ordineRuoli[Object.keys(ordineRuoli).find(r => ruoloB.includes(r))] : 99;
+
+            return pesoA - pesoB;
+        });
 
         tuttiGiocatori = giocatori;
         aggiornaSommario(tuttiGiocatori);

@@ -88,16 +88,15 @@
               <thead>
                 <tr>
                   <th>Giocatore</th>
-                  <th>Pos</th>
-                  <th>Presenze</th>
-                  <th>Gol</th>
-                  <th>Assist</th>
+                  <th onclick="sortDashboardRosa('ruolo')" style="cursor: pointer;" title="Clicca per invertire l'ordine dei ruoli">Pos ↕</th>
+                  <th onclick="sortDashboardRosa('presenze')" style="cursor: pointer;" title="Ordina per presenze">Presenze ↕</th>
+                  <th onclick="sortDashboardRosa('gol')" style="cursor: pointer;" title="Ordina per gol">Gol ↕</th>
+                  <th onclick="sortDashboardRosa('assist')" style="cursor: pointer;" title="Ordina per assist">Assist ↕</th>
                 </tr>
               </thead>
-              <!-- Agganciato a JS per iniettare i tr del DB -->
               <tbody id="dashboard-rosa-tbody">
                 <tr>
-                  <td colspan="4" style="text-align: center; padding: 20px; color: #888;">Caricamento rosa...</td>
+                  <td colspan="5" style="text-align: center; padding: 20px; color: #888;">Caricamento rosa...</td>
                 </tr>
               </tbody>
             </table>
