@@ -83,17 +83,18 @@
       <div id="view-grid"></div>
 
       <!-- LIST VIEW -->
+      <!-- LIST VIEW -->
       <div id="view-list" style="background:var(--dark2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
         <table>
           <thead>
             <tr>
-              <th>#</th>
-              <th>Giocatore</th>
-              <th>Pos.</th>
-              <th>Piede</th>
-              <th>Pres.</th>
-              <th>Gol</th>
-              <th>Assist</th>
+              <th onclick="sortRosaList('numero')" style="cursor: pointer;" title="Ordina per numero maglia"># ↕</th>
+              <th onclick="sortRosaList('nome')" style="cursor: pointer;" title="Ordina per nome/cognome">Giocatore ↕</th>
+              <th onclick="sortRosaList('ruolo')" style="cursor: pointer;" title="Ordina per ruolo">Pos. ↕</th>
+              <th onclick="sortRosaList('piede')" style="cursor: pointer;" title="Ordina per piede">Piede ↕</th>
+              <th onclick="sortRosaList('presenze')" style="cursor: pointer;" title="Ordina per presenze">Pres. ↕</th>
+              <th onclick="sortRosaList('gol')" style="cursor: pointer;" title="Ordina per gol">Gol ↕</th>
+              <th onclick="sortRosaList('assist')" style="cursor: pointer;" title="Ordina per assist">Assist ↕</th>
               <th>Azioni</th>
             </tr>
           </thead>
@@ -112,7 +113,6 @@
     <div class="modal-body" id="detail-body"></div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeModal('modal-detail')">Chiudi</button>
-      <button class="btn-primary" id="btn-apri-modifica" onclick="apriModalModifica()">✏️ Modifica</button>
     </div>
   </div>
 </div>

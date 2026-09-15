@@ -1,7 +1,13 @@
-// Variabile globale per salvare i giocatori scaricati e filtrarli in locale
+// ==========================================
+// STATO GLOBALE
+// ==========================================
 let tuttiGiocatori = [];
 let filtroRuolo = 'tutti';
 let idGiocatoreDettaglioCorrente = null;
+
+// Stato per l'ordinamento interattivo delle colonne nella vista lista
+let currentRosaSortColumn = 'ruolo';
+let currentRosaSortDirection = 'asc'; // 'asc' o 'desc'
 
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof verificaAutenticazione === 'function') {
@@ -40,7 +46,26 @@ function logout() {
     window.location.href = '/html/login.html';
 }
 
-// --- 1. RECUPERO DATI DAL BACKEND (Ordinati per ruolo: Portiere -> Difensore -> Centrocampista -> Attaccante) ---
+// --- FUNZIONE PER FORMATTARE IL NOME (EVITA DUPLICAZIONI SE IL NOME CONTIENE GIÀ IL COGNOME) ---
+function formattaNome(g) {
+    if (!g) return 'Giocatore';
+    const nome = (g.nome || '').trim();
+    const cognome = (g.cognome || '').trim();
+    
+    if (!nome) return cognome;
+    if (!cognome) return nome;
+    
+    // Se il nome contiene già il cognome (es. nome = "Mario Rossi", cognome = "Rossi"), 
+    // restituisce direttamente il nome per evitare di stamparlo due volte.
+    if (nome.toLowerCase().includes(cognome.toLowerCase())) {
+        return nome;
+    }
+    
+    // Altrimenti stampa Nome Cognome standard
+    return `${nome} ${cognome}`;
+}
+
+// --- 1. RECUPERO DATI DAL BACKEND ---
 async function caricaRosa() {
     try {
         const idSquadra = localStorage.getItem('idSquadra'); 
@@ -70,7 +95,6 @@ async function caricaRosa() {
         let giocatori = await resGiocatori.json();
         const stats   = (resStats?.ok) ? await resStats.json() : [];
 
-        // Condizione di matching originale che funzionava per associare le statistiche
         if (Array.isArray(stats) && stats.length > 0) {
             giocatori = giocatori.map(g => {
                 const s = stats.find(st => 
@@ -84,26 +108,32 @@ async function caricaRosa() {
                 return {
                     ...g,
                     ...(s || {}), 
-                    gol:              s?.gol          ?? s?.golTotali     ?? g.gol          ?? 0,
-                    assist:           s?.ass          ?? s?.assist        ?? g.assist       ?? 0,
-                    presenze:         s?.pres         ?? s?.presenze      ?? g.presenze     ?? 0,
-                    puntiTotali:      s?.puntiTotali  ?? g.puntiTotali    ?? g.punti_totali ?? 0,
+                    gol:              s?.gol              ?? s?.golTotali     ?? g.gol              ?? 0,
+                    assist:           s?.ass              ?? s?.assist        ?? g.assist           ?? 0,
+                    presenze:         s?.pres             ?? s?.presenze      ?? g.presenze         ?? 0,
+                    puntiTotali:      s?.puntiTotali      ?? g.puntiTotali    ?? g.punti_totali     ?? 0,
                     puntiSettimanali: s?.puntiSettimanali ?? g.puntiSettimanali ?? g.punti_settimanali ?? 0
                 };
             });
         }
 
-        // --- ORDINAMENTO PER RUOLO: Portiere -> Difensore -> Centrocampista -> Attaccante ---
+        // Ordinamento multilivello iniziale: Ruolo -> Presenze (desc) -> Alfabetico
         const ordineRuoli = { 'por': 1, 'dif': 2, 'cen': 3, 'att': 4 };
-        
         giocatori.sort((a, b) => {
             const ruoloA = (a.posizione || a.ruolo || '').toLowerCase();
             const ruoloB = (b.posizione || b.ruolo || '').toLowerCase();
-
             const pesoA = Object.keys(ordineRuoli).find(r => ruoloA.includes(r)) ? ordineRuoli[Object.keys(ordineRuoli).find(r => ruoloA.includes(r))] : 99;
             const pesoB = Object.keys(ordineRuoli).find(r => ruoloB.includes(r)) ? ordineRuoli[Object.keys(ordineRuoli).find(r => ruoloB.includes(r))] : 99;
 
-            return pesoA - pesoB;
+            if (pesoA !== pesoB) return pesoA - pesoB;
+
+            const presA = a.presenze || 0;
+            const presB = b.presenze || 0;
+            if (presA !== presB) return presB - presA; // Più presenze prima
+
+            const nomeA = formattaNome(a).toLowerCase();
+            const nomeB = formattaNome(b).toLowerCase();
+            return nomeA.localeCompare(nomeB);
         });
 
         tuttiGiocatori = giocatori;
@@ -144,6 +174,7 @@ function renderizzaGiocatori(giocatori) {
     giocatori.forEach(g => {
         const idGiocatoreCorrente = g.idGiocatore || g.id;
         const ruoloStr = g.posizione || g.ruolo || 'N/D';
+        const nomeCompleto = formattaNome(g);
 
         let posClass = 'pos-cen';
         const posPura = ruoloStr.toLowerCase();
@@ -152,7 +183,7 @@ function renderizzaGiocatori(giocatori) {
         else if (posPura.includes('por')) posClass = 'pos-por';
 
         const imgElement = document.createElement('img');
-        imgElement.alt = g.nome || 'Giocatore';
+        imgElement.alt = nomeCompleto;
         imgElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 50%;';
 
         let imageSrc = '/html/css/placeholder-player.png';
@@ -169,30 +200,39 @@ function renderizzaGiocatori(giocatori) {
             this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23222"/%3E%3Ctext x="50%25" y="55%25" dominant-baseline="middle" text-anchor="middle" font-size="35" fill="%23aaa"%3E⚽%3C/text%3E%3C/svg%3E';
         };
 
+        const rawDataNascita = g.dataNascita || g.data_nascita;
+        const dataNascitaFormatted = rawDataNascita ? new Date(rawDataNascita).toLocaleDateString('it-IT') : '-';
+
         if (gridView) {
             const card = document.createElement('div');
             card.className = 'player-card';
-            card.setAttribute('onclick', `mostraDettaglio(${idGiocatoreCorrente})`);
+            card.style.cursor = 'pointer';
+            card.setAttribute('onclick', `mostraDettaglio('${idGiocatoreCorrente}')`);
             
             card.innerHTML = `
                 <div class="player-card-top">
                     <div class="number">#${g.numero || '-'}</div>
-                    <div class="player-pic" style="overflow: hidden; padding: 0;" id="pic-grid-${idGiocatoreCorrente}"></div>
-                    <div class="name">${g.nome} ${g.cognome}</div>
-                    <span class="pos-badge ${posClass}">${ruoloStr}</span>
+                    <div class="player-pic" style="overflow: hidden; padding: 0; width: 80px; height: 80px; margin: 0 auto;" id="pic-grid-${idGiocatoreCorrente}"></div>
+                    <div class="name" style="margin-top: 8px; font-size: 1.2rem; font-weight: bold;">${nomeCompleto}</div>
+                    <span class="pos-badge ${posClass}" style="display: inline-block; margin-top: 4px;">${ruoloStr}</span>
                 </div>
-                <div class="player-card-body">
-                    <div class="mini-stats">
-                        <div class="mini-stat"><div class="v">${g.presenze || 0}</div><div class="l">Presenze</div></div>
-                        <div class="mini-stat"><div class="v">${g.gol || 0}</div><div class="l">Gol</div></div>
-                        <div class="mini-stat"><div class="v">${g.assist || 0}</div><div class="l">Assist</div></div>
+                <div class="player-card-body" style="padding: 10px 15px;">
+                    <div class="mini-stats" style="display: flex; justify-content: space-around; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; margin-bottom: 10px; font-size: 0.85rem;">
+                        <div style="text-align: center;"><div style="font-weight: bold; color: var(--primary);">${g.presenze || 0}</div><div style="font-size: 0.7rem; color: #aaa;">Presenze</div></div>
+                        <div style="text-align: center;"><div style="font-weight: bold; color: #4ade80;">${g.puntiSettimanali ?? g.punti_settimanali ?? 0}</div><div style="font-size: 0.7rem; color: #aaa;">Pt. Sett.</div></div>
+                        <div style="text-align: center;"><div style="font-weight: bold; color: #facc15;">${g.puntiTotali ?? g.punti_totali ?? 0}</div><div style="font-size: 0.7rem; color: #aaa;">Pt. Totali</div></div>
                     </div>
-                    <div class="player-meta">
-                        <span class="meta-tag">Piede: ${g.piede || '-'}</span>
-                        <span class="meta-tag">H: ${g.altezza ? g.altezza + ' cm' : '-'}</span>
+                    
+                    <div class="player-meta" style="font-size: 0.8rem; color: #ccc; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 12px; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px;">
+                        <div><strong>Piede:</strong> ${g.piede || '-'}</div>
+                        <div><strong>Altezza:</strong> ${g.altezza ? g.altezza + ' cm' : '-'}</div>
+                        <div><strong>Peso:</strong> ${g.peso ? g.peso + ' kg' : '-'}</div>
+                        <div><strong>Nascita:</strong> ${dataNascitaFormatted}</div>
                     </div>
-                    <div class="card-actions">
-                        <button class="btn-card primary">Visualizza Info</button>
+
+                    <div class="card-actions" style="display: flex; gap: 8px;">
+                        <button class="btn-card primary" style="flex: 1; font-size: 0.8rem; padding: 6px;" onclick="event.stopPropagation(); window.location.href='/html/messaggi.html?giocatoreId=${idGiocatoreCorrente}'">Invia Messaggio</button>
+                        <button class="btn-card ghost" style="flex: 1; font-size: 0.8rem; padding: 6px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; cursor: pointer;" onclick="event.stopPropagation(); window.location.href='/html/statistiche.html?giocatoreId=${idGiocatoreCorrente}'">Vedi Statistiche</button>
                     </div>
                 </div>
             `;
@@ -202,14 +242,15 @@ function renderizzaGiocatori(giocatori) {
 
         if (listBody) {
             const tr = document.createElement('tr');
-            tr.setAttribute('onclick', `mostraDettaglio(${idGiocatoreCorrente})`);
+            tr.style.cursor = 'pointer';
+            tr.setAttribute('onclick', `mostraDettaglio('${idGiocatoreCorrente}')`);
 
             tr.innerHTML = `
                 <td><strong>#${g.numero || '-'}</strong></td>
                 <td>
                     <div class="player-name-cell">
                         <div class="list-avatar" style="overflow: hidden; padding: 0;" id="pic-list-${idGiocatoreCorrente}"></div>
-                        <span>${g.nome} ${g.cognome}</span>
+                        <span>${nomeCompleto}</span>
                     </div>
                 </td>
                 <td><span class="pos-badge ${posClass}">${ruoloStr}</span></td>
@@ -218,7 +259,7 @@ function renderizzaGiocatori(giocatori) {
                 <td>${g.gol || 0}</td>
                 <td>${g.assist || 0}</td>
                 <td class="tbl-actions">
-                    <button class="btn-sm">👁️ Det.</button>
+                    <button class="btn-sm" onclick="event.stopPropagation(); mostraDettaglio('${idGiocatoreCorrente}')">👁️ Det.</button>
                 </td>
             `;
             listBody.appendChild(tr);
@@ -227,15 +268,26 @@ function renderizzaGiocatori(giocatori) {
     });
 }
 
-// --- 4. FILTRI E RICERCA ---
+// --- 4. GESTIONE ORDINAMENTO LISTA ROSA ---
+function sortRosaList(column) {
+    if (currentRosaSortColumn === column) {
+        currentRosaSortDirection = currentRosaSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentRosaSortColumn = column;
+        currentRosaSortDirection = ['presenze', 'gol', 'assist'].includes(column) ? 'desc' : 'asc';
+    }
+    filterPlayers();
+}
+
+// --- 5. FILTRI E RICERCA ---
 function filterPlayers() {
     const searchVal = (document.getElementById('search-input')?.value || '').toLowerCase();
 
     const giocatoriFiltrati = tuttiGiocatori.filter(g => {
         const ruolo = (g.posizione || g.ruolo || '').toLowerCase();
+        const nomeCompleto = formattaNome(g).toLowerCase();
         const matchRicerca = 
-            g.nome?.toLowerCase().includes(searchVal) ||
-            g.cognome?.toLowerCase().includes(searchVal) ||
+            nomeCompleto.includes(searchVal) ||
             ruolo.includes(searchVal) ||
             g.numero?.toString().includes(searchVal);
 
@@ -246,6 +298,47 @@ function filterPlayers() {
 
         return matchRicerca && matchRuolo;
     });
+
+    if (currentRosaSortColumn === 'ruolo') {
+        const ordineAsc  = { 'por': 1, 'dif': 2, 'cen': 3, 'att': 4 };
+        const ordineDesc = { 'att': 1, 'cen': 2, 'dif': 3, 'por': 4 };
+        const mapping    = currentRosaSortDirection === 'asc' ? ordineAsc : ordineDesc;
+
+        giocatoriFiltrati.sort((a, b) => {
+            const ruoloA = (a.posizione || a.ruolo || '').toLowerCase();
+            const ruoloB = (b.posizione || b.ruolo || '').toLowerCase();
+            const pesoA = Object.keys(mapping).find(r => ruoloA.includes(r)) ? mapping[Object.keys(mapping).find(r => ruoloA.includes(r))] : 99;
+            const pesoB = Object.keys(mapping).find(r => ruoloB.includes(r)) ? mapping[Object.keys(mapping).find(r => ruoloB.includes(r))] : 99;
+
+            if (pesoA !== pesoB) return pesoA - pesoB;
+
+            const presA = a.presenze || 0;
+            const presB = b.presenze || 0;
+            if (presA !== presB) return presB - presA;
+
+            const nomeA = formattaNome(a).toLowerCase();
+            const nomeB = formattaNome(b).toLowerCase();
+            return nomeA.localeCompare(nomeB);
+        });
+    } else if (currentRosaSortColumn === 'nome') {
+        giocatoriFiltrati.sort((a, b) => {
+            const nomeA = formattaNome(a).toLowerCase();
+            const nomeB = formattaNome(b).toLowerCase();
+            return currentRosaSortDirection === 'asc' ? nomeA.localeCompare(nomeB) : nomeB.localeCompare(nomeA);
+        });
+    } else if (currentRosaSortColumn === 'piede') {
+        giocatoriFiltrati.sort((a, b) => {
+            const piedeA = (a.piede || '').toLowerCase();
+            const piedeB = (b.piede || '').toLowerCase();
+            return currentRosaSortDirection === 'asc' ? piedeA.localeCompare(piedeB) : piedeB.localeCompare(piedeA);
+        });
+    } else if (['numero', 'presenze', 'gol', 'assist'].includes(currentRosaSortColumn)) {
+        giocatoriFiltrati.sort((a, b) => {
+            const valA = a[currentRosaSortColumn] || 0;
+            const valB = b[currentRosaSortColumn] || 0;
+            return currentRosaSortDirection === 'desc' ? valB - valA : valA - valB;
+        });
+    }
 
     renderizzaGiocatori(giocatoriFiltrati);
 }
@@ -278,20 +371,46 @@ function setView(viewType) {
     }
 }
 
-// --- 5. DETTAGLI E MODALI ---
+// --- 6. DETTAGLI E MODALI ---
 function mostraDettaglio(idGiocatore) {
-    const giocatore = tuttiGiocatori.find(g => (g.idGiocatore === idGiocatore || g.id === idGiocatore));
-    if (!giocatore) return;
+    const giocatore = tuttiGiocatori.find(g => String(g.idGiocatore || g.id) === String(idGiocatore));
+    if (!giocatore) {
+        console.warn("Giocatore non trovato per ID:", idGiocatore);
+        return;
+    }
 
     idGiocatoreDettaglioCorrente = giocatore.idGiocatore || giocatore.id;
-    const dataNascitaFormatted = giocatore.dataNascita || giocatore.data_nascita;
+    const rawDataNascita = giocatore.dataNascita || giocatore.data_nascita;
+    const dataNascitaFormatted = rawDataNascita ? new Date(rawDataNascita).toLocaleDateString('it-IT') : '-';
+    const nomeCompleto = formattaNome(giocatore);
+
+    const ruoloStr = giocatore.posizione || giocatore.ruolo || 'N/D';
+    let posClass = 'pos-cen';
+    const posPura = ruoloStr.toLowerCase();
+    if (posPura.includes('att')) posClass = 'pos-att';
+    else if (posPura.includes('dif')) posClass = 'pos-dif';
+    else if (posPura.includes('por')) posClass = 'pos-por';
+
+    let imageSrc = '/html/css/placeholder-player.png';
+    if (giocatore.img) {
+        let cleanImg = giocatore.img.replace(/\\/g, '/').replace('luploads', 'uploads').replace(/^\/+/, '');
+        if (cleanImg.startsWith('html/')) cleanImg = cleanImg.replace(/^html\//, '');
+        if (!cleanImg.startsWith('uploads/')) cleanImg = 'uploads/' + cleanImg;
+        imageSrc = `/html/${cleanImg}`;
+    }
 
     const detailHero = document.getElementById('detail-hero');
     if (detailHero) {
         detailHero.innerHTML = `
-            <div style="padding: 2rem; background: linear-gradient(135deg, var(--primary), var(--dark)); color: white; border-radius: var(--radius) var(--radius) 0 0;">
-                <h2 style="font-family:'Barlow Condensed', sans-serif; font-size: 2.5rem; text-transform: uppercase;">#${giocatore.numero || '-'} ${giocatore.nome} ${giocatore.cognome}</h2>
-                <p style="opacity: 0.9;">${giocatore.posizione || giocatore.ruolo || 'N/D'}</p>
+            <div style="padding: 1.75rem 2rem; background: linear-gradient(135deg, var(--primary), var(--dark)); color: white; border-radius: var(--radius) var(--radius) 0 0; display: flex; align-items: center; gap: 1.5rem;">
+                <div style="width: 150px; height: 150px; border-radius: 50%; overflow: hidden; background: #222; border: 3px solid rgba(255,255,255,0.3); flex-shrink: 0;">
+                    <img src="${imageSrc}" alt="${nomeCompleto}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%23222/%3E%3Ctext x=%2250%25%22 y=%2255%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2235%22 fill=%23aaa%22%3E⚽%3C/text%3E%3C/svg%3E'">
+                </div>
+                <div>
+                    <div style="font-size: 1.2rem; font-weight: bold; opacity: 0.9; font-family: 'Barlow Condensed', sans-serif;">#${giocatore.numero || '-'}</div>
+                    <h2 style="font-family:'Barlow Condensed', sans-serif; font-size: 2.2rem; text-transform: uppercase; margin: 0; line-height: 1.1;">${nomeCompleto}</h2>
+                    <div style="margin-top: 6px;"><span class="pos-badge ${posClass}" style="display: inline-block; padding: 4px 12px; font-size: 0.85rem; font-weight: bold;">${ruoloStr}</span></div>
+                </div>
             </div>
         `;
     }
@@ -299,17 +418,24 @@ function mostraDettaglio(idGiocatore) {
     const detailBody = document.getElementById('detail-body');
     if (detailBody) {
         detailBody.innerHTML = `
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1.5rem;">
-                <p><strong>Piede preferito:</strong> ${giocatore.piede || 'N/D'}</p>
-                <p><strong>Altezza:</strong> ${giocatore.altezza ? giocatore.altezza + ' cm' : 'N/D'}</p>
-                <p><strong>Peso:</strong> ${giocatore.peso ? giocatore.peso + ' kg' : 'N/D'}</p>
-                <p><strong>Nazionalità:</strong> ${giocatore.nazionalita || 'N/D'}</p>
-                <p><strong>Data di Nascita:</strong> ${dataNascitaFormatted ? new Date(dataNascitaFormatted).toLocaleDateString('it-IT') : 'N/D'}</p>
-                <hr style="grid-column: span 2; border: 0; border-top: 1px solid #eee; margin: 0.5rem 0;">
-                <p><strong>Presenze:</strong> ${giocatore.presenze || 0}</p>
-                <p><strong>Gol Totali:</strong> ${giocatore.gol || 0}</p>
-                <p><strong>Assist:</strong> ${giocatore.assist || 0}</p>
-                <p><strong>Punti Totali:</strong> ${giocatore.puntiTotali || 0}</p>
+            <div style="padding: 1.5rem;">
+                <div style="display: flex; justify-content: space-around; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 8px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="text-align: center;"><div style="font-size: 1.3rem; font-weight: bold; color: var(--primary);">${giocatore.presenze || 0}</div><div style="font-size: 0.75rem; color: #aaa; text-transform: uppercase;">Presenze</div></div>
+                    <div style="text-align: center;"><div style="font-size: 1.3rem; font-weight: bold; color: #4ade80;">${giocatore.puntiSettimanali ?? giocatore.punti_settimanali ?? 0}</div><div style="font-size: 0.75rem; color: #aaa; text-transform: uppercase;">Pt. Sett.</div></div>
+                    <div style="text-align: center;"><div style="font-size: 1.3rem; font-weight: bold; color: #facc15;">${giocatore.puntiTotali ?? giocatore.punti_totali ?? 0}</div><div style="font-size: 0.75rem; color: #aaa; text-transform: uppercase;">Pt. Totali</div></div>
+                </div>
+
+                <div style="font-size: 0.9rem; color: #ddd; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px;">
+                    <div><strong>Piede:</strong> ${giocatore.piede || '-'}</div>
+                    <div><strong>Altezza:</strong> ${giocatore.altezza ? giocatore.altezza + ' cm' : '-'}</div>
+                    <div><strong>Peso:</strong> ${giocatore.peso ? giocatore.peso + ' kg' : '-'}</div>
+                    <div><strong>Nascita:</strong> ${dataNascitaFormatted}</div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-primary" style="flex: 1; padding: 10px; font-weight: bold;" onclick="window.location.href='/html/messaggi.html?giocatoreId=${idGiocatoreDettaglioCorrente}'">💬 Invia Messaggio</button>
+                    <button class="btn-ghost" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; cursor: pointer; font-weight: bold;" onclick="window.location.href='/html/statistiche.html?giocatoreId=${idGiocatoreDettaglioCorrente}'">📊 Vedi Statistiche</button>
+                </div>
             </div>
         `;
     }
@@ -327,9 +453,9 @@ function closeModal(id) {
     if (el) el.style.display = 'none';
 }
 
-// --- 6. MODIFICA STATISTICHE ---
+// --- 7. MODIFICA STATISTICHE ---
 function apriModalModifica() {
-    const g = tuttiGiocatori.find(x => (x.idGiocatore === idGiocatoreDettaglioCorrente || x.id === idGiocatoreDettaglioCorrente));
+    const g = tuttiGiocatori.find(x => String(x.idGiocatore || x.id) === String(idGiocatoreDettaglioCorrente));
     if (!g) return;
 
     document.getElementById('form-id-giocatore').value = idGiocatoreDettaglioCorrente;
@@ -347,7 +473,6 @@ function apriModalModifica() {
         if (secPortiere) secPortiere.style.display = 'none';
     }
 
-    // Popolamento diretto usando i nomi esatti del StatisticheDto (camelCase)
     document.getElementById('stat-presenze').value           = g.presenze ?? 0;
     document.getElementById('stat-presenzeTitolare').value   = g.presenzeTitolare ?? 0;
     document.getElementById('stat-minutiGiocati').value      = g.minutiGiocati ?? 0;
@@ -394,11 +519,10 @@ function apriModalModifica() {
     closeModal('modal-detail');
 
     const titolo = document.getElementById('form-titolo');
-    if (titolo) titolo.textContent = `Modifica Statistiche: ${g.nome} ${g.cognome}`;
+    if (titolo) titolo.textContent = `Modifica Statistiche: ${formattaNome(g)}`;
 
     openModal('modal-edit');
 }
-
 
 function getValNum(id) {
     const val = document.getElementById(id)?.value;
@@ -409,7 +533,7 @@ async function salvaStatistiche() {
     const idGiocatore = document.getElementById('form-id-giocatore').value;
     if (!idGiocatore) return;
 
-    const g = tuttiGiocatori.find(x => (x.idGiocatore === parseInt(idGiocatore, 10) || x.id === parseInt(idGiocatore, 10)));
+    const g = tuttiGiocatori.find(x => String(x.idGiocatore || x.id) === String(idGiocatore));
     if (!g) return;
 
     const ruoloStr = (g.posizione || g.ruolo || '').toLowerCase();
@@ -491,7 +615,7 @@ async function salvaStatistiche() {
         }
 
         const giocatoreSalvato = await res.json();
-        const idx = tuttiGiocatori.findIndex(item => (item.idGiocatore || item.id) === parseInt(idGiocatore, 10));
+        const idx = tuttiGiocatori.findIndex(item => String(item.idGiocatore || item.id) === String(idGiocatore));
         if (idx > -1) {
             tuttiGiocatori[idx] = { ...tuttiGiocatori[idx], ...giocatoreSalvato };
         }
