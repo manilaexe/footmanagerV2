@@ -119,29 +119,48 @@ public class Dtos {
     }
 
     @Data
-    public static class AggiornaStatisticheRequest {
-        // ── Comuni ──
-        private Integer presenze;          private Integer presenzeTitolare; private Integer minutiGiocati;
-        private Integer assist;
-        private Integer passaggiTentati;   private Integer passaggiRiusciti; private Integer passaggiChiave;
-        private Integer dribblingTentati;  private Integer dribblingRiusciti;
-        private Integer duelliVinti;       private Integer duelliPersi;
-        private Integer duelliAereiVinti;  private Integer duelliAereiPersi;
-        private Integer palloniIntercettati;
-        private Integer falliCommessi;     private Integer falliSubiti;
-        private Integer ammonizioni;       private Integer espulsioni;
+public static class AggiornaStatisticheRequest {
+    private Integer presenze;
+    private Integer presenzeTitolare;
+    private Integer minutiGiocati;
+    private Integer ammonizioni;
+    private Integer espulsioni;
+    private Integer falliCommessi;
+    private Integer falliSubiti;
+    private Integer assist;
+    private Integer duelliAereiVinti;
+    private Integer duelliAereiPersi;
+    private Integer duelliVinti;
+    private Integer duelliPersi;
+    private Integer passaggiTentati;
+    private Integer passaggiRiusciti;
+    private Integer passaggiChiave;
+    private Integer dribblingTentati;
+    private Integer dribblingRiusciti;
+    private Integer palloniIntercettati;
 
-        // ── Movimento (ignorati se il giocatore è portiere) ──
-        private Integer goalRigore;        private Integer goalTesta;        private Integer goalPunizione;
-        private Integer tiriTotali;        private Integer tiriInPorta;
-        private Integer paliTraverse;      private Integer bigChanceMancate; private Integer bigChanceCreate;
-        private Integer crossTentati;      private Integer crossRiusciti;
-        private Integer tackle;            private Integer palloniRubati;
+    // Specifiche Portiere
+    private Integer parate;
+    private Integer cleanSheet;
+    private Integer goalSubiti;
+    private Integer rigoriParati;
+    private Integer rigoriSubiti;
 
-        // ── Portiere (ignorati se il giocatore non è portiere) ──
-        private Integer parate;            private Integer cleanSheet;
-        private Integer goalSubiti;        private Integer rigoriParati;     private Integer rigoriSubiti;
-    }
+    // Specifiche Movimento
+    private Integer goalRigore;
+    private Integer goalTesta;
+    private Integer goalPunizione;
+    private Integer golTotali;       // <--- Fondamentale
+    private Integer tiriTotali;
+    private Integer tiriInPorta;
+    private Integer paliTraverse;
+    private Integer bigChanceMancate;
+    private Integer bigChanceCreate;
+    private Integer crossTentati;
+    private Integer crossRiusciti;
+    private Integer tackle;
+    private Integer palloniRubati;
+}
 
     // ── Evento ────────────────────────────────────────────────────────────
     @Data @Builder
@@ -372,21 +391,64 @@ public class Dtos {
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class GiocatoreCompletoStatsDto {
+        private Integer id;
         private String nome;
+        private String cognome;
         private boolean portiere;
-        private int pres;
-        private int gol;         // 0 per i portieri
-        private int ass;
-        private int tiri;        // 0 per i portieri
-        private int pass;       // Percentuale passaggi riusciti
-        private int drib;       // Percentuale dribbling réussiti
-        private int duelli;     // Percentuale duelli vinti
-        private int intercetti;
-        private int amm;
-        private int esp;
-        // Valorizzati solo se portiere = true
+
+        // --- Proprietà Comuni ---
+        private int presenze;
+        private int presenzeTitolare;
+        private int minutiGiocati;
+        private int ammonizioni;
+        private int espulsioni;
+        private int falliCommessi;
+        private int falliSubiti;
+        private int assist;
+        private int duelliAereiVinti;
+        private int duelliAereiPersi;
+        private int duelliVinti;
+        private int duelliPersi;
+        private int passaggiTentati;
+        private int passaggiRiusciti;
+        private int passaggiChiave;
+        private int dribblingTentati;
+        private int dribblingRiusciti;
+        private int palloniIntercettati;
+
+        // --- Specifiche Portiere ---
         private int parate;
         private int cleanSheet;
+        private int goalSubiti;
+        private int rigoriParati;
+        private int rigoriSubiti;
+
+        // --- Specifiche Movimento ---
+        private int goalRigore;
+        private int goalTesta;
+        private int goalPunizione;
+        private int golTotali;
+        private int tiriTotali;
+        private int tiriInPorta;
+        private int paliTraverse;
+        private int bigChanceMancate;
+        private int bigChanceCreate;
+        private int crossTentati;
+        private int crossRiusciti;
+        private int tackle;
+        private int palloniRubati;
+
+        // --- Alias di compatibilità per grafici esistenti ---
+        private int pres;
+        private int gol;
+        private int ass;
+        private int tiri;
+        private int pass;
+        private int drib;
+        private int duelli;
+        private int interc;
+        private int amm;
+        private int esp;
     }
 
     // ══════════════════════════════════════════════════════════════════════

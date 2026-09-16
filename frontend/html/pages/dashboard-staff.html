@@ -1,102 +1,154 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>FootManager – Allenatore</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet"/>
-<link href="/html/css/styledashboard.css" rel="stylesheet" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FootManager – Staff</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="/html/css/styleall.css" rel="stylesheet" />
 </head>
 <body>
 <div class="app">
 
-<!-- SIDEBAR -->
-<aside class="sidebar">
-  <div class="sidebar-logo">
-    <div class="logo-icon">⚽</div>
-    <span class="logo-text">FootManager</span>
-  </div>
-  <nav class="nav-section">
-    <div class="nav-label">Principale</div>
-    <a class="nav-item active" href="#"><span class="ico">🏠</span>Dashboard</a>
-    <a class="nav-item" href="/html/rosa.html"><span class="ico">👥</span>Rosa</a>
-    <a class="nav-item" href="/html/calendario.html"><span class="ico">📅</span>Calendario</a>
-    <a class="nav-item" href="/html/statistiche.html"><span class="ico">📊</span>Statistiche</a>
-    <a class="nav-item" href="/html/messaggi.html"><span class="ico">💬</span>Messaggi<span class="nav-badge" id="msg-badge">3</span></a>
-    <a class="nav-item" href="/html/classifica.html"><span class="ico">🏆</span>Classifica</a>
-  </nav>
-
-  <div class="sidebar-footer">
-    <div class="user-card">
-      <div class="user-avatar" id="sb-avatar">?</div>
-      <div class="user-info"><strong id="sb-nome">—</strong><small id="sb-ruolo">—</small></div>
-      <button class="btn-logout" onclick="logout()">Esci</button>
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="icon">⚽</div>
+      <span>FootManager</span>
     </div>
-  </div>
-</aside>
 
-<!-- MAIN -->
-<div class="main">
-  <div class="topbar">
-    <h1 id="page-title">Dashboard</h1>
-    <div class="topbar-right" id="topbar-actions"></div>
-  </div>
-  <div class="content-area">
+    <nav class="nav-section">
+      <div class="nav-label">Principale</div>
+      <a class="nav-item active" href="#"><span class="ico">🏠</span> Dashboard</a>
+      <a class="nav-item" href="/html/rosa.html"><span class="ico">👥</span> Rosa</a>
+      <a class="nav-item" href="/html/calendario.html"><span class="ico">📅</span> Calendario</a>
+      <a class="nav-item" href="/html/statistiche.html"><span class="ico">📊</span> Statistiche</a>
+      <a class="nav-item" href="/html/messaggi.html"><span class="ico">💬</span> Messaggi</a>
+    </nav>
 
-    <!-- ===== DASHBOARD ===== -->
-    <div class="section active" id="sec-dashboard">
-      <div class="grid-4">
-        <div class="stat-card c-green"><div class="stat-label">Giocatori in rosa</div><div class="stat-value" id="dash-kpi-giocatori">—</div><div class="stat-sub" id="dash-kpi-giocatori-sub">—</div></div>
-        <div class="stat-card c-blue"><div class="stat-label">Prossimo evento</div><div class="stat-value" id="dash-kpi-evento" style="font-size:1.35rem">—</div><div class="stat-sub" id="dash-kpi-evento-sub">—</div></div>
-        <div class="stat-card c-amber"><div class="stat-label">Messaggi non letti</div><div class="stat-value" id="dash-kpi-msg">—</div><div class="stat-sub" id="dash-kpi-msg-sub">—</div></div>
-        <div class="stat-card c-green"><div class="stat-label">Media gol/partita</div><div class="stat-value" id="dash-kpi-golmedio">—</div><div class="stat-sub" id="dash-kpi-golmedio-sub">—</div></div>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar" id="sb-avatar">?</div>
+        <div class="user-info">
+          <strong id="sb-nome">—</strong>
+          <small id="sb-ruolo">—</small>
+        </div>
+        <button class="btn-logout" onclick="logout()">Esci</button>
       </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <div class="main">
+    <div class="topbar">
+      <h1>Dashboard Staff</h1>
+    </div>
+
+    <div class="content">
+
+      <!-- KPI CARDS -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Giocatori in rosa</div>
+          <div class="stat-value" id="kpi-giocatori">—</div>
+          <div class="stat-sub">Organico totale</div>
+        </div>
+        <div class="stat-card info">
+          <div class="stat-label">Prossimo evento</div>
+          <div class="stat-value" style="font-size:1.2rem" id="kpi-prossimo-evento-data">—</div>
+          <div class="stat-sub" id="kpi-prossimo-evento-dettaglio">Nessun evento</div>
+        </div>
+        <div class="stat-card warn">
+          <div class="stat-label">Messaggi inviati</div>
+          <div class="stat-value" id="kpi-messaggi">—</div>
+          <div class="stat-sub">Comunicazioni totali</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Media gol/partita</div>
+          <div class="stat-value" id="kpi-media-gol">0.0</div>
+          <div class="stat-sub">Dati aggiornati</div>
+        </div>
+      </div>
+
+      <!-- ROSA + CALENDARIO -->
       <div class="grid-3-1">
+        <!-- ROSA -->
         <div class="card">
-          <div class="card-header"><h2>Rosa – Ultima sessione</h2><span class="card-link" onclick="window.location.href='/html/rosa.html'">Vedi tutti →</span></div>
+          <div class="card-header">
+            <h2>Rosa</h2>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <a class="card-link" href="/html/rosa.html">Vedi tutti →</a>
+              <button class="btn-primary" style="font-size: 0.8rem; padding: 4px 8px;" onclick="openModal('modal-giocatore')">+ Aggiungi</button>
+            </div>
+          </div>
           <div class="card-body" style="padding:0">
             <table>
-              <thead><tr><th>Giocatore</th><th>Pos</th><th>Pres.</th><th>Gol</th><th>Stato</th></tr></thead>
-              <tbody id="dash-rosa-tbody">
-                <tr><td colspan="5" style="text-align:center;color:var(--muted);">Caricamento...</td></tr>
+              <thead>
+                <tr>
+                  <th>Giocatore</th>
+                  <th onclick="sortDashboardRosa('ruolo')" style="cursor: pointer;" title="Clicca per invertire l'ordine dei ruoli">Pos ↕</th>
+                  <th onclick="sortDashboardRosa('presenze')" style="cursor: pointer;" title="Ordina per presenze">Presenze ↕</th>
+                  <th onclick="sortDashboardRosa('gol')" style="cursor: pointer;" title="Ordina per gol">Gol ↕</th>
+                  <th onclick="sortDashboardRosa('assist')" style="cursor: pointer;" title="Ordina per assist">Assist ↕</th>
+                </tr>
+              </thead>
+              <tbody id="dashboard-rosa-tbody">
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 20px; color: #888;">Caricamento rosa...</td>
+                </tr>
               </tbody>
             </table>
           </div>
         </div>
+
+        <!-- CALENDARIO -->
         <div class="card">
-          <div class="card-header"><h2>Prossimi eventi</h2><span class="card-link" onclick="window.location.href='/html/calendario.html'">Vedi →</span></div>
+          <div class="card-header">
+            <h2>Prossimi eventi</h2>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <a class="card-link" href="/html/calendario.html">Vedi tutti →</a>
+              <button class="btn-primary" style="font-size: 0.8rem; padding: 4px 8px;" onclick="openModal('modal-evento')">+ Aggiungi</button>
+            </div>
+          </div>
           <div class="card-body">
-            <div class="event-list" id="dash-eventi-list">
-              <div style="text-align:center;color:var(--muted);padding:1rem;">Caricamento...</div>
+            <div class="event-list" id="dashboard-eventi-list">
+              <div style="text-align: center; padding: 20px; color: #888;">Caricamento eventi...</div>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- MESSAGGI + COMPONI -->
       <div class="grid-2">
         <div class="card">
-          <div class="card-header"><h2>Ultimi messaggi</h2><span class="card-link" onclick="window.location.href='/html/messaggi.html'">Tutti →</span></div>
+          <div class="card-header">
+            <h2>Ultimi messaggi inviati</h2>
+            <a class="card-link" href="/html/messaggi.html">Tutti →</a>
+          </div>
           <div class="card-body">
-            <div class="msg-list" id="dash-msg-list">
-              <div style="text-align:center;color:var(--muted);padding:1rem;">Caricamento...</div>
+            <div class="msg-list" id="dashboard-msg-list">
+              <div style="text-align: center; padding: 20px; color: #888;">Caricamento comunicazioni...</div>
             </div>
           </div>
         </div>
+
         <div class="card">
-          <div class="card-header"><h2>Messaggio rapido</h2></div>
+          <div class="card-header">
+            <h2>Invia nuovo messaggio</h2>
+          </div>
           <div class="card-body">
-            <div class="compose-box">
-              <select id="dash-msg-dest"><option value="">Destinatario…</option><option>Tutta la squadra</option><option>Attaccanti</option><option>Difensori</option><option>L. Rossi</option><option>M. Bianchi</option></select>
-              <textarea rows="4" id="dash-msg-text" placeholder="Scrivi il messaggio…"></textarea>
-              <button class="btn-primary" style="align-self:flex-end" onclick="sendQuickMsg()">Invia →</button>
-            </div>
+            <form id="dashboard-msg-form" class="compose-box">
+              <select id="msg-dest" required></select>
+              <textarea id="msg-text" rows="5" placeholder="Scrivi il messaggio..." required></textarea>
+              <button type="submit" class="btn-primary" style="align-self:flex-end">Invia →</button>
+            </form>
           </div>
         </div>
       </div>
-    </div>
 
-  </div><!-- /content-area -->
-</div><!-- /main -->
+    </div><!-- /content -->
+  </div><!-- /main -->
 </div><!-- /app -->
 
 <!-- MODAL NUOVO EVENTO -->
@@ -137,7 +189,95 @@
   </div>
 </div>
 
-<script src="/html/js/utils.js"></script>
-<script src="/html/js/staff.js"></script>
+<!-- MODAL NUOVO GIOCATORE COMPLETO -->
+<div class="modal-overlay" id="modal-giocatore">
+  <div class="modal" style="max-width: 550px;">
+    <h3>Nuovo Giocatore</h3>
+    <form id="dashboard-giocatore-form">
+      
+      <!-- CREDENZIALI ACCOUNT UTENTE -->
+      <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #333;">
+        <small style="color: #aaa; display: block; margin-bottom: 8px; font-weight: bold;">CREDENZIALI ACCESSO UTENTE</small>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group" style="margin:0;">
+            <label>Username *</label>
+            <input type="text" id="player-username" placeholder="es. m.rossi" required />
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label>Password *</label>
+            <input type="password" id="player-password" placeholder="es. Password123!" required />
+          </div>
+        </div>
+      </div>
+
+      <!-- DATI ANAGRAFICI -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label>Nome *</label>
+          <input type="text" id="player-nome" placeholder="es. Mario" required />
+        </div>
+        <div class="form-group">
+          <label>Cognome *</label>
+          <input type="text" id="player-cognome" placeholder="es. Rossi" required />
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label>Ruolo / Posizione *</label>
+          <select id="player-ruolo" required>
+            <option value="POR">Portiere (POR)</option>
+            <option value="DIF">Difensore (DIF)</option>
+            <option value="CEN">Centrocampista (CEN)</option>
+            <option value="ATT">Attaccante (ATT)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Numero Maglia</label>
+          <input type="number" id="player-numero" placeholder="es. 10" min="1" max="99" value="10" required />
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label>Data di Nascita *</label>
+          <input type="date" id="player-data-nascita" required />
+        </div>
+        <div class="form-group">
+          <label>Nazionalità</label>
+          <input type="text" id="player-nazionalita" placeholder="es. Italiana" value="Italiana" />
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label>Piede Preferito</label>
+          <select id="player-piede">
+            <option value="Destro">Destro</option>
+            <option value="Sinistro">Sinistro</option>
+            <option value="Ambidestro">Ambidestro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Altezza (cm)</label>
+          <input type="number" id="player-altezza" placeholder="es. 180" value="180" />
+        </div>
+        <div class="form-group">
+          <label>Peso (kg)</label>
+          <input type="number" id="player-peso" placeholder="es. 75" value="75" />
+        </div>
+      </div>
+
+      <div class="modal-footer" style="margin-top: 15px;">
+        <button type="button" class="btn-ghost" onclick="closeModal('modal-giocatore')">Annulla</button>
+        <button type="submit" class="btn-primary">Salva Giocatore e Utente</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+  <script src="/html/js/utils.js"></script> 
+  <script src="/html/js/staff.js"></script>
 </body>
 </html>

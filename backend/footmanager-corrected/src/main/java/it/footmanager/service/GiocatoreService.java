@@ -3,7 +3,7 @@ package it.footmanager.service;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.scheduling.annotation.Scheduled; // <-- IMPORT AGGIUNTO PER IL CRON JOB
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,10 +40,6 @@ public class GiocatoreService {
     private final SquadraRepository              squadraRepo;
     private final UtenteRepository               utenteRepo;
 
-    // ── PROFILO "ME" ─────────────────────────────────────────────────────────
-    // Usato dalla dashboard giocatore per popolare la card in alto (profile-hero)
-    // con i dati reali del giocatore autenticato, senza esporre un lookup per id
-    // arbitrario: il giocatore viene sempre risolto dal token, mai passato dal client.
     @Transactional(readOnly = true)
     public GiocatoreDto findMyProfile(String username) {
         Integer uid = utenteRepo.findByUsername(username)
@@ -64,9 +60,6 @@ public class GiocatoreService {
         return toDto(get(id));
     }
 
-    // ── LETTURA STATISTICHE ─────────────────────────────────────────────────
-    // Aggrega statistica_giocatore (comune) + statistica_movimento OPPURE
-    // statistica_portiere, a seconda del ruolo del giocatore.
     @Transactional(readOnly = true)
     public StatisticheDto getStatistiche(Integer giocatoreId) {
         Giocatore g = get(giocatoreId);
@@ -127,33 +120,35 @@ public class GiocatoreService {
         return b.build();
     }
 
-    // ── AGGIORNAMENTO STATISTICHE ───────────────────────────────────────────
-    // Aggiorna la riga comune e, in base al ruolo, la riga movimento o portiere.
-    // I campi non pertinenti al ruolo nella request vengono semplicemente ignorati.
     public StatisticheDto aggiornaStatistiche(Integer giocatoreId, AggiornaStatisticheRequest r) {
         Giocatore g = get(giocatoreId);
 
+        // Se la riga comune non esiste, la crea al volo invece di mandare in crash il server (500)
         StatisticaGiocatore comune = statGiocatoreRepo.findByGiocatore_Id(giocatoreId)
-                .orElseThrow(() -> new ResourceNotFoundException("Statistiche", Long.valueOf(giocatoreId)));
+                .orElseGet(() -> {
+                    StatisticaGiocatore nuova = new StatisticaGiocatore();
+                    nuova.setGiocatore(g);
+                    return statGiocatoreRepo.save(nuova);
+                });
 
-        if (r.getPresenze()             != null) comune.setPresenze(r.getPresenze());
-        if (r.getPresenzeTitolare()     != null) comune.setPresenzeTitolare(r.getPresenzeTitolare());
-        if (r.getMinutiGiocati()        != null) comune.setMinutiGiocati(r.getMinutiGiocati());
-        if (r.getAssist()               != null) comune.setAssist(r.getAssist());
-        if (r.getPassaggiTentati()      != null) comune.setPassaggiTentati(r.getPassaggiTentati());
-        if (r.getPassaggiRiusciti()     != null) comune.setPassaggiRiusciti(r.getPassaggiRiusciti());
-        if (r.getPassaggiChiave()       != null) comune.setPassaggiChiave(r.getPassaggiChiave());
-        if (r.getDribblingTentati()     != null) comune.setDribblingTentati(r.getDribblingTentati());
-        if (r.getDribblingRiusciti()    != null) comune.setDribblingRiusciti(r.getDribblingRiusciti());
-        if (r.getDuelliVinti()          != null) comune.setDuelliVinti(r.getDuelliVinti());
-        if (r.getDuelliPersi()          != null) comune.setDuelliPersi(r.getDuelliPersi());
-        if (r.getDuelliAereiVinti()     != null) comune.setDuelliAereiVinti(r.getDuelliAereiVinti());
-        if (r.getDuelliAereiPersi()     != null) comune.setDuelliAereiPersi(r.getDuelliAereiPersi());
-        if (r.getPalloniIntercettati()  != null) comune.setPalloniIntercettati(r.getPalloniIntercettati());
-        if (r.getFalliCommessi()        != null) comune.setFalliCommessi(r.getFalliCommessi());
-        if (r.getFalliSubiti()          != null) comune.setFalliSubiti(r.getFalliSubiti());
-        if (r.getAmmonizioni()          != null) comune.setAmmonizioni(r.getAmmonizioni());
-        if (r.getEspulsioni()           != null) comune.setEspulsioni(r.getEspulsioni());
+        if (r.getPresenze()            != null) comune.setPresenze(r.getPresenze());
+        if (r.getPresenzeTitolare()    != null) comune.setPresenzeTitolare(r.getPresenzeTitolare());
+        if (r.getMinutiGiocati()       != null) comune.setMinutiGiocati(r.getMinutiGiocati());
+        if (r.getAssist()              != null) comune.setAssist(r.getAssist());
+        if (r.getPassaggiTentati()     != null) comune.setPassaggiTentati(r.getPassaggiTentati());
+        if (r.getPassaggiRiusciti()    != null) comune.setPassaggiRiusciti(r.getPassaggiRiusciti());
+        if (r.getPassaggiChiave()      != null) comune.setPassaggiChiave(r.getPassaggiChiave());
+        if (r.getDribblingTentati()    != null) comune.setDribblingTentati(r.getDribblingTentati());
+        if (r.getDribblingRiusciti()   != null) comune.setDribblingRiusciti(r.getDribblingRiusciti());
+        if (r.getDuelliVinti()         != null) comune.setDuelliVinti(r.getDuelliVinti());
+        if (r.getDuelliPersi()         != null) comune.setDuelliPersi(r.getDuelliPersi());
+        if (r.getDuelliAereiVinti()    != null) comune.setDuelliAereiVinti(r.getDuelliAereiVinti());
+        if (r.getDuelliAereiPersi()    != null) comune.setDuelliAereiPersi(r.getDuelliAereiPersi());
+        if (r.getPalloniIntercettati() != null) comune.setPalloniIntercettati(r.getPalloniIntercettati());
+        if (r.getFalliCommessi()       != null) comune.setFalliCommessi(r.getFalliCommessi());
+        if (r.getFalliSubiti()         != null) comune.setFalliSubiti(r.getFalliSubiti());
+        if (r.getAmmonizioni()         != null) comune.setAmmonizioni(r.getAmmonizioni());
+        if (r.getEspulsioni()          != null) comune.setEspulsioni(r.getEspulsioni());
         statGiocatoreRepo.save(comune);
 
         if (g.isPortiere()) {
@@ -168,18 +163,18 @@ public class GiocatoreService {
         } else {
             StatisticaMovimento m = statMovimentoRepo.findByGiocatore_Id(giocatoreId)
                     .orElseGet(() -> creaStatisticaMovimentoVuota(g));
-            if (r.getGoalRigore()        != null) m.setGoalRigore(r.getGoalRigore());
-            if (r.getGoalTesta()         != null) m.setGoalTesta(r.getGoalTesta());
-            if (r.getGoalPunizione()     != null) m.setGoalPunizione(r.getGoalPunizione());
-            if (r.getTiriTotali()        != null) m.setTiriTotali(r.getTiriTotali());
-            if (r.getTiriInPorta()       != null) m.setTiriInPorta(r.getTiriInPorta());
-            if (r.getPaliTraverse()      != null) m.setPaliTraverse(r.getPaliTraverse());
-            if (r.getBigChanceMancate()  != null) m.setBigChanceMancate(r.getBigChanceMancate());
-            if (r.getBigChanceCreate()   != null) m.setBigChanceCreate(r.getBigChanceCreate());
-            if (r.getCrossTentati()      != null) m.setCrossTentati(r.getCrossTentati());
-            if (r.getCrossRiusciti()     != null) m.setCrossRiusciti(r.getCrossRiusciti());
-            if (r.getTackle()            != null) m.setTackle(r.getTackle());
-            if (r.getPalloniRubati()     != null) m.setPalloniRubati(r.getPalloniRubati());
+            if (r.getGoalRigore()       != null) m.setGoalRigore(r.getGoalRigore());
+            if (r.getGoalTesta()        != null) m.setGoalTesta(r.getGoalTesta());
+            if (r.getGoalPunizione()    != null) m.setGoalPunizione(r.getGoalPunizione());
+            if (r.getTiriTotali()       != null) m.setTiriTotali(r.getTiriTotali());
+            if (r.getTiriInPorta()      != null) m.setTiriInPorta(r.getTiriInPorta());
+            if (r.getPaliTraverse()     != null) m.setPaliTraverse(r.getPaliTraverse());
+            if (r.getBigChanceMancate() != null) m.setBigChanceMancate(r.getBigChanceMancate());
+            if (r.getBigChanceCreate()  != null) m.setBigChanceCreate(r.getBigChanceCreate());
+            if (r.getCrossTentati()     != null) m.setCrossTentati(r.getCrossTentati());
+            if (r.getCrossRiusciti()    != null) m.setCrossRiusciti(r.getCrossRiusciti());
+            if (r.getTackle()           != null) m.setTackle(r.getTackle());
+            if (r.getPalloniRubati()    != null) m.setPalloniRubati(r.getPalloniRubati());
             statMovimentoRepo.save(m);
         }
 
@@ -191,10 +186,6 @@ public class GiocatoreService {
         return giocatoreRepo.topMarcatori(squadraId).stream().map(this::toDto).toList();
     }
 
-    // ── STATISTICHE COLLETTIVE SQUADRA ──────────────────────────────────────
-    // Gol/assist/duelli/passaggi vengono ora sommati leggendo entrambe le
-    // tabelle: statistica_giocatore (comune, per tutti) e statistica_movimento
-    // (gol, solo giocatori di movimento — i portieri non ne hanno).
     @Transactional(readOnly = true)
     public SquadraStatsResponse getStatisticheCollettiveSquadra() {
         List<StatisticaGiocatore> comuni    = statGiocatoreRepo.findAll();
@@ -257,8 +248,7 @@ public class GiocatoreService {
                 .build();
     }
 
-    // ── LISTA COMPLETA GIOCATORI PER RADAR/CONFRONTI ────────────────────────
-    // Per i portieri: gol=0, tiri=0, e vengono valorizzati parate/cleanSheet.
+    // ── LISTA COMPLETA GIOCATORI CON SETTER SICURI ──────────────────────────
     @Transactional(readOnly = true)
     public List<GiocatoreCompletoStatsDto> getStatisticheTuttiGiocatori() {
         List<Giocatore> giocatori = giocatoreRepo.findAll();
@@ -268,41 +258,67 @@ public class GiocatoreService {
             StatisticaGiocatore s = statGiocatoreRepo.findByGiocatore_Id(g.getId())
                     .orElse(new StatisticaGiocatore());
 
-            int pctPassaggi  = s.getPassaggiTentati() > 0 ? (s.getPassaggiRiusciti() * 100) / s.getPassaggiTentati() : 0;
-            int pctDribbling = s.getDribblingTentati() > 0 ? (s.getDribblingRiusciti() * 100) / s.getDribblingTentati() : 0;
-
-            int totaliDuelli = s.getDuelliVinti() + s.getDuelliPersi();
-            int pctDuelli = totaliDuelli > 0 ? (s.getDuelliVinti() * 100) / totaliDuelli : 0;
-
             boolean portiere = g.isPortiere();
-            int gol = 0, tiri = 0, parate = 0, cleanSheet = 0;
+
+            GiocatoreCompletoStatsDto dto = new GiocatoreCompletoStatsDto();
+            dto.setId(g.getId());
+            dto.setNome(getMinuscoloNomeCognomeFormattato(g.getNome(), g.getCognome()));
+            dto.setPortiere(portiere);
+
+            // Proprietà Comuni
+            dto.setPresenze(s.getPresenze());
+            dto.setPresenzeTitolare(s.getPresenzeTitolare());
+            dto.setMinutiGiocati(s.getMinutiGiocati());
+            dto.setAmmonizioni(s.getAmmonizioni());
+            dto.setEspulsioni(s.getEspulsioni());
+            dto.setFalliCommessi(s.getFalliCommessi());
+            dto.setFalliSubiti(s.getFalliSubiti());
+            dto.setAssist(s.getAssist());
+            dto.setDuelliAereiVinti(s.getDuelliAereiVinti());
+            dto.setDuelliAereiPersi(s.getDuelliAereiPersi());
+            dto.setDuelliVinti(s.getDuelliVinti());
+            dto.setDuelliPersi(s.getDuelliPersi());
+            dto.setPassaggiTentati(s.getPassaggiTentati());
+            dto.setPassaggiRiusciti(s.getPassaggiRiusciti());
+            dto.setPassaggiChiave(s.getPassaggiChiave());
+            dto.setDribblingTentati(s.getDribblingTentati());
+            dto.setDribblingRiusciti(s.getDribblingRiusciti());
+            dto.setPalloniIntercettati(s.getPalloniIntercettati());
+
+            // Alias di compatibilità
+            dto.setPres(s.getPresenze());
+            dto.setAss(s.getAssist());
+            dto.setInterc(s.getPalloniIntercettati());
+            dto.setAmm(s.getAmmonizioni());
+            dto.setEsp(s.getEspulsioni());
 
             if (portiere) {
                 StatisticaPortiere p = statPortiereRepo.findByGiocatore_Id(g.getId()).orElse(new StatisticaPortiere());
-                parate     = p.getParate();
-                cleanSheet = p.getCleanSheet();
+                dto.setParate(p.getParate());
+                dto.setCleanSheet(p.getCleanSheet());
+                dto.setGoalSubiti(p.getGoalSubiti());
+                dto.setRigoriParati(p.getRigoriParati());
+                dto.setRigoriSubiti(p.getRigoriSubiti());
+                dto.setGol(0);
+                dto.setTiri(0);
             } else {
                 StatisticaMovimento m = statMovimentoRepo.findByGiocatore_Id(g.getId()).orElse(new StatisticaMovimento());
-                gol  = m.getGolTotali();
-                tiri = m.getTiriTotali();
+                dto.setGoalRigore(m.getGoalRigore());
+                dto.setGoalTesta(m.getGoalTesta());
+                dto.setGoalPunizione(m.getGoalPunizione());
+                dto.setGolTotali(m.getGolTotali());
+                dto.setTiriTotali(m.getTiriTotali());
+                dto.setTiriInPorta(m.getTiriInPorta());
+                dto.setPaliTraverse(m.getPaliTraverse());
+                dto.setBigChanceMancate(m.getBigChanceMancate());
+                dto.setBigChanceCreate(m.getBigChanceCreate());
+                dto.setCrossTentati(m.getCrossTentati());
+                dto.setCrossRiusciti(m.getCrossRiusciti());
+                dto.setTackle(m.getTackle());
+                dto.setPalloniRubati(m.getPalloniRubati());
+                dto.setGol(m.getGolTotali());
+                dto.setTiri(m.getTiriTotali());
             }
-
-            GiocatoreCompletoStatsDto dto = GiocatoreCompletoStatsDto.builder()
-                    .nome(getMinuscoloNomeCognomeFormattato(g.getNome(), g.getCognome()))
-                    .portiere(portiere)
-                    .pres(s.getPresenze())
-                    .gol(gol)
-                    .ass(s.getAssist())
-                    .tiri(tiri)
-                    .pass(pctPassaggi)
-                    .drib(pctDribbling)
-                    .duelli(pctDuelli)
-                    .intercetti(s.getPalloniIntercettati())
-                    .amm(s.getAmmonizioni())
-                    .esp(s.getEspulsioni())
-                    .parate(parate)
-                    .cleanSheet(cleanSheet)
-                    .build();
 
             risultato.add(dto);
         }
@@ -330,7 +346,7 @@ public class GiocatoreService {
                 .puntiSettimanali(g.getPunti_settimanali())
                 .puntiTotali(g.getPunti_totali())
                 .squadraId(g.getSquadra() != null ? g.getSquadra().getId() : null)
-                .utenteId(g.getUtente()   != null ? g.getUtente().getId()  : null)
+                .utenteId(g.getUtente()   != null ? g.getUtente().getId()   : null)
                 .build();
     }
 
@@ -339,9 +355,6 @@ public class GiocatoreService {
         return nome.substring(0, 1).toUpperCase() + ". " + cognome;
     }
 
-    // ── CREAZIONE GIOCATORE ──────────────────────────────────────────────────
-    // Crea sempre la riga comune (statistica_giocatore) e, in base alla
-    // posizione indicata nella request, la riga movimento OPPURE portiere.
     @Transactional
     public GiocatoreDto creaGiocatore(CreaGiocatoreRequest req) {
         var squadra = squadraRepo.findById(req.getSquadraId())
@@ -363,12 +376,10 @@ public class GiocatoreService {
 
         Giocatore salvato = giocatoreRepo.save(g);
 
-        // Riga comune, sempre creata
         StatisticaGiocatore comune = new StatisticaGiocatore();
         comune.setGiocatore(salvato);
         statGiocatoreRepo.save(comune);
 
-        // Riga specifica in base al ruolo
         if (salvato.isPortiere()) {
             creaStatisticaPortiereVuota(salvato);
         } else {
@@ -378,12 +389,6 @@ public class GiocatoreService {
         return toDto(salvato);
     }
 
-    // ── AGGIORNAMENTO GIOCATORE ─────────────────────────────────────────────
-    // Aggiorna i dati anagrafici (nome, cognome, numero, posizione, piede...).
-    // Se la posizione cambia categoria (portiere ↔ movimento), crea la riga
-    // statistica_movimento/statistica_portiere mancante per la nuova
-    // categoria — senza toccare quella vecchia, che semplicemente non viene
-    // più letta da getStatistiche() una volta cambiata isPortiere().
     @Transactional
     public GiocatoreDto aggiornaGiocatore(Integer id, CreaGiocatoreRequest req) {
         Giocatore g = get(id);
@@ -407,7 +412,6 @@ public class GiocatoreService {
 
         Giocatore salvato = giocatoreRepo.save(g);
 
-        // Assicura che esista la riga di dettaglio giusta per la posizione attuale
         if (salvato.isPortiere()) {
             if (statPortiereRepo.findByGiocatore_Id(salvato.getId()).isEmpty())
                 creaStatisticaPortiereVuota(salvato);
@@ -418,8 +422,7 @@ public class GiocatoreService {
 
         return toDto(salvato);
     }
-    // Usati sia in creazione sia come fallback lazy (es. giocatore importato
-    // via SQL senza le righe di dettaglio, o creato prima di questa modifica).
+
     private StatisticaMovimento creaStatisticaMovimentoVuota(Giocatore g) {
         StatisticaMovimento m = new StatisticaMovimento();
         m.setGiocatore(g);
@@ -432,13 +435,7 @@ public class GiocatoreService {
         return statPortiereRepo.save(p);
     }
 
-    // ── NUOVO METODO: RESET SETTIMANALE ──────────────────────────────────────
-    /**
-     * Eseguito automaticamente ogni lunedì alle 00:00.
-     * La sintassi cron è: SECONDO MINUTO ORA GIORNO MESE GIORNO_SETTIMANA
-     * Usa la query appena creata nel repository per azzerare i punti in un colpo solo.
-     */
-    @Scheduled(cron = "0 0 0 * * MON") // Esegue ogni lunedì alle 00:00
+    @Scheduled(cron = "0 0 0 * * MON")
     public void eseguiResetSettimanale() {
         giocatoreRepo.azzeraPuntiSettimanaliTutti();
         System.out.println("Reset settimanale completato: i punti_settimanali dei giocatori sono stati azzerati.");
