@@ -52,6 +52,12 @@ let cacheSquadre = [];
 let cacheBadge   = [];
 
 document.addEventListener('DOMContentLoaded', () => {
+    const savedTab = localStorage.getItem('adminTab');
+    if (savedTab) {
+        switchTab(savedTab);
+        localStorage.removeItem('adminTab'); // Svuota la memoria dopo aver cambiato scheda
+    }
+    
     if (typeof verificaAutenticazione === 'function') verificaAutenticazione();
     popolaSidebarStaff();
     caricaKpi();
