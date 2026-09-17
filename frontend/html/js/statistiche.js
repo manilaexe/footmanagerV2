@@ -6,6 +6,7 @@ const token = localStorage.getItem('token');
 
 let PLAYERS = [];         
 let MATCHES = [];         
+let CURRENT_KPI = {};     
 let ruoloUtente = '';     
 let mioNomeStat = '';     
 
@@ -58,7 +59,8 @@ async function caricaDatiSquadra() {
       
     const data = await response.json();
       
-    popolaKpiSquadra(data.kpi);
+    CURRENT_KPI = data.kpi || {};
+    popolaKpiSquadra(CURRENT_KPI);
     drawLineChart(data.andamentoGolFatti, data.andamentoGolSubiti);
     MATCHES = data.ultimiMatch || [];
     renderForma();
@@ -162,10 +164,7 @@ async function caricaDatiGiocatori() {
       buildSelector();    
       renderConfronto();  
       renderTopScorers(); 
-            
-      if(MATCHES.length > 0) {
-        caricaDatiSquadra(); 
-      }
+      popolaKpiSquadra(CURRENT_KPI);
     } else {
       document.getElementById('player-selector').innerHTML = "<p>Nessun giocatore trovato.</p>";
     }
@@ -175,10 +174,10 @@ async function caricaDatiGiocatori() {
 }
 
 /* ==========================================================================
-   4. POPOLAMENTO ELEMENTI STATICI E KPI DI SQUADRA (CUMULATIVO PER SQUADRA_ID COERENTE)
+   4. POPOLAMENTO ELEMENTI STATICI E KPI DI SQUADRA
    ========================================================================== */
-function popolaKpiSquadra(kpi) {
-  if (!kpi) return;
+function popolaKpiSquadra(kpi = {}) {
+  CURRENT_KPI = kpi;
     
   const impostaTesto = (id, valore) => {
     const el = document.getElementById(id);
@@ -208,18 +207,6 @@ function popolaKpiSquadra(kpi) {
     }
   };
 
-  const partiteTotali = kpi.partiteGiocate ?? 0; 
-  const golFattiTotali = kpi.golFatti ?? 0;
-  const golSubitiTotali = kpi.golSubiti ?? 0;
-
-  impostaTesto('kpi-gol-fatti', golFattiTotali);
-  impostaTesto('kpi-gol-subiti', golSubitiTotali);
-  impostaTesto('kpi-partite', partiteTotali);
-  impostaTesto('kpi-vittorie', kpi.vittorie ?? 0);
-  impostaTesto('kpi-pareggi', kpi.pareggi ?? 0);
-  impostaTesto('kpi-sconfitte', kpi.sconfitte ?? 0);
-
-  // ── FILTRO / AGGREGAZIONE SULLA SQUADRA ATTIVA (tramite squadraId) ──
   const activeSquadraId = PLAYERS.length > 0 ? PLAYERS[0].squadraId : null;
   const teamPlayers = activeSquadraId !== undefined && activeSquadraId !== null 
     ? PLAYERS.filter(p => p.squadraId === activeSquadraId) 
@@ -228,65 +215,80 @@ function popolaKpiSquadra(kpi) {
   const movPlayers = teamPlayers.filter(p => !p.portiere);
   const gkPlayers  = teamPlayers.filter(p =>  p.portiere);
 
-  // ⚽ Rendimento Offensivo (Coerente: aggregato al 100% dalla rosa della squadra)
   const sumGolTeam = movPlayers.reduce((s, p) => s + (Number(p.golTotali || 0)), 0);
   const sumTiriTeam = movPlayers.reduce((s, p) => s + (Number(p.tiriTotali || 0)), 0);
   const sumBigChanceTeam = movPlayers.reduce((s, p) => s + (Number(p.bigChanceCreate || 0)), 0);
   const sumAssistTeam = teamPlayers.reduce((s, p) => s + (Number(p.assist || 0)), 0);
-
-  const convRatio = sumTiriTeam > 0 ? (sumGolTeam / sumTiriTeam) * 100 : 0;
-
-  aggiornaBarra('txt-off-gol', 'bar-off-gol', sumGolTeam, 50);          // Max scala stimato: 50 gol
-  aggiornaBarra('txt-off-tiri', 'bar-off-tiri', sumTiriTeam, 300);       // Max scala stimato: 300 tiri
-  aggiornaBarra('txt-off-conversione', 'bar-off-conversione', convRatio, 100, true); 
-  aggiornaBarra('txt-off-chance', 'bar-off-chance', sumBigChanceTeam, 60);
-  aggiornaBarra('txt-off-assist', 'bar-off-assist', sumAssistTeam, 40);
-
-  // 🛡 Rendimento Difensivo (Coerente: portieri + movimenti aggregati per squadra)
+  
   const sumGolSubitiGK = gkPlayers.reduce((s, p) => s + (Number(p.goalSubiti || 0)), 0);
   const sumCleanSheetGK = gkPlayers.reduce((s, p) => s + (Number(p.cleanSheet || 0)), 0);
   const sumTackleRubati = movPlayers.reduce((s, p) => s + (Number(p.tackle || 0) + Number(p.palloniRubati || 0)), 0);
   const sumIntercetti = teamPlayers.reduce((s, p) => s + (Number(p.palloniIntercettati || 0)), 0);
   const sumFalliCommessi = teamPlayers.reduce((s, p) => s + (Number(p.falliCommessi || 0)), 0);
 
-  aggiornaBarra('txt-def-gol', 'bar-def-gol', sumGolSubitiGK, 40);
-  aggiornaBarra('txt-def-clean', 'bar-def-clean', sumCleanSheetGK, Math.max(10, partiteTotali)); 
+  const effGolFatti = Math.max(kpi.golFatti ?? 0, sumGolTeam);
+  const effGolSubiti = Math.max(kpi.golSubiti ?? 0, sumGolSubitiGK);
+
+  const hasMatches = Array.isArray(MATCHES) && MATCHES.length > 0;
+  const calcVittorie  = hasMatches ? MATCHES.filter(m => m.esito === 'w').length : (kpi.vittorie ?? 0);
+  const calcPareggi   = hasMatches ? MATCHES.filter(m => m.esito === 'd').length : (kpi.pareggi ?? 0);
+  const calcSconfitte = hasMatches ? MATCHES.filter(m => m.esito === 'l').length : (kpi.sconfitte ?? 0);
+  const calcPartite   = hasMatches ? MATCHES.length : (kpi.partiteGiocate ?? (calcVittorie + calcPareggi + calcSconfitte));
+
+  impostaTesto('kpi-gol-fatti', effGolFatti);
+  impostaTesto('kpi-gol-subiti', effGolSubiti);
+  impostaTesto('kpi-partite', calcPartite);
+  impostaTesto('kpi-vittorie', calcVittorie);
+  impostaTesto('kpi-pareggi', calcPareggi);
+  impostaTesto('kpi-sconfitte', calcSconfitte);
+
+  const convRatio = sumTiriTeam > 0 ? (sumGolTeam / sumTiriTeam) * 100 : 0;
+  aggiornaBarra('txt-off-gol', 'bar-off-gol', sumGolTeam, 50);          
+  aggiornaBarra('txt-off-tiri', 'bar-off-tiri', sumTiriTeam, 300);       
+  aggiornaBarra('txt-off-conversione', 'bar-off-conversione', convRatio, 100, true); 
+  aggiornaBarra('txt-off-chance', 'bar-off-chance', sumBigChanceTeam, 60);
+  aggiornaBarra('txt-off-assist', 'bar-off-assist', sumAssistTeam, 40);
+
+  aggiornaBarra('txt-def-gol', 'bar-def-gol', effGolSubiti, 40);
+  aggiornaBarra('txt-def-clean', 'bar-def-clean', sumCleanSheetGK, Math.max(10, calcPartite)); 
   aggiornaBarra('txt-def-tackle', 'bar-def-tackle', sumTackleRubati, 250);
   aggiornaBarra('txt-def-intercetti', 'bar-def-intercetti', sumIntercetti, 150);
   aggiornaBarra('txt-def-falli', 'bar-def-falli', sumFalliCommessi, 200);
 
-  // ── DONUT STATS DI SQUADRA ──
   const duelliVintiTot  = teamPlayers.reduce((s, p) => s + (Number(p.duelliVinti) || 0), 0);
-  const duelliTotali    = teamPlayers.reduce((s, p) => s + (Number(p.duelliVinti || 0) + Number(p.duelliPersi || 0)), 0);
-  const pctDuelliVinti  = duelliTotali > 0 ? (duelliVintiTot / duelliTotali) * 100 : (kpi.pctDuelliVinti ?? 50);
-  const pctDuelliPersi  = Math.max(0, 100 - pctDuelliVinti);
+  const duelliPersiTot  = teamPlayers.reduce((s, p) => s + (Number(p.duelliPersi) || 0), 0);
+  const duelliTot       = duelliVintiTot + duelliPersiTot;
+  const pctDuelliVinti  = duelliTot > 0 ? (duelliVintiTot / duelliTot) * 100 : (kpi.pctDuelliVinti ?? 50);
+  const pctDuelliPersi  = duelliTot > 0 ? (duelliPersiTot / duelliTot) * 100 : (kpi.pctDuelliPersi ?? 50);
 
   aggiornaDonut('kpi-duelli-vinti', 'circle-duelli-vinti', pctDuelliVinti);
   aggiornaDonut('kpi-duelli-persi', 'circle-duelli-persi', pctDuelliPersi);
 
   const passVintiTot = teamPlayers.reduce((s, p) => s + (Number(p.passaggiRiusciti) || 0), 0);
-  const passTotali = teamPlayers.reduce((s, p) => s + (Number(p.passaggiTentati) || 0), 0);
-  const pctPassaggi = passTotali > 0 ? (passVintiTot / passTotali) * 100 : (kpi.precisionePassaggi ?? 50);
+  const passTotali   = teamPlayers.reduce((s, p) => s + (Number(p.passaggiTentati) || 0), 0);
+  const pctPassaggi  = passTotali > 0 ? (passVintiTot / passTotali) * 100 : (kpi.precisionePassaggi ?? 50);
 
   aggiornaDonut('kpi-precisione', 'circle-precisione', pctPassaggi);
 
-  const dribVintiTot = teamPlayers.reduce((s, p) => s + (Number(p.dribblingRiusciti) || 0), 0);
-  const dribTotali = teamPlayers.reduce((s, p) => s + (Number(p.dribblingTentati) || 0), 0);
-  const pctDribVinti = dribTotali > 0 ? (dribVintiTot / dribTotali) * 100 : 50;
-  const pctDribPersi = Math.max(0, 100 - pctDribVinti);
+  const dribVintiTot  = teamPlayers.reduce((s, p) => s + (Number(p.dribblingRiusciti) || 0), 0);
+  const dribTentati   = teamPlayers.reduce((s, p) => s + (Number(p.dribblingTentati) || 0), 0);
+  const dribFalliti   = Math.max(0, dribTentati - dribVintiTot);
+  const pctDribVinti  = dribTentati > 0 ? (dribVintiTot / dribTentati) * 100 : 50;
+  const pctDribFalliti= dribTentati > 0 ? (dribFalliti / dribTentati) * 100 : 50;
 
   aggiornaDonut('kpi-drib-vinti', 'circle-drib-vinti', pctDribVinti);
-  aggiornaDonut('kpi-drib-persi', 'circle-drib-persi', pctDribPersi);
+  aggiornaDonut('kpi-drib-persi', 'circle-drib-persi', pctDribFalliti);
 
   const pctPossesso = kpi.possessoMedio ?? 50;
   aggiornaDonut('kpi-possesso', 'circle-possesso', pctPossesso);
 }
 
 /* ==========================================================================
-   5. ADATTAMENTO DELL'INTERFACCIA E UTILITIES
+   5. ADATTAMENTO INTERFACCIA E UTILITIES
    ========================================================================== */
 function aggiornaInterfacciaCaricamento() {
-    document.getElementById('player-selector').innerHTML = "Caricamento giocatori...";
+    const el = document.getElementById('player-selector');
+    if (el) el.innerHTML = "Caricamento giocatori...";
 }
 
 function nascondiSezioniSquadra() {
@@ -322,7 +324,7 @@ function switchTab(name){
 }
 
 /* ==========================================================================
-   6. GRAFICO A LINEE SVG (LINE CHART DINAMICO)
+   6. GRAFICO A LINEE SVG
    ========================================================================== */
 function drawLineChart(gf = [], gs = []){
   if (gf.length === 0) gf = [0];
@@ -352,7 +354,7 @@ function drawLineChart(gf = [], gs = []){
 }
 
 /* ==========================================================================
-   7. GRAFICO RADAR (SPIDER CHART / STELLA)
+   7. GRAFICO RADAR (SPIDER CHART)
    ========================================================================== */
 const RADAR_CATS=['Gol','Assist','Passaggi','Dribbling','Duelli','Intercetti'];
 
@@ -413,11 +415,12 @@ function drawRadar(idx){
   pts.forEach(([x, y]) => { html += `<circle cx="${x}" cy="${y}" r="4" fill="${color}"/>`; });
   
   svg.innerHTML = html;
-  document.getElementById('radar-name').textContent = `${p.nome} ${isGK ? '(POR)' : ''}`;
+  const nameEl = document.getElementById('radar-name');
+  if (nameEl) nameEl.textContent = `${p.nome} ${isGK ? '(POR)' : ''}`;
 }
 
 /* ==========================================================================
-   8. STATISTICHE DETTAGLIATE CON PULSANTE DI MODIFICA (ALLENATORE/STAFF)
+   8. STATISTICHE DETTAGLIATE & MODIFICA
    ========================================================================== */
 function renderIndivBars(idx){
   const p = PLAYERS[idx]; 
@@ -440,10 +443,20 @@ function renderIndivBars(idx){
     { l: 'Duelli Vinti', v: p.duelliVinti, max: 50, c: 'fill-amber' },
     { l: 'Duelli Persi', v: p.duelliPersi, max: 50, c: 'fill-amber' },
     { l: 'Passaggi Tentati', v: p.passaggiTentati, max: 1500, c: 'fill-blue' },
-    { l: 'Passaggi Riusciti', v: p.passaggiRiusciti, max: 1500, c: 'fill-blue' },
+    { 
+      l: 'Passaggi Riusciti', 
+      v: p.passaggiRiusciti, 
+      max: p.passaggiTentati > 0 ? p.passaggiTentati : 1500, 
+      c: 'fill-blue' 
+    },
     { l: 'Passaggi Chiave', v: p.passaggiChiave, max: 30, c: 'fill-blue' },
     { l: 'Dribbling Tentati', v: p.dribblingTentati, max: 50, c: 'fill-green' },
-    { l: 'Dribbling Riusciti', v: p.dribblingRiusciti, max: 50, c: 'fill-green' },
+    { 
+      l: 'Dribbling Riusciti', 
+      v: p.dribblingRiusciti, 
+      max: p.dribblingTentati > 0 ? p.dribblingTentati : 50, 
+      c: 'fill-green' 
+    },
     { l: 'Palloni Intercettati', v: p.palloniIntercettati, max: 50, c: 'fill-green' }
   ];
 
@@ -467,27 +480,35 @@ function renderIndivBars(idx){
       { l: 'Big Chance Mancate', v: p.bigChanceMancate, max: 20, c: 'fill-amber' },
       { l: 'Big Chance Create', v: p.bigChanceCreate, max: 25, c: 'fill-blue' },
       { l: 'Cross Tentati', v: p.crossTentati, max: 100, c: 'fill-blue' },
-      { l: 'Cross Riusciti', v: p.crossRiusciti, max: 100, c: 'fill-blue' },
+      { 
+        l: 'Cross Riusciti', 
+        v: p.crossRiusciti, 
+        max: p.crossTentati > 0 ? p.crossTentati : 100, 
+        c: 'fill-blue' 
+      },
       { l: 'Tackle', v: p.tackle, max: 50, c: 'fill-green' },
       { l: 'Palloni Rubati', v: p.palloniRubati, max: 50, c: 'fill-green' }
     ];
     items = [...commonItems, ...movSpecifics];
   }
 
-  let html = '';
-  if (ruoloUtente !== 'GIOCATORE') {
-    html += `
-      <div style="margin-bottom: 1.2rem; text-align: right;">
-        <button onclick="apriModalModifica(${idx})" style="background: #238636; color: white; border: none; padding: 0.55rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-          ✏️ Modifica Statistiche
+  const headerAction = document.getElementById('indiv-header-action');
+  if (headerAction) {
+    if (ruoloUtente !== 'GIOCATORE') {
+      headerAction.innerHTML = `
+        <button onclick="apriModalModifica(${idx})" style="background: #238636; color: white; border: none; padding: 0.3rem 0.75rem; border-radius: 5px; cursor: pointer; font-weight: 600; font-family: inherit; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">
+          ✏️ Modifica
         </button>
-      </div>
-    `;
+      `;
+    } else {
+      headerAction.innerHTML = '';
+    }
   }
 
-  html += items.map(it => {
+  const html = items.map(it => {
     const val = typeof it.v === 'number' ? it.v : 0;
-    const pct = Math.min((val / (it.max || 1) * 100), 100).toFixed(0);
+    const maxVal = (typeof it.max === 'number' && it.max > 0) ? it.max : 1;
+    const pct = Math.min((val / maxVal * 100), 100).toFixed(0);
 
     return `
       <div class="bc-row">
@@ -502,10 +523,10 @@ function renderIndivBars(idx){
     `;
   }).join('');
 
-  document.getElementById('indiv-bars').innerHTML = html;
+  const container = document.getElementById('indiv-bars');
+  if (container) container.innerHTML = html;
 }
 
-// ── MODALE E SALVATAGGIO STATISTICHE PER ALLENATORE/STAFF ───────────────────
 function apriModalModifica(idx) {
   const p = PLAYERS[idx];
   if (!p) return;
@@ -616,12 +637,12 @@ async function salvaStatistiche(playerId) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Risposta dal server:", errorText);
       throw new Error(`Errore del server (${response.status}): ${errorText}`);
     }
 
     alert('Statistiche aggiornate con successo!');
-    document.getElementById('edit-modal-overlay').remove();
+    const overlay = document.getElementById('edit-modal-overlay');
+    if (overlay) overlay.remove();
     
     await Promise.all([
       caricaDatiSquadra(),
@@ -634,17 +655,23 @@ async function salvaStatistiche(playerId) {
 }
 
 function renderTopScorers(){
-  const sorted = [...PLAYERS].filter(p => !p.portiere).sort((a,b) => (b.golTotali || 0) - (a.golTotali || 0)).slice(0,6);
-  if(sorted.length === 0) return;
+  const container = document.getElementById('top-scorers');
+  if (!container) return;
+
+  const sorted = [...PLAYERS].filter(p => !p.portiere).sort((a,b) => (b.golTotali || 0) - (a.golTotali || 0)).slice(0,4);
+  if(sorted.length === 0) {
+    container.innerHTML = "<p>Nessun marcatore.</p>";
+    return;
+  }
 
   const max = sorted[0].golTotali || 1;
-  const cols = ['#facc15','#94a3b8','#b45309','#4caf50','#60a5fa','#a78bfa'];
+  const cols = ['#facc15','#94a3b8','#b45309','#4caf50'];
 
-  document.getElementById('top-scorers').innerHTML = sorted.map((p,i)=>`
+  container.innerHTML = sorted.map((p,i)=>`
     <div class="hbar-row">
       <div class="hbar-name">${i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':''}${p.nome}</div>
       <div class="hbar-track">
-        <div class="hbar-fill" style="width:${(p.golTotali/max*100).toFixed(0)}%;background:${cols[i] || '#60a5fa'}20;border:1px solid ${cols[i] || '#60a5fa'}40">
+        <div class="hbar-fill" style="width:${Math.max((p.golTotali/max*100), 12).toFixed(0)}%;background:${cols[i] || '#60a5fa'}20;border:1px solid ${cols[i] || '#60a5fa'}40">
           <span style="color:${cols[i] || '#60a5fa'}">${p.golTotali} gol</span>
         </div>
       </div>
@@ -653,7 +680,7 @@ function renderTopScorers(){
 }
 
 /* ==========================================================================
-   9. SELETTORE DEL GIOCATORE (PLAYER SELECTOR)
+   9. SELETTORE DEL GIOCATORE
    ========================================================================== */
 let selPlayer=0;  
 function buildSelector(){
@@ -670,9 +697,12 @@ function buildSelector(){
     return;               
   }
 
-  document.getElementById('player-selector').innerHTML=PLAYERS.map((p,i)=>`
-    <button class="ps-btn ${i===0?'active':''}" onclick="selectPlayer(${i},this)">${p.nome}</button>
-  `).join('');
+  const selector = document.getElementById('player-selector');
+  if (selector) {
+    selector.innerHTML = PLAYERS.map((p,i)=>`
+      <button class="ps-btn ${i===0?'active':''}" onclick="selectPlayer(${i},this)">${p.nome}</button>
+    `).join('');
+  }
   
   popolaSelectConfronto();
   drawRadar(0); 
@@ -682,14 +712,14 @@ function buildSelector(){
 function selectPlayer(i,btn){
   selPlayer=i;  
   document.querySelectorAll('#player-selector .ps-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
 
   drawRadar(i); 
   renderIndivBars(i);
 }
 
 /* ==========================================================================
-   10. CONFRONTO DIRETTO TRA DUE GIOCATORI (TESTA A TESTA)
+   10. CONFRONTO DIRETTO TRA DUE GIOCATORI
    ========================================================================== */
 function popolaSelectConfronto() {
   const cmpA = document.getElementById('cmp-a');
@@ -715,10 +745,14 @@ const COMPARE_CATS=[
 function renderConfronto(){
   if(PLAYERS.length === 0) return;
 
-  const ia=+document.getElementById('cmp-a').value || 0;
-  const ib=+document.getElementById('cmp-b').value || 0;
+  const cmpAEl = document.getElementById('cmp-a');
+  const cmpBEl = document.getElementById('cmp-b');
+  if (!cmpAEl || !cmpBEl) return;
 
-  const pa=PLAYERS[ia],pb=PLAYERS[ib];
+  const ia = +cmpAEl.value || 0;
+  const ib = +cmpBEl.value || 0;
+
+  const pa = PLAYERS[ia], pb = PLAYERS[ib];
   if(!pa || !pb) return;
   
   const cats = (pa.portiere && pb.portiere) ? [
@@ -756,10 +790,12 @@ function renderConfronto(){
     </div>`;
   });
 
+  const getInitials = (n) => n.split(' ').map(w=>w[0]||'').join('');
+
   grid.innerHTML=`
     <div class="compare-col compare-left">
       <div style="text-align:center;margin-bottom:1rem">
-        <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#0e2a12,#1a3d20);border:3px solid rgba(76,175,80,.4);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;margin:0 auto 6px">${pa.nome.split(' ').map(w=>w[0]).join('')}</div>
+        <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#0e2a12,#1a3d20);border:3px solid rgba(76,175,80,.4);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;margin:0 auto 6px">${getInitials(pa.nome)}</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--green-l)">${pa.nome}</div>
       </div>
       ${leftH}
@@ -767,7 +803,7 @@ function renderConfronto(){
     <div class="compare-center">${centerH}</div>
     <div class="compare-col compare-right">
       <div style="text-align:center;margin-bottom:1rem">
-        <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#0a1a2e,#1a2d3d);border:3px solid rgba(96,165,250,.4);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;margin:0 auto 6px">${pb.nome.split(' ').map(w=>w[0]).join('')}</div>
+        <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#0a1a2e,#1a2d3d);border:3px solid rgba(96,165,250,.4);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;margin:0 auto 6px">${getInitials(pb.nome)}</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;color:#60a5fa">${pb.nome}</div>
       </div>
       ${rightH}
@@ -786,7 +822,7 @@ function renderForma(){
   
   if(!containerDots || !containerTable) return;
 
-  if(MATCHES.length === 0) {
+  if(!Array.isArray(MATCHES) || MATCHES.length === 0) {
       containerDots.innerHTML = "<p>Nessun match recente registrato.</p>";
       containerTable.innerHTML = "<tr><td colspan='6' style='text-align:center'>Nessun dato</td></tr>";
       return;
@@ -806,7 +842,7 @@ function renderForma(){
       <td><strong>${m.gf} – ${m.gs}</strong></td>
       <td style="color:var(--green-l)">${m.gf}</td>
       <td style="color:#f87171">${m.gs}</td>
-      <td><span class="pill ${pill[m.esito]}">${label[m.esito]}</span></td>
+      <td><span class="pill ${pill[m.esito] || ''}">${label[m.esito] || 'N/D'}</span></td>
     </tr>
   `).join('');
 }

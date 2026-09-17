@@ -134,34 +134,42 @@
       <!-- SCHEDA: STATISTICHE INDIVIDUALI -->
       <div class="tab-panel" id="tab-individuale">
         <div class="player-selector" id="player-selector"></div>
-        <div class="grid-2">
-          <!-- Grafico Radar delle abilità -->
-          <div class="card">
-            <div class="card-header"><h2>🕸 Profilo tecnico</h2><span id="radar-name" style="font-size:.85rem;color:var(--muted)"></span></div>
-            <div class="card-body radar-wrap">
-              <svg id="radar-svg" viewBox="-130 -130 260 260" width="280" height="280"></svg>
+        <div class="indiv-grid">
+          <!-- 1ª COLONNA: 2 righe impilate -->
+          <div class="indiv-col-left">
+            <!-- Riga 1: Grafico Radar delle abilità -->
+            <div class="card" id="card-radar">
+              <div class="card-header"><h2>🕸 Profilo tecnico</h2><span id="radar-name" style="font-size:.85rem;color:var(--muted)"></span></div>
+              <div class="card-body radar-wrap">
+                <svg id="radar-svg" viewBox="-130 -130 260 260" width="380" height="380"></svg>
+              </div>
+            </div>
+
+            <!-- Riga 2: Classifica dei migliori marcatori (Top 4) -->
+            <div class="card" id="card-classifica-marcatori">
+              <div class="card-header"><h2>🏅 Classifica marcatori</h2></div>
+              <div class="card-body">
+                <div class="hbar-chart" id="top-scorers"></div>
+              </div>
             </div>
           </div>
-          <!-- Dettaglio metriche giocatore selezionato -->
-          <div class="card">
-            <div class="card-header"><h2>📋 Statistiche dettagliate</h2></div>
+
+          <!-- 2ª COLONNA: Statistiche dettagliate -->
+          <div class="card" id="card-indiv-details">
+            <div class="card-header">
+              <h2>📋 Statistiche dettagliate</h2>
+              <div id="indiv-header-action"></div>
+            </div>
             <div class="card-body">
               <div class="bar-chart" id="indiv-bars"></div>
             </div>
-          </div>
-        </div>
-        <!-- Classifica dei migliori marcatori -->
-        <div class="card" id="card-classifica-marcatori">
-          <div class="card-header"><h2>🏅 Classifica marcatori</h2></div>
-          <div class="card-body">
-            <div class="hbar-chart" id="top-scorers"></div>
           </div>
         </div>
       </div>
 
       <!-- SCHEDA: CONFRONTO GIOCATORI -->
       <div class="tab-panel" id="tab-confronto">
-        <div class="card" style="margin-bottom:1.5rem">
+        <div class="card" style="margin-bottom:1.5rem; margin-top:1.5rem;">
           <div class="card-header">
             <h2>⚖️ Confronto giocatori</h2>
             <div style="display:flex;gap:8px">
@@ -210,7 +218,7 @@
       </div>
 
       <!-- Grafico temporale: Gol segnati e subiti per giornata -->
-      <div class="card" id="card-line-chart" style="margin-bottom:1.5rem">
+      <div class="card" id="card-line-chart" style="margin-bottom:1.5rem; margin-top: 1.5rem;">
         <div class="card-header"><h2>📈 Gol segnati per giornata</h2></div>
         <div class="card-body">
           <div class="line-chart-wrap">
