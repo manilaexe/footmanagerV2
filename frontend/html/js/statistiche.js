@@ -427,69 +427,80 @@ function renderIndivBars(idx){
   if(!p) return;
 
   const isGK = Boolean(p.portiere);
-  let items = [];
+  
+  // Helper dinamico basato sul massimo della squadra per quella metrica
+  const getSquadMax = (key, fallback) => {
+    if (!PLAYERS || PLAYERS.length === 0) return fallback;
+    const vals = PLAYERS.map(item => Number(item[key] || 0));
+    const maxVal = Math.max(...vals, 0);
+    return maxVal > 0 ? maxVal : fallback;
+  };
 
-  const commonItems = [
-    { l: 'Presenze', v: p.presenze, max: 38, c: 'fill-green' },
-    { l: 'Presenze Titolare', v: p.presenzeTitolare, max: 38, c: 'fill-green' },
-    { l: 'Minuti Giocati', v: p.minutiGiocati, max: 3420, c: 'fill-blue' },
-    { l: 'Ammonizioni', v: p.ammonizioni, max: 10, c: 'fill-amber' },
-    { l: 'Espulsioni', v: p.espulsioni, max: 5, c: 'fill-amber' },
-    { l: 'Falli Commessi', v: p.falliCommessi, max: 30, c: 'fill-amber' },
-    { l: 'Falli Subiti', v: p.falliSubiti, max: 30, c: 'fill-blue' },
-    { l: 'Assist', v: p.assist, max: 20, c: 'fill-blue' },
-    { l: 'Duelli Aerei Vinti', v: p.duelliAereiVinti, max: 30, c: 'fill-amber' },
-    { l: 'Duelli Aerei Persi', v: p.duelliAereiPersi, max: 30, c: 'fill-amber' },
-    { l: 'Duelli Vinti', v: p.duelliVinti, max: 50, c: 'fill-amber' },
-    { l: 'Duelli Persi', v: p.duelliPersi, max: 50, c: 'fill-amber' },
-    { l: 'Passaggi Tentati', v: p.passaggiTentati, max: 1500, c: 'fill-blue' },
-    { 
-      l: 'Passaggi Riusciti', 
-      v: p.passaggiRiusciti, 
-      max: p.passaggiTentati > 0 ? p.passaggiTentati : 1500, 
-      c: 'fill-blue' 
-    },
-    { l: 'Passaggi Chiave', v: p.passaggiChiave, max: 30, c: 'fill-blue' },
-    { l: 'Dribbling Tentati', v: p.dribblingTentati, max: 50, c: 'fill-green' },
-    { 
-      l: 'Dribbling Riusciti', 
-      v: p.dribblingRiusciti, 
-      max: p.dribblingTentati > 0 ? p.dribblingTentati : 50, 
-      c: 'fill-green' 
-    },
-    { l: 'Palloni Intercettati', v: p.palloniIntercettati, max: 50, c: 'fill-green' }
+  const buildItem = (label, val, key, fallbackMax, colorClass, ratioKey = null) => {
+    const v = Number(val || 0);
+    let pct = 0;
+    if (ratioKey) {
+      const baseVal = Number(p[ratioKey] || 0);
+      pct = baseVal > 0 ? (v / baseVal) * 100 : 0;
+    } else {
+      const maxVal = getSquadMax(key, fallbackMax);
+      pct = maxVal > 0 ? (v / maxVal) * 100 : 0;
+    }
+    return { 
+      label, 
+      val: v, 
+      pct: Math.min(Math.max(pct, 0), 100).toFixed(0), 
+      colorClass 
+    };
+  };
+
+  let items = [
+    buildItem('Presenze', p.presenze, 'presenze', 38, 'fill-green'),
+    buildItem('Presenze Titolare', p.presenzeTitolare, 'presenzeTitolare', 38, 'fill-green'),
+    buildItem('Minuti Giocati', p.minutiGiocati, 'minutiGiocati', 3420, 'fill-blue'),
+    buildItem('Ammonizioni', p.ammonizioni, 'ammonizioni', 10, 'fill-amber'),
+    buildItem('Espulsioni', p.espulsioni, 'espulsioni', 5, 'fill-amber'),
+    buildItem('Falli Commessi', p.falliCommessi, 'falliCommessi', 30, 'fill-amber'),
+    buildItem('Falli Subiti', p.falliSubiti, 'falliSubiti', 30, 'fill-blue'),
+    buildItem('Assist', p.assist, 'assist', 20, 'fill-blue'),
+    buildItem('Duelli Aerei Vinti', p.duelliAereiVinti, 'duelliAereiVinti', 30, 'fill-amber'),
+    buildItem('Duelli Aerei Persi', p.duelliAereiPersi, 'duelliAereiPersi', 30, 'fill-amber'),
+    buildItem('Duelli Vinti', p.duelliVinti, 'duelliVinti', 50, 'fill-amber'),
+    buildItem('Duelli Persi', p.duelliPersi, 'duelliPersi', 50, 'fill-amber'),
+    buildItem('Passaggi Tentati', p.passaggiTentati, 'passaggiTentati', 1500, 'fill-blue'),
+    buildItem('Passaggi Riusciti', p.passaggiRiusciti, 'passaggiRiusciti', 1500, 'fill-blue', 'passaggiTentati'),
+    buildItem('Passaggi Chiave', p.passaggiChiave, 'passaggiChiave', 30, 'fill-blue'),
+    buildItem('Dribbling Tentati', p.dribblingTentati, 'dribblingTentati', 50, 'fill-green'),
+    buildItem('Dribbling Riusciti', p.dribblingRiusciti, 'dribblingRiusciti', 50, 'fill-green', 'dribblingTentati'),
+    buildItem('Palloni Intercettati', p.palloniIntercettati, 'palloniIntercettati', 50, 'fill-green')
   ];
 
   if (isGK) {
     const gkSpecifics = [
-      { l: 'Parate', v: p.parate, max: 150, c: 'fill-blue' },
-      { l: 'Clean Sheet', v: p.cleanSheet, max: 25, c: 'fill-green' },
-      { l: 'Gol Subiti', v: p.goalSubiti, max: 60, c: 'fill-amber' },
-      { l: 'Rigori Parati', v: p.rigoriParati, max: 10, c: 'fill-green' },
-      { l: 'Rigori Subiti', v: p.rigoriSubiti, max: 15, c: 'fill-amber' }
+      buildItem('Parate', p.parate, 'parate', 150, 'fill-blue'),
+      buildItem('Clean Sheet', p.cleanSheet, 'cleanSheet', 25, 'fill-green'),
+      buildItem('Gol Subiti', p.goalSubiti, 'goalSubiti', 60, 'fill-amber'),
+      buildItem('Rigori Parati', p.rigoriParati, 'rigoriParati', 10, 'fill-green'),
+      buildItem('Rigori Subiti', p.rigoriSubiti, 'rigoriSubiti', 15, 'fill-amber')
     ];
-    items = [...commonItems, ...gkSpecifics];
+    items = [...items, ...gkSpecifics];
   } else {
     const movSpecifics = [
-      { l: 'Gol su Rigore', v: p.goalRigore, max: 10, c: 'fill-green' },
-      { l: 'Gol di Testa', v: p.goalTesta, max: 10, c: 'fill-green' },
-      { l: 'Gol su Punizione', v: p.goalPunizione, max: 10, c: 'fill-green' },
-      { l: 'Tiri Totali', v: p.tiriTotali, max: 100, c: 'fill-amber' },
-      { l: 'Tiri in Porta', v: p.tiriInPorta, max: 50, c: 'fill-amber' },
-      { l: 'Pali / Traverse', v: p.paliTraverse, max: 10, c: 'fill-amber' },
-      { l: 'Big Chance Mancate', v: p.bigChanceMancate, max: 20, c: 'fill-amber' },
-      { l: 'Big Chance Create', v: p.bigChanceCreate, max: 25, c: 'fill-blue' },
-      { l: 'Cross Tentati', v: p.crossTentati, max: 100, c: 'fill-blue' },
-      { 
-        l: 'Cross Riusciti', 
-        v: p.crossRiusciti, 
-        max: p.crossTentati > 0 ? p.crossTentati : 100, 
-        c: 'fill-blue' 
-      },
-      { l: 'Tackle', v: p.tackle, max: 50, c: 'fill-green' },
-      { l: 'Palloni Rubati', v: p.palloniRubati, max: 50, c: 'fill-green' }
+      buildItem('Gol su Rigore', p.goalRigore, 'goalRigore', 10, 'fill-green'),
+      buildItem('Gol di Testa', p.goalTesta, 'goalTesta', 10, 'fill-green'),
+      buildItem('Gol su Punizione', p.goalPunizione, 'goalPunizione', 10, 'fill-green'),
+      buildItem('Gol Totali', p.golTotali ?? p.gol, 'golTotali', 20, 'fill-green'),
+      buildItem('Tiri Totali', p.tiriTotali, 'tiriTotali', 100, 'fill-amber'),
+      buildItem('Tiri in Porta', p.tiriInPorta, 'tiriInPorta', 50, 'fill-amber'),
+      buildItem('Pali / Traverse', p.paliTraverse, 'paliTraverse', 10, 'fill-amber'),
+      buildItem('Big Chance Mancate', p.bigChanceMancate, 'bigChanceMancate', 20, 'fill-amber'),
+      buildItem('Big Chance Create', p.bigChanceCreate, 'bigChanceCreate', 25, 'fill-blue'),
+      buildItem('Cross Tentati', p.crossTentati, 'crossTentati', 100, 'fill-blue'),
+      buildItem('Cross Riusciti', p.crossRiusciti, 'crossRiusciti', 100, 'fill-blue', 'crossTentati'),
+      buildItem('Tackle', p.tackle, 'tackle', 50, 'fill-green'),
+      buildItem('Palloni Rubati', p.palloniRubati, 'palloniRubati', 50, 'fill-green')
     ];
-    items = [...commonItems, ...movSpecifics];
+    items = [...items, ...movSpecifics];
   }
 
   const headerAction = document.getElementById('indiv-header-action');
@@ -505,23 +516,17 @@ function renderIndivBars(idx){
     }
   }
 
-  const html = items.map(it => {
-    const val = typeof it.v === 'number' ? it.v : 0;
-    const maxVal = (typeof it.max === 'number' && it.max > 0) ? it.max : 1;
-    const pct = Math.min((val / maxVal * 100), 100).toFixed(0);
-
-    return `
-      <div class="bc-row">
-        <div class="bc-label">
-          <span class="name">${it.l}</span>
-          <span>${val}</span>
-        </div>
-        <div class="bc-track">
-          <div class="bc-fill ${it.c}" style="width:${pct}%"></div>
-        </div>
+  const html = items.map(it => `
+    <div class="bc-row">
+      <div class="bc-label">
+        <span class="name">${it.label}</span>
+        <span>${it.val}</span>
       </div>
-    `;
-  }).join('');
+      <div class="bc-track">
+        <div class="bc-fill ${it.colorClass}" style="width:${it.pct}%"></div>
+      </div>
+    </div>
+  `).join('');
 
   const container = document.getElementById('indiv-bars');
   if (container) container.innerHTML = html;
@@ -763,50 +768,51 @@ function renderConfronto(){
     {lbl:'Duelli Vinti',key:'duelliVinti',max:50},
   ] : COMPARE_CATS;
 
-  const grid=document.getElementById('compare-grid');
+  const grid = document.getElementById('compare-grid');
   if (!grid) return;
-
-  let leftH='',centerH='',rightH='';
-
-  cats.forEach(c=>{
-    const va=pa[c.key] || 0, vb=pb[c.key] || 0;                             
-    const pctA=Math.min(va/c.max*100,100),pctB=Math.min(vb/c.max*100,100);  
-
-    let colA = 'var(--text,#e6edf3)', colB = 'var(--text,#e6edf3)';
-
-    if (va > vb)      { colA = '#4caf50'; colB = '#f87171'; }
-    else if (vb > va) { colB = '#4caf50'; colA = '#f87171'; }
-
-    leftH+=`<div class="compare-row">
-      <div class="val" style="text-align:right;color:${colA};font-weight:700">${va}</div>
-      <div class="bar-wrap"><div class="bar-inner" style="width:${pctA}%;background:${colA}"></div></div>
-    </div>`;
-
-    centerH+=`<div class="cat-lbl">${c.lbl}</div>`;
-
-    rightH+=`<div class="compare-row">
-      <div class="val" style="text-align:left;color:${colB};font-weight:700">${vb}</div>
-      <div class="bar-wrap"><div class="bar-inner" style="width:${pctB}%;background:${colB}"></div></div>
-    </div>`;
-  });
 
   const getInitials = (n) => n.split(' ').map(w=>w[0]||'').join('');
 
-  grid.innerHTML=`
-    <div class="compare-col compare-left">
-      <div style="text-align:center;margin-bottom:1rem">
-        <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#0e2a12,#1a3d20);border:3px solid rgba(76,175,80,.4);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;margin:0 auto 6px">${getInitials(pa.nome)}</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--green-l)">${pa.nome}</div>
+  const rowsHtml = cats.map(c => {
+    const va = pa[c.key] || 0, vb = pb[c.key] || 0;                             
+    const pctA = Math.min((va / c.max) * 100, 100).toFixed(0);
+    const pctB = Math.min((vb / c.max) * 100, 100).toFixed(0);  
+
+    let colA = 'var(--text)', colB = 'var(--text)';
+    if (va > vb)      { colA = '#4caf50'; colB = '#f87171'; }
+    else if (vb > va) { colB = '#4caf50'; colA = '#f87171'; }
+
+    return `
+      <div class="compare-row-item">
+        <div class="cp-side-data cp-left">
+          <div class="bar-wrap"><div class="bar-inner" style="width:${pctA}%;background:${colA}"></div></div>
+          <span class="val" style="color:${colA}">${va}</span>
+        </div>
+        <div class="cp-center-label">${c.lbl}</div>
+        <div class="cp-side-data cp-right">
+          <div class="bar-wrap"><div class="bar-inner" style="width:${pctB}%;background:${colB}"></div></div>
+          <span class="val" style="color:${colB}">${vb}</span>
+        </div>
       </div>
-      ${leftH}
-    </div>
-    <div class="compare-center">${centerH}</div>
-    <div class="compare-col compare-right">
-      <div style="text-align:center;margin-bottom:1rem">
-        <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#0a1a2e,#1a2d3d);border:3px solid rgba(96,165,250,.4);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;margin:0 auto 6px">${getInitials(pb.nome)}</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;color:#60a5fa">${pb.nome}</div>
+    `;
+  }).join('');
+
+  grid.innerHTML = `
+    <div class="compare-container">
+      <div class="compare-players-header">
+        <div class="cp-player-info">
+          <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#0e2a12,#1a3d20);border:2px solid rgba(76,175,80,.4);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;color:var(--green-l)">${getInitials(pa.nome)}</div>
+          <strong style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;color:var(--green-l)">${pa.nome}</strong>
+        </div>
+        <div class="cp-vs">VS</div>
+        <div class="cp-player-info cp-right-info">
+          <strong style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;color:#60a5fa">${pb.nome}</strong>
+          <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#0a1a2e,#1a2d3d);border:2px solid rgba(96,165,250,.4);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;color:#60a5fa">${getInitials(pb.nome)}</div>
+        </div>
       </div>
-      ${rightH}
+      <div class="compare-rows-list">
+        ${rowsHtml}
+      </div>
     </div>
   `;
 }
