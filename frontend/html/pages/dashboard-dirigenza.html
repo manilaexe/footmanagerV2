@@ -6,123 +6,115 @@
   <title>FootManager – Dirigenza</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
-  <link href="/html/css/styledir.css" rel="stylesheet" />
-
+  <link href="/html/css/styleall.css" rel="stylesheet" />
 </head>
 <body>
 <div class="app">
+
+  <!-- ── SIDEBAR DIRIGENZA (Strict Read-Only Scope) ── -->
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="icon">⚽</div>
       <span>FootManager</span>
     </div>
-    <div class="nav-label">Panoramica</div>
-    <a class="nav-item active" href="#">🏠 Dashboard</a>
-    <a class="nav-item" href="#">⚽ Performance squadra</a>
-    <a class="nav-item" href="#">👥 Rosa</a>
-    <a class="nav-item" href="#">📅 Calendario</a>
-    <a class="nav-item" href="#">🏆 Classifica interna</a>
+
+    <nav class="nav-section">
+      <div class="nav-label">Panoramica</div>
+      <a class="nav-item active" href="dirigenza.html"><span class="ico">🏠</span>Dashboard</a>
+      <a class="nav-item" href="/html/rosa.html"><span class="ico">👥</span>Rosa</a>
+      <a class="nav-item" href="/html/calendario.html"><span class="ico">📅</span>Calendario</a>
+      <a class="nav-item" href="/html/statistiche.html"><span class="ico">📊</span> Statistiche</a>
+      <a class="nav-item" href="/html/classifica.html"><span class="ico">🏆</span>Classifica</a>
+      <a class="nav-item" href="dirigenza-performance.html"><span class="ico">⚽</span>Performance squadra</a> <!-- USO DI AI??! -->
+    </nav>
+
     <div class="sidebar-footer">
       <div class="user-card">
-        <div class="avatar">DF</div>
-        <div class="user-info"><strong>Dir. Ferrari</strong><small>Dirigenza</small></div>
-        <button class="btn-logout" onclick="window.location.href='../login.html'">Esci</button>
+        <div class="avatar" id="sb-avatar">DF</div>
+        <div class="user-info">
+          <strong id="sb-nome">—</strong>
+          <small id="sb-ruolo">—</small>
+        </div>
+        <button class="btn-logout" onclick="logout()">Esci</button>
       </div>
     </div>
   </aside>
 
+  <!-- ── MAIN ── -->
   <div class="main">
-    <div class="topbar">
-      <h1>Panoramica Dirigenza</h1>
-      <div class="readonly-badge">👁 Sola lettura</div>
+    <div class="topbar" style="display:flex;align-items:center;justify-content:space-between;">
+      <h1>Dashboard Dirigenza</h1>
     </div>
 
-   <div class="content">
-      <!-- KPI -->
-      <div class="kpi-row">
-        <div class="kpi-big">
-          <div class="icon">⚽</div>
-          <div class="val" id="kpi-giocatori">...</div>
-          <div class="lbl">Giocatori in rosa</div>
-          <div class="trend trend-up" id="trend-giocatori"></div>
+    <div class="content">
+
+      <!-- 1. PARTE ALTA: 5 KPI RICHIESTE -->
+       <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Giocatori in rosa</div>
+          <div class="stat-value" id="kpi-giocatori">--</div>
+          <div class="stat-sub">Organico</div>
         </div>
-        <div class="kpi-big">
-          <div class="icon">🥅</div>
-          <div class="val" id="kpi-gol">...</div>
-          <div class="lbl">Gol stagione</div>
-          <div class="trend trend-up" id="trend-gol"></div>
+        <div class="stat-card info">
+          <div class="stat-label">Gol fatti</div>
+          <div class="stat-value" id="kpi-gol-fatti">--</div>
+          <div class="stat-sub">Stagione</div>
         </div>
-        <div class="kpi-big">
-          <div class="icon">📅</div>
-          <div class="val" id="kpi-partite">...</div>
-          <div class="lbl">Partite giocate</div>
-          <div class="trend" style="color:var(--muted)" id="trend-partite"></div>
+        <div class="stat-card warn">
+          <div class="stat-label">Gol subiti</div>
+          <div class="stat-value" id="kpi-gol-subiti">--</div>
+          <div class="stat-sub">Stagione</div>
         </div>
-        <div class="kpi-big">
-          <div class="icon">🎮</div>
-          <div class="val" id="kpi-quiz">...</div>
-          <div class="lbl">Partecipazione quiz</div>
-          <div class="trend trend-up" id="trend-quiz"></div>
+        <div class="stat-card">
+          <div class="stat-label">% Partecipazione quiz</div>
+          <div class="stat-value" id="kpi-quiz-partecipazione">--%</div>
+          <div class="stat-sub">Coinvolgimento</div>
         </div>
       </div>
 
-      <!-- TOP MARCATORI + PERFORMANCE -->
+      <!-- 2. PARTE BASSA: TOP MARCATORI + PROSSIMI EVENTI -->
       <div class="grid-2">
+        <!-- TOP MARCATORI -->
         <div class="card">
-          <div class="card-header"><h2>🏅 Top Marcatori</h2><span style="font-size:0.8rem;color:var(--muted)">Stagione 2024/25</span></div>
+          <div class="card-header">
+            <h2>🏅 Top Marcatori</h2>
+          </div>
           <div class="card-body" style="padding:0">
             <table>
-              <thead><tr><th>#</th><th>Giocatore</th><th>Gol</th><th>Assist</th><th>Presenze</th></tr></thead>
-              <tbody id="tabella-marcatori">
-                <!-- Popolato da JS -->
+              <thead>
+                <tr>
+                  <th style="width:40px;">#</th>
+                  <th>Giocatore</th>
+                  <th style="text-align:right; cursor:pointer;" onclick="sortDirigenzaMarcatori('gol')" title="Ordina per gol">Gol ↕</th>
+                  <th style="text-align:right; cursor:pointer;" onclick="sortDirigenzaMarcatori('assist')" title="Ordina per assist">Assist ↕</th>
+                  <th style="text-align:right; cursor:pointer;" onclick="sortDirigenzaMarcatori('presenze')" title="Ordina per presenze">Pres ↕</th>
+                </tr>
+              </thead>
+              <tbody id="tabella-top-marcatori">
+                <tr><td colspan="5" style="text-align:center;padding:1.5rem;color:#888;">Caricamento top marcatori...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
 
+        <!-- PROSSIMI EVENTI -->
         <div class="card">
-          <div class="card-header"><h2>📈 Indicatori squadra</h2></div>
+          <div class="card-header">
+            <h2>📅 Prossimi eventi</h2>
+          </div>
           <div class="card-body">
-            <div class="chart-bar-list" id="lista-indicatori">
-              <div class="chart-bar-item">
-                <div class="chart-bar-label"><span class="name">Possesso medio</span><span id="ind-possesso">58%</span></div>
-                <div class="bar-track"><div class="bar-fill bar-blue" id="bar-possesso" style="width:58%"></div></div>
-              </div>
-              <div class="chart-bar-item">
-                <div class="chart-bar-label"><span class="name">Passaggi riusciti</span><span id="ind-passaggi">82%</span></div>
-                <div class="bar-track"><div class="bar-fill bar-green" id="bar-passaggi" style="width:82%"></div></div>
-              </div>
-              <div class="chart-bar-item">
-                <div class="chart-bar-label"><span class="name">Tiri in porta / partita</span><span id="ind-tiri">5.2</span></div>
-                <div class="bar-track"><div class="bar-fill bar-gold" id="bar-tiri" style="width:65%"></div></div>
-              </div>
-              <div class="chart-bar-item">
-                <div class="chart-bar-label"><span class="name">Duelli vinti</span><span id="ind-duelli">53%</span></div>
-                <div class="bar-track"><div class="bar-fill bar-blue" id="bar-duelli" style="width:53%"></div></div>
-              </div>
-              <div class="chart-bar-item">
-                <div class="chart-bar-label"><span class="name">Presenze medie / allenamento</span><span id="ind-presenze">91%</span></div>
-                <div class="bar-track"><div class="bar-fill bar-green" id="bar-presenze" style="width:91%"></div></div>
-              </div>
+            <div class="event-list" id="lista-prossimi-eventi">
+              <div style="text-align:center;padding:1.5rem;color:#888;">Caricamento eventi...</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ATTIVITÀ RECENTI -->
-      <div class="section-title">Attività recenti</div>
-      <div class="card">
-        <div class="card-body">
-          <div class="activity-list" id="lista-attivita">
-            <!-- Popolato da JS -->
-          </div>
-        </div>
-      </div>
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
 
-    </div>
-  </div>
-</div>
-  <script src="/html/js/utils.js"></script> 
+<script src="/html/js/utils.js"></script>
 <script src="/html/js/dirigenza.js"></script>
 </body>
 </html>

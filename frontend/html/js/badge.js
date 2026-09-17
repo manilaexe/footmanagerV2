@@ -141,7 +141,7 @@ function apriDettaglioBadge(badgeId) {
     
     nome.textContent   = b.nomeBadge;
     status.textContent = ottenuto ? '✔ Badge sbloccato' : '🔒 Badge non ancora sbloccato';
-    soglia.textContent = `${b.sogliaPunti} risposte corrette al quiz del giorno`;
+    soglia.textContent = `${b.sogliaPunti} punti totali al quiz del giorno`;
 
     if (ottenuto) {
         dataRow.style.display = 'flex';

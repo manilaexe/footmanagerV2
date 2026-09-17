@@ -745,6 +745,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('btn-nuovo-evento');
     if (btn) btn.style.display = 'none';
   }
+  const ruoloUtente = (localStorage.getItem('ruolo') || '').toUpperCase();
+  if (ruoloUtente === 'DIRIGENZA') {
+      // Nascondi voce messaggi dalla sidebar
+      document.querySelectorAll('.sidebar a, .sidebar-menu a, nav a, .nav-item').forEach(el => {
+          const text = (el.textContent || '').toLowerCase();
+          const href = el.getAttribute('href') || '';
+          if (text.includes('messagg') || href.includes('messaggi.html')) {
+              const containerToHide = el.closest('li') || el.closest('.nav-item') || el;
+              containerToHide.style.display = 'none';
+          }
+      });
+
+      // Eventuale blocco di bottoni di creazione/modifica eventi nel calendario (se presenti)
+      document.querySelectorAll('.btn-add, .btn-crea, #btn-aggiungi-match, .admin-only').forEach(b => {
+          b.style.display = 'none';
+      });
+  }
 
   // Carica il calendario
   render();

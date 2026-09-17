@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const nome    = localStorage.getItem('nomeReale')    || localStorage.getItem('username') || 'Utente';
     const cognome = localStorage.getItem('cognomeReale') || '';
-    const ruolo   = localStorage.getItem('ruolo')        || '';
+    const ruolo   = (localStorage.getItem('ruolo')       || '').toUpperCase();
 
     if (ruolo === 'GIOCATORE') {
         window.location.href = '/html/pages/dashboard-giocatore.html';
@@ -35,6 +35,21 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.topbar-right .btn-primary').forEach(b => b.style.display = 'none');
         const btnMod = document.getElementById('btn-apri-modifica');
         if (btnMod) btnMod.style.display = 'none';
+    }
+    if (ruolo === 'DIRIGENZA') {
+        document.querySelectorAll('.topbar-right .btn-primary').forEach(b => b.style.display = 'none');
+        const btnMod = document.getElementById('btn-apri-modifica');
+        if (btnMod) btnMod.style.display = 'none';
+
+        // Nascondi voce messaggi dalla sidebar
+        document.querySelectorAll('.sidebar a, .sidebar-menu a, nav a, .nav-item').forEach(el => {
+            const text = (el.textContent || '').toLowerCase();
+            const href = el.getAttribute('href') || '';
+            if (text.includes('messagg') || href.includes('messaggi.html')) {
+                const containerToHide = el.closest('li') || el.closest('.nav-item') || el;
+                containerToHide.style.display = 'none';
+            }
+        });
     }
 
     setView('grid');
@@ -102,9 +117,10 @@ async function caricaRosa() {
                     (st.nome && st.nome.includes(g.cognome))
                 );
 
+                // PRIORITÀ A g (anagrafica pulita) per nome, cognome, dataNascita ecc.
                 return {
-                    ...g,
-                    ...(s || {}), 
+                    ...(s || {}),
+                    ...g, 
                     gol:                  s?.gol              ?? s?.golTotali     ?? g.gol              ?? 0,
                     assist:               s?.ass              ?? s?.assist        ?? g.assist           ?? 0,
                     presenze:             s?.pres             ?? s?.presenze      ?? g.presenze         ?? 0,
@@ -168,6 +184,9 @@ function renderizzaGiocatori(giocatori) {
     if (gridView) gridView.innerHTML = '';
     if (listBody) listBody.innerHTML = '';
 
+    const ruoloUtente = (localStorage.getItem('ruolo') || '').toUpperCase();
+    const canSendMsg = ruoloUtente !== 'DIRIGENZA';
+
     giocatori.forEach(g => {
         const idGiocatoreCorrente = g.idGiocatore || g.id;
         const ruoloStr = g.posizione || g.ruolo || 'N/D';
@@ -228,7 +247,7 @@ function renderizzaGiocatori(giocatori) {
                     </div>
 
                     <div class="card-actions" style="display: flex; gap: 8px;">
-                        <button class="btn-card primary" style="flex: 1; font-size: 0.8rem; padding: 6px;" onclick="event.stopPropagation(); window.location.href='/html/messaggi.html?giocatoreId=${idGiocatoreCorrente}'">Invia Messaggio</button>
+                        ${canSendMsg ? `<button class="btn-card primary" style="flex: 1; font-size: 0.8rem; padding: 6px;" onclick="event.stopPropagation(); window.location.href='/html/messaggi.html?giocatoreId=${idGiocatoreCorrente}'">Invia Messaggio</button>` : ''}
                         <button class="btn-card ghost" style="flex: 1; font-size: 0.8rem; padding: 6px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; cursor: pointer;" onclick="event.stopPropagation(); window.location.href='/html/statistiche.html?giocatoreId=${idGiocatoreCorrente}'">Vedi Statistiche</button>
                     </div>
                 </div>
@@ -415,6 +434,8 @@ function mostraDettaglio(idGiocatore) {
     const detailBody = document.getElementById('detail-body');
     if (detailBody) {
         const ruoloUtente = (localStorage.getItem('ruolo') || '').toUpperCase();
+        const canSendMsg = ruoloUtente !== 'DIRIGENZA';
+        const isStaff = ruoloUtente === 'STAFF';
         
         detailBody.innerHTML = `
             <div style="padding: 1.5rem;">
@@ -432,13 +453,13 @@ function mostraDettaglio(idGiocatore) {
                 </div>
 
                 <!-- CONTENITORE PULSANTI AZIONE -->
-                <div style="display: flex; gap: 10px; margin-bottom: ${ruoloUtente === 'STAFF' ? '10px' : '0'};">
-                    <button class="btn-primary" style="flex: 1; padding: 10px; font-weight: bold;" onclick="window.location.href='/html/messaggi.html?giocatoreId=${idGiocatoreDettaglioCorrente}'">💬 Invia Messaggio</button>
+                <div style="display: flex; gap: 10px; margin-bottom: ${isStaff ? '10px' : '0'};">
+                    ${canSendMsg ? `<button class="btn-primary" style="flex: 1; padding: 10px; font-weight: bold;" onclick="window.location.href='/html/messaggi.html?giocatoreId=${idGiocatoreDettaglioCorrente}'">💬 Invia Messaggio</button>` : ''}
                     <button class="btn-ghost" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; cursor: pointer; font-weight: bold;" onclick="window.location.href='/html/statistiche.html?giocatoreId=${idGiocatoreDettaglioCorrente}'">📊 Vedi Statistiche</button>
                 </div>
 
                 <!-- SEZIONE INLINE DEDICATA ALLO STAFF PER MODIFICARE FISICO -->
-                ${ruoloUtente === 'STAFF' ? `
+                ${isStaff ? `
                     <div id="staff-edit-container">
                         <button id="btn-abilita-edit" class="btn-primary" style="width: 100%; padding: 10px; background: #eab308; color: #000; font-weight: bold; border: none; border-radius: 6px; cursor: pointer;" onclick="attivaModificaFisicaInline()">✏️ Modifica Altezza e Peso</button>
                     </div>
@@ -533,10 +554,15 @@ function apriModalModifica() {
 
 // --- 8. MODIFICA INLINE ALTEZZA E PESO (ESCLUSIVO PER LO STAFF) ---
 function attivaModificaFisicaInline() {
+    const ruoloUtente = (localStorage.getItem('ruolo') || '').toUpperCase();
+    if (ruoloUtente !== 'STAFF') {
+        alert('Accesso negato: solo lo staff può modificare questi parametri.');
+        return;
+    }
+
     const g = tuttiGiocatori.find(x => String(x.idGiocatore || x.id) === String(idGiocatoreDettaglioCorrente));
     if (!g) return;
 
-    // Sostituisce i testi statici con input a casella direttamente nel box dei dettagli
     const boxAltezza = document.getElementById('box-altezza');
     const boxPeso = document.getElementById('box-peso');
     const containerEdit = document.getElementById('staff-edit-container');
@@ -548,7 +574,6 @@ function attivaModificaFisicaInline() {
         boxPeso.innerHTML = `<strong>Peso:</strong> <input type="number" id="input-inline-peso" value="${g.peso || ''}" placeholder="kg" style="width: 70px; background: #222; border: 1px solid #555; color: #fff; padding: 2px 5px; border-radius: 4px;" /> kg`;
     }
 
-    // Trasforma il pulsante in un comando di salvataggio pulito
     if (containerEdit) {
         containerEdit.innerHTML = `
             <div style="display: flex; gap: 8px;">
@@ -572,11 +597,30 @@ async function salvaModificaFisicaInline() {
     const valAltezza = document.getElementById('input-inline-altezza')?.value;
     const valPeso = document.getElementById('input-inline-peso')?.value;
 
+    // PAYLOAD SICURO: Mantiene nome, cognome e dataNascita originali intatti ed evita stringhe finte
     const payload = {
-        ...giocatore,
-        altezza: valAltezza && valAltezza.trim() !== "" ? parseInt(valAltezza, 10) : null,
-        peso: valPeso && valPeso.trim() !== "" ? parseInt(valPeso, 10) : null,
-        squadraId: giocatore.squadraId || parseInt(localStorage.getItem('idSquadra'), 10)
+        id: giocatore.id || idGiocatoreDettaglioCorrente,
+        nome: giocatore.nome || '',
+        cognome: giocatore.cognome || '',
+        numero: giocatore.numero || 0,
+        posizione: giocatore.posizione || giocatore.ruolo || '',
+        piede: giocatore.piede || '',
+        nazionalita: giocatore.nazionalita || '',
+        dataNascita: giocatore.dataNascita || giocatore.data_nascita || null,
+        squadraId: giocatore.squadraId || parseInt(localStorage.getItem('idSquadra'), 10),
+        
+        altezza: valAltezza && valAltezza.trim() !== "" ? parseInt(valAltezza, 10) : giocatore.altezza,
+        peso: valPeso && valPeso.trim() !== "" ? parseInt(valPeso, 10) : giocatore.peso,
+
+        // Mantieni i valori statistici correnti per non azzerarli lato server se richiesto dal DTO completo
+        presenze: giocatore.presenze ?? 0,
+        presenzeTitolare: giocatore.presenzeTitolare ?? 0,
+        minutiGiocati: giocatore.minutiGiocati ?? 0,
+        ammonizioni: giocatore.ammonizioni ?? 0,
+        espulsioni: giocatore.espulsioni ?? 0,
+        assist: giocatore.assist ?? 0,
+        gol: giocatore.gol ?? 0,
+        goalSubiti: giocatore.goalSubiti ?? 0
     };
 
     const headers = typeof getAuthHeaders === 'function'
@@ -596,14 +640,24 @@ async function salvaModificaFisicaInline() {
         }
 
         if (!res.ok) {
-            alert(`⚠️ Errore durante il salvataggio (${res.status}).`);
+            const errorMsg = await res.text().catch(() => '');
+            console.error(`Errore Backend (${res.status}):`, errorMsg);
+            alert(`⚠️ Errore salvataggio (${res.status}): ${errorMsg}`);
             return;
         }
 
         const giocatoreAggiornato = await res.json();
+        
         const idx = tuttiGiocatori.findIndex(item => String(item.idGiocatore || item.id) === String(idGiocatoreDettaglioCorrente));
         if (idx > -1) {
-            tuttiGiocatori[idx] = { ...tuttiGiocatori[idx], ...giocatoreAggiornato };
+            tuttiGiocatori[idx] = { 
+                ...tuttiGiocatori[idx], 
+                ...giocatoreAggiornato,
+                nome: giocatore.nome,
+                cognome: giocatore.cognome,
+                altezza: payload.altezza, 
+                peso: payload.peso
+            };
         }
 
         aggiornaSommario(tuttiGiocatori);
@@ -632,12 +686,13 @@ async function salvaStatistiche() {
     const isPortiere = ruoloStr.includes('por') || g.portiere === true;
 
     const payload = {
-        nome: g.nome,
-        cognome: g.cognome,
-        numero: g.numero,
-        posizione: g.posizione || g.ruolo,
-        piede: g.piede,
-        nazionalita: g.nazionalita,
+        nome: g.nome || '',
+        cognome: g.cognome || '',
+        numero: g.numero || 0,
+        posizione: g.posizione || g.ruolo || '',
+        piede: g.piede || '',
+        nazionalita: g.nazionalita || '',
+        dataNascita: g.dataNascita || g.data_nascita || null,
         altezza: g.altezza,
         peso: g.peso,
         squadraId: g.squadraId || parseInt(localStorage.getItem('idSquadra'), 10),
@@ -709,7 +764,7 @@ async function salvaStatistiche() {
         const giocatoreSalvato = await res.json();
         const idx = tuttiGiocatori.findIndex(item => String(item.idGiocatore || item.id) === String(idGiocatore));
         if (idx > -1) {
-            tuttiGiocatori[idx] = { ...tuttiGiocatori[idx], ...giocatoreSalvato };
+            tuttiGiocatori[idx] = { ...tuttiGiocatori[idx], ...giocatoreSalvato, nome: g.nome, cognome: g.cognome };
         }
 
         aggiornaSommario(tuttiGiocatori);

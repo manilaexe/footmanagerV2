@@ -34,12 +34,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderAvatar(sbAv, (nome[0]||('')).toUpperCase() + (cognome[0]||nome[1]||'').toUpperCase());
   }
 
-  ruoloUtente = ruolo;
+  ruoloUtente = ruolo.toUpperCase();
   mioNomeStat = nome ? `${nome.charAt(0).toUpperCase()}. ${cognome}` : '';
   
   if (ruoloUtente === 'GIOCATORE') nascondiSezioniSquadra();
 
   aggiornaInterfacciaCaricamento();
+
+  const ruoloCorrente = (localStorage.getItem('ruolo') || '').toUpperCase();
+  if (ruoloCorrente === 'DIRIGENZA') {
+      document.querySelectorAll('.sidebar a, .sidebar-menu a, nav a, .nav-item').forEach(el => {
+          const text = el.textContent.toLowerCase();
+          const href = el.getAttribute('href') || '';
+          if (text.includes('messagg') || href.includes('messaggi.html')) {
+              const containerToHide = el.closest('li') || el.closest('.nav-item') || el;
+              containerToHide.style.display = 'none';
+          }
+      });
+  }
 
   await Promise.all([
     caricaDatiSquadra(),  
@@ -428,7 +440,6 @@ function renderIndivBars(idx){
 
   const isGK = Boolean(p.portiere);
   
-  // Helper dinamico basato sul massimo della squadra per quella metrica
   const getSquadMax = (key, fallback) => {
     if (!PLAYERS || PLAYERS.length === 0) return fallback;
     const vals = PLAYERS.map(item => Number(item[key] || 0));
@@ -505,7 +516,8 @@ function renderIndivBars(idx){
 
   const headerAction = document.getElementById('indiv-header-action');
   if (headerAction) {
-    if (ruoloUtente !== 'GIOCATORE') {
+    // Inibito per GIOCATORE e DIRIGENZA
+    if (ruoloUtente !== 'GIOCATORE' && ruoloUtente !== 'DIRIGENZA') {
       headerAction.innerHTML = `
         <button onclick="apriModalModifica(${idx})" style="background: #238636; color: white; border: none; padding: 0.3rem 0.75rem; border-radius: 5px; cursor: pointer; font-weight: 600; font-family: inherit; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">
           ✏️ Modifica
@@ -533,6 +545,8 @@ function renderIndivBars(idx){
 }
 
 function apriModalModifica(idx) {
+  if (ruoloUtente === 'GIOCATORE' || ruoloUtente === 'DIRIGENZA') return;
+
   const p = PLAYERS[idx];
   if (!p) return;
 
@@ -621,6 +635,8 @@ function apriModalModifica(idx) {
 }
 
 async function salvaStatistiche(playerId) {
+  if (ruoloUtente === 'GIOCATORE' || ruoloUtente === 'DIRIGENZA') return;
+
   const form = document.getElementById('edit-stats-form');
   if (!form) return;
 
@@ -663,7 +679,7 @@ function renderTopScorers(){
   const container = document.getElementById('top-scorers');
   if (!container) return;
 
-  const sorted = [...PLAYERS].filter(p => !p.portiere).sort((a,b) => (b.golTotali || 0) - (a.golTotali || 0)).slice(0,4);
+  const sorted = [...PLAYERS].filter(p => !p.portiere).sort((a,b) => (b.golTotali || 0) - (a.golTotali || 0)).slice(0,12);
   if(sorted.length === 0) {
     container.innerHTML = "<p>Nessun marcatore.</p>";
     return;
