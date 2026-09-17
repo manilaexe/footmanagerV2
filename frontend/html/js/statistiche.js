@@ -175,7 +175,7 @@ async function caricaDatiGiocatori() {
 }
 
 /* ==========================================================================
-   4. POPOLAMENTO ELEMENTI STATICI E KPI DI SQUADRA
+   4. POPOLAMENTO ELEMENTI STATICI E KPI DI SQUADRA (CUMULATIVO PER SQUADRA_ID COERENTE)
    ========================================================================== */
 function popolaKpiSquadra(kpi) {
   if (!kpi) return;
@@ -186,8 +186,8 @@ function popolaKpiSquadra(kpi) {
   };
 
   const aggiornaBarra = (idTesto, idBarra, valore, maxValore, isPercentuale = false) => {
-    const val = valore ?? 0;
-    impostaTesto(idTesto, isPercentuale ? `${Number(val).toFixed(0)}%` : Number(val).toFixed(1));
+    const val = Number(valore ?? 0);
+    impostaTesto(idTesto, isPercentuale ? `${val.toFixed(0)}%` : val.toFixed(0));
         
     const barra = document.getElementById(idBarra);
     if (barra) {
@@ -208,9 +208,9 @@ function popolaKpiSquadra(kpi) {
     }
   };
 
-  const partiteTotali = kpi.partiteGiocate ?? 2; 
-  const golFattiTotali = kpi.golFatti ?? 2;
-  const golSubitiTotali = kpi.golSubiti ?? 4;
+  const partiteTotali = kpi.partiteGiocate ?? 0; 
+  const golFattiTotali = kpi.golFatti ?? 0;
+  const golSubitiTotali = kpi.golSubiti ?? 0;
 
   impostaTesto('kpi-gol-fatti', golFattiTotali);
   impostaTesto('kpi-gol-subiti', golSubitiTotali);
@@ -219,45 +219,59 @@ function popolaKpiSquadra(kpi) {
   impostaTesto('kpi-pareggi', kpi.pareggi ?? 0);
   impostaTesto('kpi-sconfitte', kpi.sconfitte ?? 0);
 
-  const totaleTiriGiocatori = PLAYERS.reduce((sum, p) => sum + (Number(p.tiriTotali) || 0), 0);
-  const totaleAssistGiocatori = PLAYERS.reduce((sum, p) => sum + (Number(p.assist) || 0), 0);
-  const totaleIntercetti = PLAYERS.reduce((sum, p) => sum + (Number(p.palloniIntercettati) || 0), 0);
+  // ── FILTRO / AGGREGAZIONE SULLA SQUADRA ATTIVA (tramite squadraId) ──
+  const activeSquadraId = PLAYERS.length > 0 ? PLAYERS[0].squadraId : null;
+  const teamPlayers = activeSquadraId !== undefined && activeSquadraId !== null 
+    ? PLAYERS.filter(p => p.squadraId === activeSquadraId) 
+    : PLAYERS;
 
-  const golFattiMedio = golFattiTotali / partiteTotali;
-  const golSubitiMedio = golSubitiTotali / partiteTotali;
-  const tiriMedio = totaleTiriGiocatori / partiteTotali;
-  const assistMedio = totaleAssistGiocatori / partiteTotali;
+  const movPlayers = teamPlayers.filter(p => !p.portiere);
+  const gkPlayers  = teamPlayers.filter(p =>  p.portiere);
 
-  const conversioneSquadra = totaleTiriGiocatori > 0 ? (golFattiTotali / totaleTiriGiocatori) * 100 : 0;
+  // ⚽ Rendimento Offensivo (Coerente: aggregato al 100% dalla rosa della squadra)
+  const sumGolTeam = movPlayers.reduce((s, p) => s + (Number(p.golTotali || 0)), 0);
+  const sumTiriTeam = movPlayers.reduce((s, p) => s + (Number(p.tiriTotali || 0)), 0);
+  const sumBigChanceTeam = movPlayers.reduce((s, p) => s + (Number(p.bigChanceCreate || 0)), 0);
+  const sumAssistTeam = teamPlayers.reduce((s, p) => s + (Number(p.assist || 0)), 0);
 
-  aggiornaBarra('txt-off-gol', 'bar-off-gol', golFattiMedio, 4.0);
-  aggiornaBarra('txt-off-tiri', 'bar-off-tiri', tiriMedio, 10.0);
-  aggiornaBarra('txt-off-conversione', 'bar-off-conversione', conversioneSquadra, 100, true); 
-  aggiornaBarra('txt-off-chance', 'bar-off-chance', 1.5, 6.0);
-  aggiornaBarra('txt-off-assist', 'bar-off-assist', assistMedio, 4.0);
+  const convRatio = sumTiriTeam > 0 ? (sumGolTeam / sumTiriTeam) * 100 : 0;
 
-  aggiornaBarra('txt-def-gol', 'bar-def-gol', golSubitiMedio, 3.0);
-  aggiornaBarra('txt-def-clean', 'bar-def-clean', kpi.cleanSheet ?? 0, partiteTotali); 
-  aggiornaBarra('txt-def-tackle', 'bar-def-tackle', 10, 25.0);
-  aggiornaBarra('txt-def-intercetti', 'bar-def-intercetti', totaleIntercetti / partiteTotali, 20.0);
-  aggiornaBarra('txt-def-falli', 'bar-def-falli', 0, 25.0);
+  aggiornaBarra('txt-off-gol', 'bar-off-gol', sumGolTeam, 50);          // Max scala stimato: 50 gol
+  aggiornaBarra('txt-off-tiri', 'bar-off-tiri', sumTiriTeam, 300);       // Max scala stimato: 300 tiri
+  aggiornaBarra('txt-off-conversione', 'bar-off-conversione', convRatio, 100, true); 
+  aggiornaBarra('txt-off-chance', 'bar-off-chance', sumBigChanceTeam, 60);
+  aggiornaBarra('txt-off-assist', 'bar-off-assist', sumAssistTeam, 40);
 
-  const duelliVintiTot  = PLAYERS.reduce((s, p) => s + (Number(p.duelliVinti) || 0), 0);
-  const duelliTotali    = PLAYERS.reduce((s, p) => s + (Number(p.duelliVinti || 0) + Number(p.duelliPersi || 0)), 0);
+  // 🛡 Rendimento Difensivo (Coerente: portieri + movimenti aggregati per squadra)
+  const sumGolSubitiGK = gkPlayers.reduce((s, p) => s + (Number(p.goalSubiti || 0)), 0);
+  const sumCleanSheetGK = gkPlayers.reduce((s, p) => s + (Number(p.cleanSheet || 0)), 0);
+  const sumTackleRubati = movPlayers.reduce((s, p) => s + (Number(p.tackle || 0) + Number(p.palloniRubati || 0)), 0);
+  const sumIntercetti = teamPlayers.reduce((s, p) => s + (Number(p.palloniIntercettati || 0)), 0);
+  const sumFalliCommessi = teamPlayers.reduce((s, p) => s + (Number(p.falliCommessi || 0)), 0);
+
+  aggiornaBarra('txt-def-gol', 'bar-def-gol', sumGolSubitiGK, 40);
+  aggiornaBarra('txt-def-clean', 'bar-def-clean', sumCleanSheetGK, Math.max(10, partiteTotali)); 
+  aggiornaBarra('txt-def-tackle', 'bar-def-tackle', sumTackleRubati, 250);
+  aggiornaBarra('txt-def-intercetti', 'bar-def-intercetti', sumIntercetti, 150);
+  aggiornaBarra('txt-def-falli', 'bar-def-falli', sumFalliCommessi, 200);
+
+  // ── DONUT STATS DI SQUADRA ──
+  const duelliVintiTot  = teamPlayers.reduce((s, p) => s + (Number(p.duelliVinti) || 0), 0);
+  const duelliTotali    = teamPlayers.reduce((s, p) => s + (Number(p.duelliVinti || 0) + Number(p.duelliPersi || 0)), 0);
   const pctDuelliVinti  = duelliTotali > 0 ? (duelliVintiTot / duelliTotali) * 100 : (kpi.pctDuelliVinti ?? 50);
   const pctDuelliPersi  = Math.max(0, 100 - pctDuelliVinti);
 
   aggiornaDonut('kpi-duelli-vinti', 'circle-duelli-vinti', pctDuelliVinti);
   aggiornaDonut('kpi-duelli-persi', 'circle-duelli-persi', pctDuelliPersi);
 
-  const passVintiTot = PLAYERS.reduce((s, p) => s + (Number(p.passaggiRiusciti) || 0), 0);
-  const passTotali = PLAYERS.reduce((s, p) => s + (Number(p.passaggiTentati) || 0), 0);
+  const passVintiTot = teamPlayers.reduce((s, p) => s + (Number(p.passaggiRiusciti) || 0), 0);
+  const passTotali = teamPlayers.reduce((s, p) => s + (Number(p.passaggiTentati) || 0), 0);
   const pctPassaggi = passTotali > 0 ? (passVintiTot / passTotali) * 100 : (kpi.precisionePassaggi ?? 50);
 
   aggiornaDonut('kpi-precisione', 'circle-precisione', pctPassaggi);
 
-  const dribVintiTot = PLAYERS.reduce((s, p) => s + (Number(p.dribblingRiusciti) || 0), 0);
-  const dribTotali = PLAYERS.reduce((s, p) => s + (Number(p.dribblingTentati) || 0), 0);
+  const dribVintiTot = teamPlayers.reduce((s, p) => s + (Number(p.dribblingRiusciti) || 0), 0);
+  const dribTotali = teamPlayers.reduce((s, p) => s + (Number(p.dribblingTentati) || 0), 0);
   const pctDribVinti = dribTotali > 0 ? (dribVintiTot / dribTotali) * 100 : 50;
   const pctDribPersi = Math.max(0, 100 - pctDribVinti);
 
@@ -461,7 +475,6 @@ function renderIndivBars(idx){
   }
 
   let html = '';
-  // Se l'utente NON è un giocatore (es. Allenatore, Staff, IT), mostra il pulsante di modifica
   if (ruoloUtente !== 'GIOCATORE') {
     html += `
       <div style="margin-bottom: 1.2rem; text-align: right;">
@@ -497,9 +510,7 @@ function apriModalModifica(idx) {
   const p = PLAYERS[idx];
   if (!p) return;
 
-  // AGGIUNGI QUESTA RIGA PER RICAVARE L'ID IN SICUREZZA:
   const playerId = p.id ?? p.giocatoreId;
-
   const oldModal = document.getElementById('edit-modal-overlay');
   if (oldModal) oldModal.remove();
 
@@ -604,7 +615,6 @@ async function salvaStatistiche(playerId) {
     });
 
     if (!response.ok) {
-      // Legge il testo esatto dell'errore restituito dal server Java
       const errorText = await response.text();
       console.error("Risposta dal server:", errorText);
       throw new Error(`Errore del server (${response.status}): ${errorText}`);
