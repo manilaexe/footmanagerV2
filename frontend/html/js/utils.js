@@ -69,29 +69,46 @@ function impostaLinkDashboard() {
 // da una pagina all'altra: i giocatori non devono vedere "Rosa", ma devono
 // ritrovare sempre "I miei badge" e "Classifica" anche quando sono su
 // calendario/statistiche/messaggi.
+// Adatta le voci della sidebar in base al ruolo, così la sidebar non "salta" più
+// da una pagina all'altra. Modificato per uniformare la sidebar della Dirigenza.
 function adattaSidebarPerRuolo() {
     const ruolo = localStorage.getItem('ruolo');
-    if (ruolo !== 'GIOCATORE') return;
-
     const nav = document.querySelector('.sidebar .nav-section');
-    if (!nav) return;
+    if (!nav || !ruolo) return;
 
-    // Nasconde "Rosa": i giocatori non devono poterla vedere
-    const linkRosa = nav.querySelector('a[href$="rosa.html"]');
-    if (linkRosa) linkRosa.remove();
+    const ruoloMaiuscolo = ruolo.toUpperCase();
+    const currentPage = window.location.pathname.toLowerCase();
 
-    // Aggiunge "I miei badge" e "Classifica" solo se non già presenti in questa
-    // pagina (es. sulla dashboard giocatore c'è già "I miei badge", su
-    // classifica.html c'è già "Classifica": si evitano così duplicati)
-    const testiPresenti = [...nav.querySelectorAll('a')].map(a => a.textContent);
-
-    if (!testiPresenti.some(t => t.includes('I miei badge'))) {
-        nav.insertAdjacentHTML('beforeend',
-            `<a class="nav-item" href="/html/badge.html"><span class="ico">🎖️</span> I miei badge</a>`);
+    // 1. VISTA DIRIGENZA: Riscrive la sidebar per essere identica in tutte le pagine
+    if (ruoloMaiuscolo === 'DIRIGENZA' || ruoloMaiuscolo === 'PRESIDENTE') {
+        nav.innerHTML = `
+            <div class="nav-label">Panoramica</div>
+            <a class="nav-item ${currentPage.includes('dirigenza.html') ? 'active' : ''}" id="nav-dashboard" href="/html/pages/dashboard-dirigenza.html"><span class="ico">🏠</span>Dashboard</a>
+            <a class="nav-item ${currentPage.includes('rosa.html') ? 'active' : ''}" href="/html/rosa.html"><span class="ico">👥</span>Rosa</a>
+            <a class="nav-item ${currentPage.includes('calendario.html') ? 'active' : ''}" href="/html/calendario.html"><span class="ico">📅</span>Calendario</a>
+            <a class="nav-item ${currentPage.includes('statistiche.html') ? 'active' : ''}" href="/html/statistiche.html"><span class="ico">📊</span>Statistiche</a>
+            <a class="nav-item ${currentPage.includes('classifica.html') ? 'active' : ''}" href="/html/classifica.html"><span class="ico">🏆</span>Classifica</a>
+            <a class="nav-item ${currentPage.includes('performance') ? 'active' : ''}" href="/html/dirigenza-performance.html"><span class="ico">⚽</span>Performance squadra</a>
+        `;
+        return; // Ferma l'esecuzione della funzione qui per la Dirigenza
     }
-    if (!testiPresenti.some(t => t.includes('Classifica'))) {
-        nav.insertAdjacentHTML('beforeend',
-            `<a class="nav-item" href="/html/classifica.html"><span class="ico">🏆</span> Classifica</a>`);
+
+    // 2. VISTA GIOCATORE: Mantiene le regole precedenti
+    if (ruoloMaiuscolo === 'GIOCATORE') {
+        // Nasconde "Rosa": i giocatori non devono poterla vedere
+        const linkRosa = nav.querySelector('a[href$="rosa.html"]');
+        if (linkRosa) linkRosa.remove();
+
+        const testiPresenti = [...nav.querySelectorAll('a')].map(a => a.textContent);
+
+        if (!testiPresenti.some(t => t.includes('I miei badge'))) {
+            nav.insertAdjacentHTML('beforeend',
+                `<a class="nav-item" href="/html/badge.html"><span class="ico">🎖️</span> I miei badge</a>`);
+        }
+        if (!testiPresenti.some(t => t.includes('Classifica'))) {
+            nav.insertAdjacentHTML('beforeend',
+                `<a class="nav-item" href="/html/classifica.html"><span class="ico">🏆</span> Classifica</a>`);
+        }
     }
 }
 

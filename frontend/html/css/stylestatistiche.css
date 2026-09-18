@@ -114,7 +114,6 @@ html, body {
   color: var(--green-l);
   border-left-color: var(--green-l);
   background: rgba(58, 125, 68, 0.12);
-  font-weight: 600;
 }
 
 .nav-item .ico {
