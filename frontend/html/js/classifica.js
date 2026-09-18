@@ -63,7 +63,9 @@ async function caricaClassifica(idSquadra, idGiocatore) {
 
     try {
         const res = await fetch(`${API_BASE_URL}/quiz/classifica/${idSquadra}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: typeof getAuthHeaders === 'function' 
+                ? getAuthHeaders() 
+                : { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
         if (!res.ok) throw new Error('Errore nel recupero della classifica');
 
