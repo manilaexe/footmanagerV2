@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     caricaMessaggi();          // ← carica dal DB
     caricaEventi();            // ← carica dal DB
     caricaQuizGiornaliero();   // ← gamification: quiz del primo accesso del giorno
+    caricaClassificaSettimanale();
 });
 
 // ─── 2. SIDEBAR ───────────────────────────────────────────────────────────
@@ -655,4 +656,77 @@ function mostraNuoviBadge(badges) {
 // Compatibilità con i chiamanti HTML onclick="openMsg(this)" rimasti (se presenti)
 function openMsg(el, idMessaggio) {
     apriMessaggio(el, idMessaggio);
+}
+
+// ─── 11. CARICA CLASSIFICA SETTIMANALE (Anteprima Top 5) ───────────────────
+async function caricaClassificaSettimanale() {
+    // Intercettiamo il contenitore della classifica nella dashboard
+    const listEl = document.querySelector('#classifica-card .rank-list');
+    if (!listEl) return;
+
+    // Sostituiamo i dati hardcoded con un messaggio di caricamento
+    listEl.innerHTML = '<div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.85rem">Caricamento classifica...</div>';
+
+    const headers = typeof getAuthHeaders === 'function'
+        ? getAuthHeaders()
+        : { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') };
+
+    try {
+        // Chiamiamo l'endpoint aggregato della dashboard
+        const res = await fetch(`${API}/api/dashboard/giocatore`, { headers });
+        if (!res.ok) throw new Error('Errore API classifica');
+
+        const data = await res.json();
+        const classifica = data.classificaSettimanale || [];
+        
+        // Recuperiamo il nostro ID dal localStorage (salvato durante il login)
+        const mioId = parseInt(localStorage.getItem('idGiocatore'), 10);
+
+        if (classifica.length === 0) {
+            listEl.innerHTML = '<div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.85rem">Nessun punteggio registrato questa settimana.</div>';
+            return;
+        }
+
+        // Svuotiamo il contenitore per inserire i dati veri
+        listEl.innerHTML = '';
+        
+        // Tagliamo l'array per mostrare solo la Top 5 nell'anteprima
+        classifica.slice(0, 5).forEach((item, index) => {
+            const pos = index + 1;
+            
+            // Assegna il colore metallico ai primi 3
+            let colorClass = '';
+            if (pos === 1) colorClass = 'gold';
+            else if (pos === 2) colorClass = 'silver';
+            else if (pos === 3) colorClass = 'bronze';
+
+            // Verifica se la riga appartiene al giocatore correntemente loggato
+            const isMe = item.giocatoreId === mioId;
+            const meClass = isMe ? ' me' : '';
+            
+            // Formatta il nome: "L. Rossi (tu)"
+            const inizialeNome = item.nome ? item.nome.charAt(0) + '. ' : '';
+            const nomeDisplay = `${inizialeNome}${item.cognome || ''}${isMe ? ' (tu)' : ''}`;
+
+            // Html della posizione (colorata o grigia)
+            const posHtml = colorClass 
+                ? `<div class="rank-pos ${colorClass}">${pos}</div>` 
+                : `<div class="rank-pos" style="color:var(--muted)">${pos}</div>`;
+
+            // Crea la riga
+            const div = document.createElement('div');
+            div.className = `rank-item${meClass}`;
+            div.innerHTML = `
+                ${posHtml}
+                <div class="rank-name">${esc(nomeDisplay.trim())}</div>
+                <div class="rank-pts">${item.puntiSettimanali || 0} pt</div>
+            `;
+            
+            listEl.appendChild(div);
+        });
+
+    } catch (err) {
+        console.error('Errore caricamento classifica:', err);
+        listEl.innerHTML = '<div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.85rem">Impossibile caricare la classifica.</div>';
+    }
 }
