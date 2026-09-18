@@ -112,3 +112,34 @@ function assicuratiVoceClassifica() {
 }
 
 document.addEventListener('DOMContentLoaded', assicuratiVoceClassifica);
+
+// Funzione per attivare la modalità sola lettura per la dirigenza
+// Funzione per attivare la modalità sola lettura per la dirigenza
+function impostaVistaDirigenza(ruoloUtente) {
+    if (!ruoloUtente) return;
+
+    // Convertiamo in maiuscolo per evitare problemi di scrittura (es. 'Dirigenza' vs 'DIRIGENZA')
+    const ruoloMaiuscolo = ruoloUtente.toUpperCase();
+
+    if (ruoloMaiuscolo === 'DIRIGENZA' || ruoloMaiuscolo === 'PRESIDENTE') { 
+        
+        // Aggiunge la classe al body (attiva tutto il CSS giallo e nasconde i bottoni)
+        document.body.classList.add('view-dirigenza');
+        
+        // Cerca tutti i campi di input, select e textarea e li blocca
+        const campiModulo = document.querySelectorAll('input, select, textarea');
+        campiModulo.forEach(campo => {
+            campo.disabled = true;
+            campo.style.opacity = "0.7";
+            campo.style.cursor = "not-allowed";
+        });
+    }
+}
+
+// Assicurati di chiamare la funzione quando la pagina ha finito di caricare.
+document.addEventListener('DOMContentLoaded', () => {
+    // Ora legge dinamicamente il VERO ruolo salvato nel browser durante il login
+    const ruoloAttuale = localStorage.getItem('ruolo'); 
+    
+    impostaVistaDirigenza(ruoloAttuale);
+});

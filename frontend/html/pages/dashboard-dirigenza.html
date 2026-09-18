@@ -41,9 +41,10 @@
   </aside>
 
   <!-- ── MAIN ── -->
-  <div class="main">
-    <div class="topbar" style="display:flex;align-items:center;justify-content:space-between;">
-      <h1>Dashboard Dirigenza</h1>
+<div class="main">
+    <div class="topbar">
+      <h1>Panoramica Dirigenza</h1>
+      <div class="readonly-badge">👁 Sola lettura</div>
     </div>
 
     <div class="content">
@@ -51,21 +52,25 @@
       <!-- 1. PARTE ALTA: 5 KPI RICHIESTE -->
        <div class="stats-grid">
         <div class="stat-card">
+          <div class="icon">👥</div>
           <div class="stat-label">Giocatori in rosa</div>
           <div class="stat-value" id="kpi-giocatori">--</div>
           <div class="stat-sub">Organico</div>
         </div>
         <div class="stat-card info">
+          <div class="icon">⚽</div>
           <div class="stat-label">Gol fatti</div>
           <div class="stat-value" id="kpi-gol-fatti">--</div>
           <div class="stat-sub">Stagione</div>
         </div>
         <div class="stat-card warn">
+          <div class="icon">🥅</div>
           <div class="stat-label">Gol subiti</div>
           <div class="stat-value" id="kpi-gol-subiti">--</div>
           <div class="stat-sub">Stagione</div>
         </div>
         <div class="stat-card">
+          <div class="icon">🎮</div>
           <div class="stat-label">% Partecipazione quiz</div>
           <div class="stat-value" id="kpi-quiz-partecipazione">--%</div>
           <div class="stat-sub">Coinvolgimento</div>
