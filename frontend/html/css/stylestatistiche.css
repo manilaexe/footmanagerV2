@@ -28,7 +28,6 @@ html, body {
   font-family: 'Barlow', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--dark);
   color: var(--text);
-  line-height: 1.45;
 }
 
 /* ==========================================================================
@@ -74,9 +73,8 @@ html, body {
 
 .sidebar-logo span {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 800;
-  letter-spacing: 0.5px;
 }
 
 .nav-section {
@@ -173,16 +171,13 @@ html, body {
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   padding: 4px 8px;
   cursor: pointer;
   transition: all 0.15s;
 }
 
-.btn-logout:hover {
-  border-color: var(--red);
-  color: var(--red);
-}
+.btn-logout:hover { border-color: #f87171; color: #f87171;}
 
 /* ==========================================================================
    2. MAIN & TOPBAR
