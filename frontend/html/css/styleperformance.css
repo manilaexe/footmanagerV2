@@ -75,7 +75,7 @@
 /* tooltip costruito in CSS puro: nessuna libreria esterna */
 .form-box .tip {
   visibility: hidden; opacity: 0; transition: opacity .15s;
-  position: absolute; bottom: 118%; left: 50%; transform: translateX(-50%);
+  position: absolute; bottom: 118%; left: 100%; transform: translateX(-50%);
   background: var(--dark3); border: 1px solid var(--border);
   color: var(--text); font-family: 'Barlow', sans-serif; font-weight: 400;
   font-size: .72rem; line-height: 1.35; white-space: nowrap;
