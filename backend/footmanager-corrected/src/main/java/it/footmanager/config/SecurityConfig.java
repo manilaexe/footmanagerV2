@@ -143,6 +143,16 @@ public class SecurityConfig {
                 // ── Dashboard aggregata ───────────────────────────────
                 .requestMatchers("/api/dashboard/**")                   .authenticated()
 
+
+                // ── API esterna Serie A ───────────────────────────────
+                // Lettura: tutti i ruoli autenticati (DIRIGENZA, GIOCATORE,
+                // STAFF, ALLENATORE) devono poter vedere la pagina Performance.
+                .requestMatchers(HttpMethod.GET,  "/api/esterno/**")    .authenticated()
+                // Scrittura (refresh cache, import calendario): solo chi può
+                // già creare eventi. Il controllo fine è nei @PreAuthorize.
+                .requestMatchers(HttpMethod.POST, "/api/esterno/**")    .hasAnyRole("STAFF","ALLENATORE","IT")
+
+
                 .anyRequest().authenticated()
             );
 

@@ -129,6 +129,24 @@ function assicuratiVoceClassifica() {
 }
 
 document.addEventListener('DOMContentLoaded', assicuratiVoceClassifica);
+// Aggiunge la voce "Performance squadra" alla sidebar se manca.
+// Vale per GIOCATORE, STAFF e ALLENATORE: per la DIRIGENZA la voce è già
+// scritta dentro adattaSidebarPerRuolo(), quindi lì usciamo subito.
+function assicuratiVocePerformance() {
+    const ruolo = (localStorage.getItem('ruolo') || '').toUpperCase();
+    if (ruolo === 'DIRIGENZA' || ruolo === 'PRESIDENTE') return;
+
+    const nav = document.querySelector('.sidebar .nav-section');
+    if (!nav) return;
+
+    const testiPresenti = [...nav.querySelectorAll('a')].map(a => a.textContent);
+    if (!testiPresenti.some(t => t.includes('Performance'))) {
+        nav.insertAdjacentHTML('beforeend',
+            `<a class="nav-item" href="/html/dirigenza-performance.html"><span class="ico">⚽</span>Performance squadra</a>`);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', assicuratiVocePerformance);
 
 // Funzione per attivare la modalità sola lettura per la dirigenza
 // Funzione per attivare la modalità sola lettura per la dirigenza

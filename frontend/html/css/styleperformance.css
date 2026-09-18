@@ -1,0 +1,92 @@
+/* ==========================================================================
+   Stili specifici della pagina "Performance squadra".
+   Le variabili (--dark2, --border, --green-l...) arrivano da styleall.css,
+   quindi questo file va caricato DOPO styleall.css.
+   ========================================================================== */
+
+.card {
+  background: var(--dark2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+}
+.card-header h2 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.15rem; font-weight: 700; text-transform: uppercase;
+}
+.card-body { padding: 1.25rem; }
+
+.perf-card  { margin-bottom: 1.5rem; }
+.hint       { font-size: .72rem; color: var(--muted); }
+
+.perf-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+@media (max-width: 1100px) { .perf-grid-2 { grid-template-columns: 1fr; } }
+
+/* ── Banner errore ── */
+.perf-error {
+  background: rgba(239,68,68,.12); border: 1px solid #ef4444;
+  color: #fca5a5; border-radius: var(--radius);
+  padding: .9rem 1.1rem; margin-bottom: 1.5rem; font-size: .88rem;
+}
+
+/* ── Grafico ── */
+.chart-wrap { position: relative; height: 320px; width: 100%; }
+
+/* ── Tabelle ── */
+.perf-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.perf-table th {
+  text-align: left; font-size: .68rem; text-transform: uppercase;
+  letter-spacing: .8px; color: var(--muted); font-weight: 600;
+  padding: .5rem .55rem; border-bottom: 1px solid var(--border);
+}
+.perf-table td { padding: .6rem .55rem; border-bottom: 1px solid rgba(48,54,61,.5); }
+.perf-table tbody tr:last-child td { border-bottom: none; }
+.perf-table tr.noi { background: rgba(58,125,68,.16); }
+.perf-table tr.noi td { color: var(--green-l); font-weight: 600; }
+.perf-table td.num { font-variant-numeric: tabular-nums; }
+.loading { text-align: center; color: var(--muted); padding: 1.2rem; }
+
+.pos-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 6px;
+  background: var(--dark3); font-weight: 700; font-size: .78rem;
+}
+.pos-chip.champions { background: rgba(59,130,246,.25); color: #93c5fd; }
+
+.delta-pos { color: var(--green-l); }
+.delta-neg { color: #f87171; }
+
+/* ── Form guide ── */
+.form-strip { display: flex; gap: .5rem; flex-wrap: wrap; }
+.form-box {
+  position: relative; width: 46px; height: 46px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1.25rem;
+  cursor: default; transition: transform .12s;
+}
+.form-box:hover { transform: translateY(-3px); }
+.form-box.V { background: rgba(76,175,80,.25);  color: #4caf50; border: 1px solid #4caf50; }
+.form-box.N { background: rgba(234,179,8,.20);  color: #eab308; border: 1px solid #eab308; }
+.form-box.P { background: rgba(239,68,68,.20);  color: #f87171; border: 1px solid #ef4444; }
+
+/* tooltip costruito in CSS puro: nessuna libreria esterna */
+.form-box .tip {
+  visibility: hidden; opacity: 0; transition: opacity .15s;
+  position: absolute; bottom: 118%; left: 50%; transform: translateX(-50%);
+  background: var(--dark3); border: 1px solid var(--border);
+  color: var(--text); font-family: 'Barlow', sans-serif; font-weight: 400;
+  font-size: .72rem; line-height: 1.35; white-space: nowrap;
+  padding: .45rem .6rem; border-radius: 6px; z-index: 30;
+  box-shadow: 0 6px 18px rgba(0,0,0,.45);
+}
+.form-box:hover .tip { visibility: visible; opacity: 1; }
+
+/* ── Badge fonte ── */
+.fonte-badge {
+  background: var(--dark3); border: 1px solid var(--border); border-radius: 8px;
+  padding: 5px 11px; font-size: .75rem; color: var(--muted);
+}
+.fonte-nota { font-size: .72rem; color: var(--muted); margin-top: .5rem; word-break: break-all; }
