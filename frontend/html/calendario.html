@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html lang="it">
   <head>
+    <!-- Definizione della codifica dei caratteri e del viewport responsive per mobile/desktop -->
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
     <title>FootManager – Calendario</title>
+    <!-- Preconnessione ai Google Fonts per ottimizzare il caricamento dei font -->
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <!-- Importazione font 'Barlow Condensed' e 'Barlow' da Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet"/>
-    <!--
-      USA IL CSS ESISTENTE DEL TUO PROGETTO.
-      Abbiamo aggiunto solo le classi mancanti in fondo con un <style> inline.
-    -->
     <link href="/html/css/stylecalendario.css" rel="stylesheet"/>
     <link href="/html/css/styleall.css" rel="stylesheet" />
   </head>
@@ -32,7 +31,7 @@
           <a class="nav-item" href="/html/messaggi.html"><span class="ico">💬</span>Messaggi</a>
         </nav>
 
-                <!-- ══ LEGENDA SIDEBAR ══ -->
+        <!-- ══ LEGENDA SIDEBAR ══ -->
         <div class="sidebar-legend">
           <div class="legend-title">Tipi di evento</div>
           <div class="legend-item">
@@ -49,6 +48,7 @@
           </div>
         </div>
 
+        <!-- Footer della sidebar con profilo utente loggato e tasto logout -->      
         <div class="sidebar-footer">
           <div class="user-card">
             <div class="avatar" id="sb-avatar">?</div>
@@ -59,9 +59,6 @@
             <button class="btn-logout" onclick="logout()">Esci</button>
           </div>
         </div>
-
-
-
       </aside>
 
       <!-- ══ MAIN ══ -->
@@ -148,9 +145,9 @@
             <div id="list-container"></div>
           </div>
 
-        </div><!-- /content -->
-      </div><!-- /main -->
-    </div><!-- /app -->
+        </div>
+      </div>
+    </div>
 
     <!-- ══ MODAL NUOVO / MODIFICA EVENTO ══ -->
     <div class="fm-modal-overlay" id="modalNuovoEvento">
@@ -171,10 +168,6 @@
           <div class="fm-form-group">
             <label>Tipo *</label>
             <select id="fm-ev-tipo">
-              <!--
-                IMPORTANTE: i valori devono corrispondere ESATTAMENTE
-                all'ENUM MySQL: ALLENAMENTO | PARTITA | RIUNIONE | ALTRO
-              -->
               <option value="ALLENAMENTO">⚽ Allenamento</option>
               <option value="PARTITA">🏟 Partita</option>
               <option value="RIUNIONE">📋 Riunione</option>
@@ -221,15 +214,13 @@
       </div>
     </div>
 
-    <!-- TOAST -->
+    <!-- ── TOAST NOTIFICATIONS (Feedback operazioni) ── -->
     <div class="fm-toast" id="fm-toast">
       <span id="fm-toast-icon">✅</span>
       <span id="fm-toast-text"></span>
     </div>
 
-    <!-- JS del calendario — UNICA dipendenza -->
     <script src="/html/js/utils.js"></script>
     <script src="/html/js/calendario.js"></script>
-
   </body>
 </html>
