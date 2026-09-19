@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+  <!-- Definizione della codifica dei caratteri e del viewport responsive per mobile/desktop -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FootManager – Classifica</title>
+  <!-- Preconnessione ai Google Fonts per ottimizzare il caricamento dei font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <!-- Importazione font 'Barlow Condensed' e 'Barlow' da Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
   <link href="/html/css/styleclassifica.css" rel="stylesheet" />
   <link href="/html/css/styleall.css" rel="stylesheet" />
@@ -12,7 +15,7 @@
 <body>
 <div class="app">
 
-  <!-- SIDEBAR (stessa struttura di calendario.html / statistiche.html / messaggi.html) -->
+  <!-- ── SIDEBAR ── -->
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="icon">⚽</div>
@@ -20,16 +23,15 @@
     </div>
 
     <nav class="nav-section">
-      <div class="nav-label">La mia area</div>
+      <div class="nav-label">Principale</div>
       <a class="nav-item" id="nav-dashboard" href="/html/pages/dashboard-allenatore.html"><span class="ico">🏠</span>Dashboard</a>
+      <a class="nav-item" href="/html/rosa.html"><span class="ico">👥</span>Rosa</a>
       <a class="nav-item" href="calendario.html"><span class="ico">📅</span>Calendario</a>
       <a class="nav-item" href="statistiche.html"><span class="ico">📊</span>Statistiche</a>
       <a class="nav-item" href="messaggi.html"><span class="ico">💬</span>Messaggi</a>
-      <a class="nav-item" id="nav-badge" href="/html/badge.html" style="display:none;"><span class="ico">🎖️</span>I miei badge</a>
-      <a class="nav-item active" href="classifica.html"><span class="ico">🏆</span>Classifica</a>
     </nav>
 
-
+    <!-- Footer della sidebar con profilo utente loggato e tasto logout -->
     <div class="sidebar-footer">
       <div class="user-card">
         <div class="avatar" id="sb-avatar">?</div>
@@ -58,11 +60,11 @@
         </div>
         <div class="card-body">
           <div class="stat-row">
-            <div class="stat-cell"><div class="val" id="mia-pos-sett" style="color:var(--green-l)">--</div><div class="lbl">Pos. Settimanale</div></div>
-            <div class="stat-cell"><div class="val" id="miei-pts-sett">--</div><div class="lbl">Pt Settimanali</div></div>
-            <div class="stat-cell"><div class="val" id="mia-pos-tot" style="color:#60a5fa">--</div><div class="lbl">Pos. Totale</div></div>
-            <div class="stat-cell"><div class="val" id="miei-pts-tot">--</div><div class="lbl">Pt Totali</div></div>
-            <div class="stat-cell"><div class="val" id="mie-risposte">--</div><div class="lbl">Risposte corrette</div></div>
+            <div class="stat-cell"><div class="val" id="mia-pos-sett" style="color:var(--green-l)">—</div><div class="lbl">Pos. Settimanale</div></div>
+            <div class="stat-cell"><div class="val" id="miei-pts-sett">—</div><div class="lbl">Pt Settimanali</div></div>
+            <div class="stat-cell"><div class="val" id="mia-pos-tot" style="color:#60a5fa">—</div><div class="lbl">Pos. Totale</div></div>
+            <div class="stat-cell"><div class="val" id="miei-pts-tot">—</div><div class="lbl">Pt Totali</div></div>
+            <div class="stat-cell"><div class="val" id="mie-risposte">—</div><div class="lbl">Risposte corrette</div></div>
           </div>
         </div>
       </div>
@@ -96,7 +98,7 @@
         </div>
       </div>
 
-    </div><!-- /content -->
+    </div>
   </div>
 </div>
 
