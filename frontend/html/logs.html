@@ -1,19 +1,20 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+  <!-- Definizione della codifica dei caratteri e del viewport responsive per mobile/desktop -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FootManager – Log di Sistema</title>
+  <!-- Preconnessione ai Google Fonts per ottimizzare il caricamento dei font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <!-- Importazione font 'Barlow Condensed' e 'Barlow' da Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
-  
-
   <link href="/html/css/stylestaff.css" rel="stylesheet" />
 </head>
 <body>
 <div class="app">
 
-
+  <!-- ── SIDEBAR ── -->
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="icon">⚽</div>
@@ -72,7 +73,7 @@
         </table>
 
         <!-- PAGINAZIONE -->
-        <div style="display:flex; justify-space-between; align-items:center; padding: 1rem 1.25rem; border-top: 1px solid var(--border, #30363d);">
+        <div style="display:flex; justify-content: space-between; align-items:center; padding: 1rem 1.25rem; border-top: 1px solid var(--border, #30363d);">
           <button class="btn-sm" id="btn-prev" onclick="cambiaPagina(-1)" disabled>← Precedente</button>
           <span id="page-info" style="font-size: 0.85rem; color: var(--muted);">Pagina 1</span>
           <button class="btn-sm" id="btn-next" onclick="cambiaPagina(1)">Successiva →</button>

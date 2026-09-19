@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+    <!-- Definizione della codifica dei caratteri e del viewport responsive per mobile/desktop -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FootManager - Messaggi</title>
-
+    <!-- Preconnessione ai Google Fonts per ottimizzare il caricamento dei font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- Importazione font 'Barlow Condensed' e 'Barlow' da Google Fonts -->    
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
     <link href="/html/css/styleall.css" rel="stylesheet">
 </head>
-
 <body>
-
 <div class="app">
 
     <!-- SIDEBAR -->
@@ -20,6 +20,8 @@
             <div class="icon">⚽</div>
             <span>FootManager</span>
         </div>
+
+        <!-- Sezione navigazione principale -->
         <nav class="nav-section">
             <div class="nav-label">Principale</div>
             <a class="nav-item" id="nav-dashboard" href="/html/pages/dashboard-allenatore.html"><span class="ico">🏠</span> Dashboard</a>
@@ -29,12 +31,13 @@
             <a class="nav-item active" href="/html/messaggi.html"><span class="ico">💬</span> Messaggi</a>
         </nav>
 
+        <!-- Footer della sidebar con profilo utente loggato e tasto logout -->
         <div class="sidebar-footer">
             <div class="user-card">
-                <div class="avatar">MC</div>
+                <div class="avatar">?</div>
                 <div class="user-info">
-                    <strong>Marco Conti</strong>
-                    <small>Allenatore</small>
+                    <strong>—</strong>
+                    <small>—</small>
                 </div>
                 <button class="btn-logout" onclick="logout()">Esci</button>
             </div>
@@ -56,24 +59,23 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-label">Messaggi inviati</div>
-                    <div class="stat-value">87</div>
+                    <div class="stat-value">—</div>
                     <div class="stat-sub">Stagione corrente</div>
                 </div>
                 <div class="stat-card info">
                     <div class="stat-label">Da leggere</div>
-                    <div class="stat-value">5</div>
-                    <div class="stat-sub">3 giocatori</div>
+                    <div class="stat-value">—</div>
+                    <div class="stat-sub">— giocatori</div>
                 </div>
                 <div class="stat-card warn">
                     <div class="stat-label">Ultimo invio</div>
-                    <div class="stat-value" style="font-size:1.3rem;">Oggi</div>
-                    <div class="stat-sub">08:30</div>
+                    <div class="stat-value" style="font-size:1.3rem;">—</div>
+                    <div class="stat-sub">—:—</div>
                 </div>
             </div>
 
             <!-- LISTA + COMPOSIZIONE -->
             <div class="grid-2" id="msg-grid">
-
                 <!-- LISTA -->
                 <div class="card">
                     <div class="card-header">
@@ -83,43 +85,17 @@
                         <div class="msg-list">
                             <div class="msg-item">
                                 <div class="msg-header">
-                                    <span class="msg-to">→ Tutta la squadra</span>
-                                    <span class="msg-time">Oggi 08:30</span>
+                                    <span class="msg-to">→ —</span>
+                                    <span class="msg-time">— —:—</span>
                                 </div>
-                                <div class="msg-text">Domani allenamento anticipato alle 8:45. Portate il materiale completo.</div>
-                                <div class="msg-status letto">✔✔ Letto da 18/23</div>
-                            </div>
-
-                            <div class="msg-item">
-                                <div class="msg-header">
-                                    <span class="msg-to">→ L. Rossi</span>
-                                    <span class="msg-time">Ieri 16:00</span>
-                                </div>
-                                <div class="msg-text">Ottima prestazione sabato. Continua così.</div>
-                                <div class="msg-status letto">✔✔ Letto</div>
-                            </div>
-                            <div class="msg-item">
-                                <div class="msg-header">
-                                    <span class="msg-to">→ Difensori</span>
-                                    <span class="msg-time">23 Mag</span>
-                                </div>
-                                <div class="msg-text">Ripassate il modulo 4-3-3 in vista della prossima partita.</div>
-                                <div class="msg-status inviato">✔ Inviato - 2 non hanno ancora letto</div>
-                            </div>
-                            <div class="msg-item">
-                                <div class="msg-header">
-                                    <span class="msg-to">→ Staff Tecnico</span>
-                                    <span class="msg-time">20 Mag</span>
-                                </div>
-                                <div class="msg-text">Riunione programmata per venerdì alle 18:00.</div>
-                                <div class="msg-status letto">✔✔ Tutti hanno letto</div>
+                                <div class="msg-text">—</div>
+                                <div class="msg-status letto">✔✔—</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- COMPOSIZIONE (visibile solo ad allenatore/staff, nascosta ai giocatori via JS) -->
-
                 <div class="card" id="compose-card">
                     <div class="card-header">
                         <h2>Nuovo Messaggio</h2>
@@ -177,6 +153,5 @@
 
 <script src="/html/js/utils.js"></script>
 <script src="/html/js/messaggi.js"></script>
-
 </body>
 </html>
