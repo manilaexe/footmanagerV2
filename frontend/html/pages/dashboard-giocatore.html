@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+  <!-- Definizione della codifica dei caratteri e del viewport responsive per mobile/desktop -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FootManager – Giocatore</title>
+  <!-- Preconnessione ai Google Fonts per ottimizzare il caricamento dei font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <!-- Importazione font 'Barlow Condensed' e 'Barlow' da Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
   <link href="/html/css/stylegiocatore.css" rel="stylesheet" />
 </head>
@@ -18,16 +21,14 @@
       <span>FootManager</span>
     </div>
     <nav class="nav-section">
-      <div class="nav-label">La mia area</div>
+      <div class="nav-label">Principale</div>
       <a class="nav-item active" href="#"><span class="ico">🏠</span> Dashboard</a>     
       <a class="nav-item" href="/html/calendario.html"><span class="ico">📅</span> Calendario</a>
       <a class="nav-item" href="/html/statistiche.html"><span class="ico">📊</span> Statistiche</a>
       <a class="nav-item" href="/html/messaggi.html"><span class="ico">💬</span> Messaggi</a>
-      <a class="nav-item" href="/html/badge.html"><span class="ico">🎖️</span> I miei badge</a>
-      <a class="nav-item" href="/html/classifica.html"><span class="ico">🏆</span> Classifica</a>
-      
     </nav>
 
+    <!-- Footer della sidebar con profilo utente loggato e tasto logout -->
     <div class="sidebar-footer">
       <div class="user-card">
         <div class="avatar" id="sb-avatar">?</div>
@@ -67,14 +68,12 @@
             <div class="pts" id="profile-punti-totali">—</div>
             <div class="pts-label">Punti totali</div>
           </div>
-          <!-- Badge popolati dinamicamente da giocatore.js -->
           <div id="profile-badge-list"></div>
         </div>
       </div>
 
       <!-- QUIZ DEL GIORNO -->
-      <!-- Tutto il contenuto (domanda, opzioni, punti, stato già-risposto)
-           è gestito da giocatore.js -> caricaQuizGiornaliero() -->
+      <!-- Tutto il contenuto (domanda, opzioni, punti, stato già-risposto) è gestito da giocatore.js -> caricaQuizGiornaliero() -->
       <div class="quiz-card" id="quiz-card">
         <div class="quiz-header">
           <div>
@@ -93,28 +92,29 @@
       <!-- STATISTICHE + MESSAGGI -->
       <div class="grid-2">
         <!-- STATISTICHE -->
+        <!-- TODO: FAR FUNZIONARE-->
         <div class="card">
           <div class="card-header"><h2>Le mie statistiche</h2><span style="font-size:0.8rem;color:var(--muted)">Stagione 2024/25</span></div>
           <div class="card-body">
             <div class="stat-row" style="margin-bottom:1.25rem">
-              <div class="stat-cell"><div class="val">18</div><div class="lbl">Presenze</div></div>
-              <div class="stat-cell"><div class="val">12</div><div class="lbl">Gol</div></div>
-              <div class="stat-cell"><div class="val">5</div><div class="lbl">Assist</div></div>
-              <div class="stat-cell"><div class="val">34</div><div class="lbl">Tiri tot.</div></div>
-              <div class="stat-cell"><div class="val">22</div><div class="lbl">In porta</div></div>
-              <div class="stat-cell"><div class="val">3</div><div class="lbl">Rigori</div></div>
+              <div class="stat-cell"><div class="val">—</div><div class="lbl">Presenze</div></div>
+              <div class="stat-cell"><div class="val">—</div><div class="lbl">Gol</div></div>
+              <div class="stat-cell"><div class="val">—</div><div class="lbl">Assist</div></div>
+              <div class="stat-cell"><div class="val">—</div><div class="lbl">Tiri tot.</div></div>
+              <div class="stat-cell"><div class="val">—</div><div class="lbl">In porta</div></div>
+              <div class="stat-cell"><div class="val">—</div><div class="lbl">Rigori</div></div>
             </div>
             <div class="stat-bar-row">
-              <div class="stat-bar-label"><span class="name">Passaggi riusciti</span><span class="pct">78%</span></div>
-              <div class="bar-track"><div class="bar-fill" style="width:78%"></div></div>
+              <div class="stat-bar-label"><span class="name">Passaggi riusciti</span><span class="pct">—%</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:0%"></div></div>
             </div>
             <div class="stat-bar-row">
-              <div class="stat-bar-label"><span class="name">Dribbling riusciti</span><span class="pct">62%</span></div>
-              <div class="bar-track"><div class="bar-fill blue" style="width:62%"></div></div>
+              <div class="stat-bar-label"><span class="name">Dribbling riusciti</span><span class="pct">—%</span></div>
+              <div class="bar-track"><div class="bar-fill blue" style="width:0%"></div></div>
             </div>
             <div class="stat-bar-row">
-              <div class="stat-bar-label"><span class="name">Duelli vinti</span><span class="pct">55%</span></div>
-              <div class="bar-track"><div class="bar-fill amber" style="width:55%"></div></div>
+              <div class="stat-bar-label"><span class="name">Duelli vinti</span><span class="pct">—%</span></div>
+              <div class="bar-track"><div class="bar-fill amber" style="width:0%"></div></div>
             </div>
           </div>
         </div>
@@ -156,20 +156,19 @@
           <div class="card-header"><h2>🏆 Classifica settimanale</h2><span style="font-size:0.75rem;color:var(--muted)">Reset ogni lunedì</span></div>
           <div class="card-body">
             <div class="rank-list">
-              <div class="rank-item"><div class="rank-pos gold">1</div><div class="rank-name">M. Bianchi</div><div class="rank-pts">80 pt</div></div>
-              <div class="rank-item"><div class="rank-pos silver">2</div><div class="rank-name">G. Esposito</div><div class="rank-pts">70 pt</div></div>
-              <div class="rank-item me"><div class="rank-pos bronze">3</div><div class="rank-name">L. Rossi (tu)</div><div class="rank-pts">60 pt</div></div>
-              <div class="rank-item"><div class="rank-pos" style="color:var(--muted)">4</div><div class="rank-name">A. Ferrari</div><div class="rank-pts">50 pt</div></div>
-              <div class="rank-item"><div class="rank-pos" style="color:var(--muted)">5</div><div class="rank-name">P. Romano</div><div class="rank-pts">40 pt</div></div>
+              <div class="rank-item"><div class="rank-pos gold">1</div><div class="rank-name">—</div><div class="rank-pts">—pt</div></div>
+              <div class="rank-item"><div class="rank-pos silver">2</div><div class="rank-name">—</div><div class="rank-pts">—pt</div></div>
+              <div class="rank-item me"><div class="rank-pos bronze">3</div><div class="rank-name">—</div><div class="rank-pts">—pt</div></div>
+              <div class="rank-item"><div class="rank-pos" style="color:var(--muted)">4</div><div class="rank-name">—</div><div class="rank-pts">—pt</div></div>
+              <div class="rank-item"><div class="rank-pos" style="color:var(--muted)">5</div><div class="rank-name">—</div><div class="rank-pts">—pt</div></div>
             </div>
           </div>
         </div>
       </div>
-    </div><!-- /content -->
-  </div><!-- /main -->
+    </div>
+  </div>
 </div>
 
-  <!-- 1. Prima l'utility che contiene verificaAutenticazione() -->
   <script src="/html/js/utils.js"></script> 
   <script src="/html/js/giocatore.js"></script>
 </body>
