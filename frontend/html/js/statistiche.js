@@ -70,12 +70,8 @@ async function caricaDatiSquadra() {
     if (!response.ok) throw new Error('Errore nel recupero dei dati squadra');
       
     const data = await response.json();
-      
     CURRENT_KPI = data.kpi || {};
     popolaKpiSquadra(CURRENT_KPI);
-    drawLineChart(data.andamentoGolFatti, data.andamentoGolSubiti);
-    MATCHES = data.ultimiMatch || [];
-    renderForma();
   } catch (error) {
     console.error('Errore nel caricamento della squadra:', error);
   }
@@ -88,12 +84,10 @@ async function caricaDatiGiocatori() {
     });
 
     if (!response.ok) throw new Error('Errore nel recupero dei giocatori');
-        
     const data = await response.json();
         
     PLAYERS = data.map(p => {
         const isGK = Boolean(p.portiere);
-
         const presenze = p.presenze ?? p.pres ?? 0;
         const presenzeTitolare = p.presenzeTitolare ?? 0;
         const minutiGiocati = p.minutiGiocati ?? 0;
@@ -164,11 +158,9 @@ async function caricaDatiGiocatori() {
             normalized.crossRiusciti = p.crossRiusciti ?? 0;
             normalized.tackle = p.tackle ?? p.tackel ?? 0;
             normalized.palloniRubati = p.palloniRubati ?? 0;
-            
             normalized.gol = normalized.golTotali;
             normalized.tiri = normalized.tiriTotali;
         }
-
         return normalized;
     });
         
@@ -190,7 +182,6 @@ async function caricaDatiGiocatori() {
    ========================================================================== */
 function popolaKpiSquadra(kpi = {}) {
   CURRENT_KPI = kpi;
-    
   const impostaTesto = (id, valore) => {
     const el = document.getElementById(id);
     if (el) el.textContent = valore;
@@ -212,7 +203,6 @@ function popolaKpiSquadra(kpi = {}) {
   const aggiornaDonut = (idTesto, idCerchio, valorePercentuale) => {
     const pct = Math.min(Math.max(Number(valorePercentuale) || 0, 0), 100);
     impostaTesto(idTesto, `${pct.toFixed(0)}%`);
-
     const cerchio = document.getElementById(idCerchio);
     if (cerchio) {
       cerchio.setAttribute('stroke-dasharray', `${pct.toFixed(1)} ${100 - pct.toFixed(1)}`);
@@ -223,7 +213,6 @@ function popolaKpiSquadra(kpi = {}) {
   const teamPlayers = activeSquadraId !== undefined && activeSquadraId !== null 
     ? PLAYERS.filter(p => p.squadraId === activeSquadraId) 
     : PLAYERS;
-
   const movPlayers = teamPlayers.filter(p => !p.portiere);
   const gkPlayers  = teamPlayers.filter(p =>  p.portiere);
 
@@ -231,7 +220,6 @@ function popolaKpiSquadra(kpi = {}) {
   const sumTiriTeam = movPlayers.reduce((s, p) => s + (Number(p.tiriTotali || 0)), 0);
   const sumBigChanceTeam = movPlayers.reduce((s, p) => s + (Number(p.bigChanceCreate || 0)), 0);
   const sumAssistTeam = teamPlayers.reduce((s, p) => s + (Number(p.assist || 0)), 0);
-  
   const sumGolSubitiGK = gkPlayers.reduce((s, p) => s + (Number(p.goalSubiti || 0)), 0);
   const sumCleanSheetGK = gkPlayers.reduce((s, p) => s + (Number(p.cleanSheet || 0)), 0);
   const sumTackleRubati = movPlayers.reduce((s, p) => s + (Number(p.tackle || 0) + Number(p.palloniRubati || 0)), 0);
@@ -336,37 +324,7 @@ function switchTab(name){
 }
 
 /* ==========================================================================
-   6. GRAFICO A LINEE SVG
-   ========================================================================== */
-function drawLineChart(gf = [], gs = []){
-  if (gf.length === 0) gf = [0];
-  if (gs.length === 0) gs = [0];
-  
-  const svg = document.getElementById('line-svg');
-  if(!svg) return;  
-  
-  const W=700,H=200,pad=20,maxV=Math.max(...gf, ...gs, 5);  
-  const xs=i=>pad+(W-2*pad)*(i/(gf.length-1 || 1));         
-  const ys=v=>H-pad-(H-2*pad)*(v/maxV);                     
-  
-  const path=(arr,col)=>{
-    let d=arr.map((v,i)=>`${i===0?'M':'L'}${xs(i).toFixed(1)},${ys(v).toFixed(1)}`).join(' ');
-    return `<path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            ${arr.map((v,i)=>`<circle cx="${xs(i)}" cy="${ys(v)}" r="3" fill="${col}" opacity=".8"/>`).join('')}`;
-  };
-
-  let grid='';
-  for(let g=0;g<=maxV;g++){
-    const y=ys(g);
-    grid+=`<line x1="${pad}" y1="${y}" x2="${W-pad}" y2="${y}" stroke="rgba(48,54,61,.6)" stroke-width="1"/>
-           <text x="${pad-10}" y="${y+4}" text-anchor="end" font-size="14" fill="#8b949e">${g}</text>`;
-  }
-
-  svg.innerHTML=grid+path(gf,'#4caf50')+path(gs,'#f87171');
-}
-
-/* ==========================================================================
-   7. GRAFICO RADAR (SPIDER CHART)
+   6. GRAFICO RADAR (SPIDER CHART)
    ========================================================================== */
 const RADAR_CATS=['Gol','Assist','Passaggi','Dribbling','Duelli','Intercetti'];
 
@@ -432,7 +390,7 @@ function drawRadar(idx){
 }
 
 /* ==========================================================================
-   8. STATISTICHE DETTAGLIATE & MODIFICA
+   7. STATISTICHE DETTAGLIATE & MODIFICA
    ========================================================================== */
 function renderIndivBars(idx){
   const p = PLAYERS[idx]; 
@@ -701,7 +659,7 @@ function renderTopScorers(){
 }
 
 /* ==========================================================================
-   9. SELETTORE DEL GIOCATORE
+   8. SELETTORE DEL GIOCATORE
    ========================================================================== */
 let selPlayer=0;  
 function buildSelector(){
@@ -740,7 +698,7 @@ function selectPlayer(i,btn){
 }
 
 /* ==========================================================================
-   10. CONFRONTO DIRETTO TRA DUE GIOCATORI
+   9. CONFRONTO DIRETTO TRA DUE GIOCATORI
    ========================================================================== */
 function popolaSelectConfronto() {
   const cmpA = document.getElementById('cmp-a');
@@ -833,38 +791,3 @@ function renderConfronto(){
   `;
 }
 
-/* ==========================================================================
-   11. STATO DI FORMA E STORICO ULTIME PARTITE
-   ========================================================================== */
-function renderForma(){
-  const esito={w:'V',d:'P',l:'S'};
-
-  const containerDots = document.getElementById('form-dots');
-  const containerTable = document.getElementById('results-tbody');
-  
-  if(!containerDots || !containerTable) return;
-
-  if(!Array.isArray(MATCHES) || MATCHES.length === 0) {
-      containerDots.innerHTML = "<p>Nessun match recente registrato.</p>";
-      containerTable.innerHTML = "<tr><td colspan='6' style='text-align:center'>Nessun dato</td></tr>";
-      return;
-  }
-
-  containerDots.innerHTML=MATCHES.map(m=>`
-    <div class="form-dot ${m.esito}" title="${m.avv} ${m.gf}-${m.gs}">${esito[m.esito] || 'P'}</div>
-  `).join('');
-  
-  const pill={w:'pill-green',d:'pill-amber',l:'pill-red'};
-  const label={w:'Vittoria',d:'Pareggio',l:'Sconfitta'};
-
-  containerTable.innerHTML=MATCHES.map(m=>`
-    <tr>
-      <td>${m.data}</td>
-      <td>${m.avv}</td>
-      <td><strong>${m.gf} – ${m.gs}</strong></td>
-      <td style="color:var(--green-l)">${m.gf}</td>
-      <td style="color:#f87171">${m.gs}</td>
-      <td><span class="pill ${pill[m.esito] || ''}">${label[m.esito] || 'N/D'}</span></td>
-    </tr>
-  `).join('');
-}
