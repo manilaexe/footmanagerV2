@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+  <!-- Definizione della codifica dei caratteri e del viewport responsive per mobile/desktop -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FootManager – Allenatore</title>
+  <!-- Preconnessione ai Google Fonts per ottimizzare il caricamento dei font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <!-- Importazione font 'Barlow Condensed' e 'Barlow' da Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
   <link href="/html/css/styleall.css" rel="stylesheet" />
 </head>
@@ -18,6 +21,7 @@
       <span>FootManager</span>
     </div>
 
+    <!-- Sezione navigazione principale -->
     <nav class="nav-section">
       <div class="nav-label">Principale</div>
       <a class="nav-item active" href="#"><span class="ico">🏠</span> Dashboard</a>
@@ -27,7 +31,7 @@
       <a class="nav-item" href="/html/messaggi.html"><span class="ico">💬</span> Messaggi</a>
     </nav>
 
-
+    <!-- Footer della sidebar con profilo utente loggato e tasto logout -->
     <div class="sidebar-footer">
       <div class="user-card">
         <div class="avatar" id="sb-avatar">?</div>
@@ -48,7 +52,7 @@
 
     <div class="content">
 
-      <!-- KPI CARDS (Valori controllati da JS) -->
+      <!-- CARDS (Valori controllati da JS) -->
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-label">Giocatori in rosa</div>
@@ -65,6 +69,7 @@
           <div class="stat-value" id="kpi-messaggi">—</div>
           <div class="stat-sub">Comunicazioni totali</div>
         </div>
+        <!-- TODO: CHECK CHE FUNZIONI-->
         <div class="stat-card">
           <div class="stat-label">Media gol/partita</div>
           <div class="stat-value" id="kpi-media-gol">0.0</div>
@@ -80,7 +85,6 @@
             <h2>Rosa</h2>
             <div style="display: flex; align-items: center; gap: 10px;">
               <a class="card-link" href="/html/rosa.html">Vedi tutti →</a>
-              <button class="btn-primary" style="font-size: 0.8rem; padding: 4px 8px;" onclick="openModal('modal-giocatore')">+ Aggiungi</button>
             </div>
           </div>
           <div class="card-body" style="padding:0">
@@ -88,6 +92,7 @@
               <thead>
                 <tr>
                   <th>Giocatore</th>
+                  <!-- Intestazioni interattive per ordinare la tabella tramite JS -->
                   <th onclick="sortDashboardRosa('ruolo')" style="cursor: pointer;" title="Clicca per invertire l'ordine dei ruoli">Pos ↕</th>
                   <th onclick="sortDashboardRosa('presenze')" style="cursor: pointer;" title="Ordina per presenze">Presenze ↕</th>
                   <th onclick="sortDashboardRosa('gol')" style="cursor: pointer;" title="Ordina per gol">Gol ↕</th>
@@ -113,7 +118,6 @@
             </div>
           </div>
           <div class="card-body">
-            <!-- ID corrispondente al JavaScript -->
             <div class="event-list" id="dashboard-eventi-list">
               <div style="text-align: center; padding: 20px; color: #888;">Caricamento eventi...</div>
             </div>
@@ -129,7 +133,6 @@
             <a class="card-link" href="/html/messaggi.html">Tutti →</a>
           </div>
           <div class="card-body">
-            <!-- Agganciato a JS per iniettare i messaggi inviati -->
             <div class="msg-list" id="dashboard-msg-list">
               <div style="text-align: center; padding: 20px; color: #888;">Caricamento comunicazioni...</div>
             </div>
@@ -141,7 +144,6 @@
             <h2>Invia nuovo messaggio</h2>
           </div>
           <div class="card-body">
-            <!-- Form strutturato per intercettare i dati via JS -->
             <form id="dashboard-msg-form" class="compose-box">
               <select id="msg-dest" required>
               </select>
@@ -152,9 +154,9 @@
         </div>
       </div>
 
-    </div><!-- /content -->
-  </div><!-- /main -->
-</div><!-- /app -->
+    </div>
+  </div>
+</div>
 
 <!-- MODAL NUOVO EVENTO -->
 <div class="modal-overlay" id="modal-evento">
@@ -190,94 +192,6 @@
         <button type="button" class="btn-ghost" onclick="closeModal('modal-evento')">Annulla</button>
         <button type="submit" class="btn-primary">Salva Evento</button>
       </div>
-    </form>
-  </div>
-</div>
-
-<!-- MODAL NUOVO GIOCATORE COMPLETO -->
-<div class="modal-overlay" id="modal-giocatore">
-  <div class="modal" style="max-width: 550px;">
-    <h3>Nuovo Giocatore</h3>
-    <form id="dashboard-giocatore-form">
-      
-      <!-- CREDENZIALI ACCOUNT UTENTE -->
-      <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #333;">
-        <small style="color: #aaa; display: block; margin-bottom: 8px; font-weight: bold;">CREDENZIALI ACCESSO UTENTE</small>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-          <div class="form-group" style="margin:0;">
-            <label>Username *</label>
-            <input type="text" id="player-username" placeholder="es. m.rossi" required />
-          </div>
-          <div class="form-group" style="margin:0;">
-            <label>Password *</label>
-            <input type="password" id="player-password" placeholder="es. Password123!" required />
-          </div>
-        </div>
-      </div>
-
-      <!-- DATI ANAGRAFICI -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <div class="form-group">
-          <label>Nome *</label>
-          <input type="text" id="player-nome" placeholder="es. Mario" required />
-        </div>
-        <div class="form-group">
-          <label>Cognome *</label>
-          <input type="text" id="player-cognome" placeholder="es. Rossi" required />
-        </div>
-      </div>
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <div class="form-group">
-          <label>Ruolo / Posizione *</label>
-          <select id="player-ruolo" required>
-            <option value="POR">Portiere (POR)</option>
-            <option value="DIF">Difensore (DIF)</option>
-            <option value="CEN">Centrocampista (CEN)</option>
-            <option value="ATT">Attaccante (ATT)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Numero Maglia</label>
-          <input type="number" id="player-numero" placeholder="es. 10" min="1" max="99" value="10" required />
-        </div>
-      </div>
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <div class="form-group">
-          <label>Data di Nascita *</label>
-          <input type="date" id="player-data-nascita" required />
-        </div>
-        <div class="form-group">
-          <label>Nazionalità</label>
-          <input type="text" id="player-nazionalita" placeholder="es. Italiana" value="Italiana" />
-        </div>
-      </div>
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-        <div class="form-group">
-          <label>Piede Preferito</label>
-          <select id="player-piede">
-            <option value="Destro">Destro</option>
-            <option value="Sinistro">Sinistro</option>
-            <option value="Ambidestro">Ambidestro</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Altezza (cm)</label>
-          <input type="number" id="player-altezza" placeholder="es. 180" value="180" />
-        </div>
-        <div class="form-group">
-          <label>Peso (kg)</label>
-          <input type="number" id="player-peso" placeholder="es. 75" value="75" />
-        </div>
-      </div>
-
-      <div class="modal-footer" style="margin-top: 15px;">
-        <button type="button" class="btn-ghost" onclick="closeModal('modal-giocatore')">Annulla</button>
-        <button type="submit" class="btn-primary">Salva Giocatore e Utente</button>
-      </div>
-
     </form>
   </div>
 </div>
