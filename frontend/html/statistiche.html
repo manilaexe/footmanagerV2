@@ -1,23 +1,27 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+  <!-- Definizione della codifica dei caratteri e del viewport responsive per mobile/desktop -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FootManager – Statistiche</title>
+  <!-- Preconnessione ai Google Fonts per ottimizzare il caricamento dei font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <!-- Importazione font 'Barlow Condensed' e 'Barlow' da Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
   <link href="/html/css/stylestatistiche.css" rel="stylesheet" />
 </head>
 <body>
 <div class="app">
 
-  <!-- BARRA DI NAVIGAZIONE LATERALE (SIDEBAR) -->
+  <!-- ── SIDEBAR ── -->
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="icon">⚽</div>
       <span>FootManager</span>
     </div>
     
+    <!-- Sezione navigazione principale -->
     <nav class="nav-section">
       <div class="nav-label">Principale</div>
       <a class="nav-item" id="nav-dashboard" href="/html/pages/dashboard-allenatore.html"><span class="ico">🏠</span>Dashboard</a>
@@ -27,10 +31,9 @@
       <a class="nav-item" href="messaggi.html"><span class="ico">💬</span>Messaggi</a>
     </nav>
 
-
+    <!-- Footer della sidebar con profilo utente loggato e tasto logout -->
     <div class="sidebar-footer">
       <div class="user-card">
-        <!-- Profilo utente in sessione -->
         <div class="avatar" id="sb-avatar">?</div>
         <div class="user-info">
           <strong id="sb-nome">—</strong>
@@ -48,14 +51,16 @@
     </div>
 
     <div class="content">
+
       <!-- PANNELLO INDICATORI DI PRESTAZIONE (KPI SQUADRA) -->
       <div class="kpi-strip">
-        <div class="kpi-box"><div class="v" id="kpi-gol-fatti" style="color:var(--green-l)">--</div><div class="l">Gol fatti</div></div>
-        <div class="kpi-box"><div class="v" id="kpi-gol-subiti" style="color:#f87171">--</div><div class="l">Gol subiti</div></div>
-        <div class="kpi-box"><div class="v" id="kpi-partite">--</div><div class="l">Partite</div></div>
-        <div class="kpi-box"><div class="v" id="kpi-vittorie" style="color:var(--green-l)">--</div><div class="l">Vittorie</div></div>
-        <div class="kpi-box"><div class="v" id="kpi-pareggi" style="color:#facc15">--</div><div class="l">Pareggi</div></div>
-        <div class="kpi-box"><div class="v" id="kpi-sconfitte" style="color:#f87171">--</div><div class="l">Sconfitte</div></div>
+        <div class="kpi-box"><div class="v" id="kpi-gol-fatti" style="color:var(--green-l)">—</div><div class="l">Gol fatti</div></div>
+        <div class="kpi-box"><div class="v" id="kpi-gol-subiti" style="color:#f87171">—</div><div class="l">Gol subiti</div></div>
+        <!-- TODO: FAR FUNZIONARE-->
+        <div class="kpi-box"><div class="v" id="kpi-partite">—</div><div class="l">Partite</div></div>
+        <div class="kpi-box"><div class="v" id="kpi-vittorie" style="color:var(--green-l)">—</div><div class="l">Vittorie</div></div>
+        <div class="kpi-box"><div class="v" id="kpi-pareggi" style="color:#facc15">—</div><div class="l">Pareggi</div></div>
+        <div class="kpi-box"><div class="v" id="kpi-sconfitte" style="color:#f87171">—</div><div class="l">Sconfitte</div></div>
       </div>
 
       <!-- SELEZIONE SCHEDE (TABS) -->
@@ -63,7 +68,6 @@
         <div class="tab active" onclick="switchTab('squadra')">Squadra</div>
         <div class="tab" onclick="switchTab('individuale')">Individuale</div>
         <div class="tab" onclick="switchTab('confronto')">Confronto</div>
-        <div class="tab" onclick="switchTab('forma')">Forma</div>
       </div>
 
       <!-- SCHEDA: STATISTICHE SQUADRA -->
@@ -76,23 +80,23 @@
             <div class="card-body">
               <div class="bar-chart">
                 <div class="bc-row">
-                  <div class="bc-label"><span class="name">Gol squadra</span><span id="txt-off-gol">--</span></div>
+                  <div class="bc-label"><span class="name">Gol squadra</span><span id="txt-off-gol">—</span></div>
                   <div class="bc-track"><div class="bc-fill fill-green" id="bar-off-gol" style="width:0%"></div></div>
                 </div>
                 <div class="bc-row">
-                  <div class="bc-label"><span class="name">Tiri totali</span><span id="txt-off-tiri">--</span></div>
+                  <div class="bc-label"><span class="name">Tiri totali</span><span id="txt-off-tiri">—</span></div>
                   <div class="bc-track"><div class="bc-fill fill-green" id="bar-off-tiri" style="width:0%"></div></div>
                 </div>
                 <div class="bc-row">
-                  <div class="bc-label"><span class="name">Conversione tiri</span><span id="txt-off-conversione">--%</span></div>
+                  <div class="bc-label"><span class="name">Conversione tiri</span><span id="txt-off-conversione">—%</span></div>
                   <div class="bc-track"><div class="bc-fill fill-blue" id="bar-off-conversione" style="width:0%"></div></div>
                 </div>
                 <div class="bc-row">
-                  <div class="bc-label"><span class="name">Big chance create</span><span id="txt-off-chance">--</span></div>
+                  <div class="bc-label"><span class="name">Big chance create</span><span id="txt-off-chance">—</span></div>
                   <div class="bc-track"><div class="bc-fill fill-amber" id="bar-off-chance" style="width:0%"></div></div>
                 </div>
                 <div class="bc-row">
-                  <div class="bc-label"><span class="name">Assist squadra</span><span id="txt-off-assist">--</span></div>
+                  <div class="bc-label"><span class="name">Assist squadra</span><span id="txt-off-assist">—</span></div>
                   <div class="bc-track"><div class="bc-fill fill-green" id="bar-off-assist" style="width:0%"></div></div>
                 </div>
               </div>
@@ -105,23 +109,23 @@
             <div class="card-body">
               <div class="bar-chart">
                 <div class="bc-row">
-                  <div class="bc-label"><span class="name">Gol subiti</span><span id="txt-def-gol">--</span></div>
+                  <div class="bc-label"><span class="name">Gol subiti</span><span id="txt-def-gol">—</span></div>
                   <div class="bc-track"><div class="bc-fill fill-amber" id="bar-def-gol" style="width:0%"></div></div>
                 </div>
                 <div class="bc-row">
-                  <div class="bc-label"><span class="name">Clean sheet</span><span id="txt-def-clean">--</span></div>
+                  <div class="bc-label"><span class="name">Clean sheet</span><span id="txt-def-clean">—</span></div>
                   <div class="bc-track"><div class="bc-fill fill-green" id="bar-def-clean" style="width:0%"></div></div>
                 </div>
                 <div class="bc-row">
-                  <div class="bc-label"><span class="name">Tackle & Rubati</span><span id="txt-def-tackle">--</span></div>
+                  <div class="bc-label"><span class="name">Tackle & Rubati</span><span id="txt-def-tackle">—</span></div>
                   <div class="bc-track"><div class="bc-fill fill-blue" id="bar-def-tackle" style="width:0%"></div></div>
                 </div>
                 <div class="bc-row">
-                  <div class="bc-label"><span class="name">Intercetti</span><span id="txt-def-intercetti">--</span></div>
+                  <div class="bc-label"><span class="name">Intercetti</span><span id="txt-def-intercetti">—</span></div>
                   <div class="bc-track"><div class="bc-fill fill-blue" id="bar-def-intercetti" style="width:0%"></div></div>
                 </div>
                 <div class="bc-row">
-                  <div class="bc-label"><span class="name">Falli commessi</span><span id="txt-def-falli">--</span></div>
+                  <div class="bc-label"><span class="name">Falli commessi</span><span id="txt-def-falli">—</span></div>
                   <div class="bc-track"><div class="bc-fill fill-amber" id="bar-def-falli" style="width:0%"></div></div>
                 </div>
               </div>
@@ -132,6 +136,7 @@
       </div>
 
       <!-- SCHEDA: STATISTICHE INDIVIDUALI -->
+      <!-- TODO: CONTROLLARE CHE FUNZIONI E SE SERVE AVERLI-->
       <div class="tab-panel" id="tab-individuale">
         <div class="player-selector" id="player-selector"></div>
         <div class="indiv-grid">
@@ -174,15 +179,11 @@
             <h2>⚖️ Confronto giocatori</h2>
             <div style="display:flex;gap:8px">
               <select class="select-styled" id="cmp-a" onchange="renderConfronto()">
-                <option value="0">L. Rossi</option><option value="1">M. Bianchi</option>
-                <option value="2">A. Ferrari</option><option value="3">G. Esposito</option>
-                <option value="4">P. Romano</option>
+                <option value="0">—</option>
               </select>
               <span style="color:var(--muted);padding:.4rem">vs</span>
               <select class="select-styled" id="cmp-b" onchange="renderConfronto()">
-                <option value="2">A. Ferrari</option><option value="0">L. Rossi</option>
-                <option value="1">M. Bianchi</option><option value="3">G. Esposito</option>
-                <option value="4">P. Romano</option>
+                <option value="1">—</option>
               </select>
             </div>
           </div>
@@ -192,149 +193,106 @@
         </div>
       </div>
 
-      <!-- SCHEDA: FORMA E STORICO PARTITE -->
-      <div class="tab-panel" id="tab-forma">
-        <div class="card" style="margin-bottom:1.5rem">
-          <div class="card-header"><h2>🔥 Forma recente squadra (ultime 10 partite)</h2></div>
-          <div class="card-body">
-            <div class="form-dots" id="form-dots"></div>
-            <div style="margin-top:1.25rem;display:flex;gap:20px;font-size:.8rem;color:var(--muted)">
-              <span><span style="display:inline-block;width:12px;height:12px;background:rgba(76,175,80,.3);border-radius:3px;vertical-align:middle;margin-right:4px"></span>Vittoria</span>
-              <span><span style="display:inline-block;width:12px;height:12px;background:rgba(234,179,8,.2);border-radius:3px;vertical-align:middle;margin-right:4px"></span>Pareggio</span>
-              <span><span style="display:inline-block;width:12px;height:12px;background:rgba(239,68,68,.15);border-radius:3px;vertical-align:middle;margin-right:4px"></span>Sconfitta</span>
-            </div>
-          </div>
-        </div>
-        <!-- Tabella con lo storico dei risultati -->
-        <div class="card">
-          <div class="card-header"><h2>📅 Risultati recenti</h2></div>
-          <div class="card-body" style="padding:0">
-            <table>
-              <thead><tr><th>Data</th><th>Avversario</th><th>Ris.</th><th>Gol fatti</th><th>Gol sub.</th><th>Esito</th></tr></thead>
-              <tbody id="results-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Grafico temporale: Gol segnati e subiti per giornata -->
-      <div class="card" id="card-line-chart" style="margin-bottom:1.5rem; margin-top: 1.5rem;">
-        <div class="card-header"><h2>📈 Gol segnati per giornata</h2></div>
-        <div class="card-body">
-          <div class="line-chart-wrap">
-            <svg class="line-chart" id="line-svg" viewBox="0 0 700 200" preserveAspectRatio="none"></svg>
-          </div>
-          <div style="display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:.78rem;color:var(--muted)">
-            <span><span style="display:inline-block;width:16px;height:3px;background:var(--green-l);border-radius:2px;vertical-align:middle;margin-right:4px"></span>Gol fatti</span>
-            <span><span style="display:inline-block;width:16px;height:3px;background:#f87171;border-radius:2px;vertical-align:middle;margin-right:4px"></span>Gol subiti</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Indicatori: Possesso palla, Passaggi e Disciplina -->
-                  <!-- Indicatori a Cerchio (Donuts) -->
-            <div class="grid-cards-6" id="grid-stat-donuts">
+      <!-- Indicatori a Cerchio (Donuts): Possesso palla, Passaggi e Disciplina -->
+      <div class="grid-cards-6" id="grid-stat-donuts">
               
-              <!-- 1. Duelli Vinti -->
-              <div class="card">
-                <div class="card-header"><h2>⚔️ Duelli Vinti</h2></div>
-                <div class="card-body donut-card-body">
-                  <div class="donut-wrap">
-                    <svg viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--green-l)" stroke-width="3.5" stroke-dasharray="0 100" id="circle-duelli-vinti" stroke-linecap="round"/>
-                    </svg>
-                    <div class="donut-val" id="kpi-duelli-vinti">--%</div>
-                  </div>
-                  <div class="donut-label">Duelli Vinti</div>
-                </div>
-              </div>
-
-              <!-- 2. Duelli Persi -->
-              <div class="card">
-                <div class="card-header"><h2>🛡️ Duelli Persi</h2></div>
-                <div class="card-body donut-card-body">
-                  <div class="donut-wrap">
-                    <svg viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f87171" stroke-width="3.5" stroke-dasharray="0 100" id="circle-duelli-persi" stroke-linecap="round"/>
-                    </svg>
-                    <div class="donut-val" id="kpi-duelli-persi">--%</div>
-                  </div>
-                  <div class="donut-label">Duelli Persi</div>
-                </div>
-              </div>
-
-              <!-- 3. Precisione Passaggi -->
-              <div class="card">
-                <div class="card-header"><h2>🎯 Passaggi</h2></div>
-                <div class="card-body donut-card-body">
-                  <div class="donut-wrap">
-                    <svg viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="#60a5fa" stroke-width="3.5" stroke-dasharray="0 100" id="circle-precisione" stroke-linecap="round"/>
-                    </svg>
-                    <div class="donut-val" id="kpi-precisione">--%</div>
-                  </div>
-                  <div class="donut-label">Precisione Passaggi</div>
-                </div>
-              </div>
-
-              <!-- 4. Dribbling Vinti -->
-              <div class="card">
-                <div class="card-header"><h2>⚡ Dribbling Vinti</h2></div>
-                <div class="card-body donut-card-body">
-                  <div class="donut-wrap">
-                    <svg viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="#a78bfa" stroke-width="3.5" stroke-dasharray="0 100" id="circle-drib-vinti" stroke-linecap="round"/>
-                    </svg>
-                    <div class="donut-val" id="kpi-drib-vinti">--%</div>
-                  </div>
-                  <div class="donut-label">Dribbling Riusciti</div>
-                </div>
-              </div>
-
-              <!-- 5. Dribbling Persi -->
-              <div class="card">
-                <div class="card-header"><h2>❌ Dribbling Persi</h2></div>
-                <div class="card-body donut-card-body">
-                  <div class="donut-wrap">
-                    <svg viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f87171" stroke-width="3.5" stroke-dasharray="0 100" id="circle-drib-persi" stroke-linecap="round"/>
-                    </svg>
-                    <div class="donut-val" id="kpi-drib-persi">--%</div>
-                  </div>
-                  <div class="donut-label">Dribbling Falliti</div>
-                </div>
-              </div>
-
-              <!-- 6. Possesso Palla -->
-              <div class="card">
-                <div class="card-header"><h2>🔵 Possesso</h2></div>
-                <div class="card-body donut-card-body">
-                  <div class="donut-wrap">
-                    <svg viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="#facc15" stroke-width="3.5" stroke-dasharray="0 100" id="circle-possesso" stroke-linecap="round"/>
-                    </svg>
-                    <div class="donut-val" id="kpi-possesso">--%</div>
-                  </div>
-                  <div class="donut-label">Possesso Medio</div>
-                </div>
-              </div>
-
+        <!-- 1. Duelli Vinti -->
+        <div class="card">
+          <div class="card-header"><h2>⚔️ Duelli Vinti</h2></div>
+            <div class="card-body donut-card-body">
+              <div class="donut-wrap">
+                <svg viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--green-l)" stroke-width="3.5" stroke-dasharray="0 100" id="circle-duelli-vinti" stroke-linecap="round"/>
+                </svg>
+              <div class="donut-val" id="kpi-duelli-vinti">--%</div>
             </div>
+            <div class="donut-label">Duelli Vinti</div>
+          </div>
+        </div>
+
+        <!-- 2. Duelli Persi -->
+        <div class="card">
+          <div class="card-header"><h2>🛡️ Duelli Persi</h2></div>
+          <div class="card-body donut-card-body">
+            <div class="donut-wrap">
+              <svg viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f87171" stroke-width="3.5" stroke-dasharray="0 100" id="circle-duelli-persi" stroke-linecap="round"/>
+              </svg>
+              <div class="donut-val" id="kpi-duelli-persi">--%</div>
+            </div>
+            <div class="donut-label">Duelli Persi</div>
+          </div>
+        </div>
+
+        <!-- 3. Precisione Passaggi -->
+        <div class="card">
+          <div class="card-header"><h2>🎯 Passaggi</h2></div>
+          <div class="card-body donut-card-body">
+            <div class="donut-wrap">
+              <svg viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#60a5fa" stroke-width="3.5" stroke-dasharray="0 100" id="circle-precisione" stroke-linecap="round"/>
+              </svg>
+              <div class="donut-val" id="kpi-precisione">--%</div>
+            </div>
+            <div class="donut-label">Precisione Passaggi</div>
+          </div>
+        </div>
+
+        <!-- 4. Dribbling Vinti -->
+        <div class="card">
+          <div class="card-header"><h2>⚡ Dribbling Vinti</h2></div>
+          <div class="card-body donut-card-body">
+            <div class="donut-wrap">
+              <svg viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#a78bfa" stroke-width="3.5" stroke-dasharray="0 100" id="circle-drib-vinti" stroke-linecap="round"/>
+              </svg>
+              <div class="donut-val" id="kpi-drib-vinti">--%</div>
+            </div>
+            <div class="donut-label">Dribbling Riusciti</div>
+          </div>
+        </div>
+
+        <!-- 5. Dribbling Persi -->
+        <div class="card">
+          <div class="card-header"><h2>❌ Dribbling Persi</h2></div>
+          <div class="card-body donut-card-body">
+            <div class="donut-wrap">
+              <svg viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f87171" stroke-width="3.5" stroke-dasharray="0 100" id="circle-drib-persi" stroke-linecap="round"/>
+              </svg>
+              <div class="donut-val" id="kpi-drib-persi">--%</div>
+            </div>
+            <div class="donut-label">Dribbling Falliti</div>
+          </div>
+        </div>
+
+        <!-- 6. Possesso Palla -->
+        <div class="card">
+          <div class="card-header"><h2>🔵 Possesso</h2></div>
+          <div class="card-body donut-card-body">
+            <div class="donut-wrap">
+              <svg viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--dark3)" stroke-width="3.5"/>
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#facc15" stroke-width="3.5" stroke-dasharray="0 100" id="circle-possesso" stroke-linecap="round"/>
+              </svg>
+              <div class="donut-val" id="kpi-possesso">--%</div>
+            </div>
+            <div class="donut-label">Possesso Medio</div>
+          </div>
+        </div>
+
+      </div>
 
     </div>
   </div>
 </div>
 
-  <!-- JS SCRIPTS -->
-  <!-- 1. Importiamo prima l'utility del Token e dell'autenticazione -->
   <script src="js/utils.js"></script>
-  <!-- 2. Poi importiamo il file JS specifico per elaborare le statistiche -->
   <script src="js/statistiche.js"></script>
 </body>
 </html>
