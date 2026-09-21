@@ -167,7 +167,7 @@ async function caricaDatiGiocatori() {
     if (PLAYERS.length > 0) {
       buildSelector();    
       renderConfronto();  
-      renderTopScorers(); 
+      renderTop5Squadra();
       popolaKpiSquadra(CURRENT_KPI);
     } else {
       document.getElementById('player-selector').innerHTML = "<p>Nessun giocatore trovato.</p>";
@@ -178,7 +178,7 @@ async function caricaDatiGiocatori() {
 }
 
 /* ==========================================================================
-   4. POPOLAMENTO ELEMENTI STATICI E KPI DI SQUADRA
+   4. POPOLAMENTO ELEMENTI STATICI E KPI DI SQUADRA (AGGIORNATO DB)
    ========================================================================== */
 function popolaKpiSquadra(kpi = {}) {
   CURRENT_KPI = kpi;
@@ -190,13 +190,10 @@ function popolaKpiSquadra(kpi = {}) {
   const aggiornaBarra = (idTesto, idBarra, valore, maxValore, isPercentuale = false) => {
     const val = Number(valore ?? 0);
     impostaTesto(idTesto, isPercentuale ? `${val.toFixed(0)}%` : val.toFixed(0));
-        
     const barra = document.getElementById(idBarra);
     if (barra) {
       let percentuale = isPercentuale ? val : (val / maxValore) * 100;
-      if (percentuale > 100) percentuale = 100;
-      if (percentuale < 0) percentuale = 0;
-      barra.style.width = `${percentuale}%`;
+      barra.style.width = `${Math.min(Math.max(percentuale, 0), 100)}%`;
     }
   };
 
@@ -216,71 +213,89 @@ function popolaKpiSquadra(kpi = {}) {
   const movPlayers = teamPlayers.filter(p => !p.portiere);
   const gkPlayers  = teamPlayers.filter(p =>  p.portiere);
 
-  const sumGolTeam = movPlayers.reduce((s, p) => s + (Number(p.golTotali || 0)), 0);
-  const sumTiriTeam = movPlayers.reduce((s, p) => s + (Number(p.tiriTotali || 0)), 0);
-  const sumBigChanceTeam = movPlayers.reduce((s, p) => s + (Number(p.bigChanceCreate || 0)), 0);
-  const sumAssistTeam = teamPlayers.reduce((s, p) => s + (Number(p.assist || 0)), 0);
-  const sumGolSubitiGK = gkPlayers.reduce((s, p) => s + (Number(p.goalSubiti || 0)), 0);
-  const sumCleanSheetGK = gkPlayers.reduce((s, p) => s + (Number(p.cleanSheet || 0)), 0);
-  const sumTackleRubati = movPlayers.reduce((s, p) => s + (Number(p.tackle || 0) + Number(p.palloniRubati || 0)), 0);
-  const sumIntercetti = teamPlayers.reduce((s, p) => s + (Number(p.palloniIntercettati || 0)), 0);
-  const sumFalliCommessi = teamPlayers.reduce((s, p) => s + (Number(p.falliCommessi || 0)), 0);
+  // --- 1. KPI STRIP ESATTE ---
+  const sumGolFatti  = movPlayers.reduce((s, p) => s + Number(p.golTotali || p.gol || 0), 0);
+  const sumGolSubiti = gkPlayers.reduce((s, p) => s + Number(p.goalSubiti || 0), 0);
+  const sumRigoriFatti = movPlayers.reduce((s, p) => s + Number(p.goalRigore || p.golRigore || 0), 0);
+  
+  impostaTesto('kpi-gol-fatti', sumGolFatti);
+  impostaTesto('kpi-rigoriFatti', sumRigoriFatti);
+  impostaTesto('kpi-gol-subiti', sumGolSubiti);
 
-  const effGolFatti = Math.max(kpi.golFatti ?? 0, sumGolTeam);
-  const effGolSubiti = Math.max(kpi.golSubiti ?? 0, sumGolSubitiGK);
+  const passRiusciti = teamPlayers.reduce((s, p) => s + Number(p.passaggiRiusciti || 0), 0);
+  const passTentati  = teamPlayers.reduce((s, p) => s + Number(p.passaggiTentati || 0), 0);
+  const pctPassaggi  = passTentati > 0 ? (passRiusciti / passTentati) * 100 : 0;
+  impostaTesto('kpi-pct-passaggi', `${pctPassaggi.toFixed(0)}%`);
 
-  const hasMatches = Array.isArray(MATCHES) && MATCHES.length > 0;
-  const calcVittorie  = hasMatches ? MATCHES.filter(m => m.esito === 'w').length : (kpi.vittorie ?? 0);
-  const calcPareggi   = hasMatches ? MATCHES.filter(m => m.esito === 'd').length : (kpi.pareggi ?? 0);
-  const calcSconfitte = hasMatches ? MATCHES.filter(m => m.esito === 'l').length : (kpi.sconfitte ?? 0);
-  const calcPartite   = hasMatches ? MATCHES.length : (kpi.partiteGiocate ?? (calcVittorie + calcPareggi + calcSconfitte));
+  const dribVintiTot = movPlayers.reduce((s, p) => s + Number(p.dribblingRiusciti || p.driblingRiusciti || 0), 0);
+  const dribTentati  = movPlayers.reduce((s, p) => s + Number(p.dribblingTentati || p.driblingTentati || 0), 0);
+  const pctDrib      = dribTentati > 0 ? (dribVintiTot / dribTentati) * 100 : 0;
+  impostaTesto('kpi-pct-dribbling', `${pctDrib.toFixed(0)}%`);
 
-  impostaTesto('kpi-gol-fatti', effGolFatti);
-  impostaTesto('kpi-gol-subiti', effGolSubiti);
-  impostaTesto('kpi-partite', calcPartite);
-  impostaTesto('kpi-vittorie', calcVittorie);
-  impostaTesto('kpi-pareggi', calcPareggi);
-  impostaTesto('kpi-sconfitte', calcSconfitte);
+  const dvVinti = teamPlayers.reduce((s, p) => s + Number(p.duelliVinti || 0) + Number(p.duelliAereiVinti || 0), 0);
+  const dvPersi = teamPlayers.reduce((s, p) => s + Number(p.duelliPersi || 0) + Number(p.duelliAereiPersi || 0), 0);
+  const dvTot   = dvVinti + dvPersi;
+  const pctDuelli = dvTot > 0 ? (dvVinti / dvTot) * 100 : 0;
+  impostaTesto('kpi-pct-duelli', `${pctDuelli.toFixed(0)}%`);
 
-  const convRatio = sumTiriTeam > 0 ? (sumGolTeam / sumTiriTeam) * 100 : 0;
-  aggiornaBarra('txt-off-gol', 'bar-off-gol', sumGolTeam, 50);          
-  aggiornaBarra('txt-off-tiri', 'bar-off-tiri', sumTiriTeam, 300);       
-  aggiornaBarra('txt-off-conversione', 'bar-off-conversione', convRatio, 100, true); 
-  aggiornaBarra('txt-off-chance', 'bar-off-chance', sumBigChanceTeam, 60);
-  aggiornaBarra('txt-off-assist', 'bar-off-assist', sumAssistTeam, 40);
+  const crossRiusciti = movPlayers.reduce((s, p) => s + Number(p.crossRiusciti || 0), 0);
+  const crossTentati  = movPlayers.reduce((s, p) => s + Number(p.crossTentati || 0), 0);
+  const pctCross      = crossTentati > 0 ? (crossRiusciti / crossTentati) * 100 : 0;
+  impostaTesto('kpi-pct-cross', `${pctCross.toFixed(0)}%`);
 
-  aggiornaBarra('txt-def-gol', 'bar-def-gol', effGolSubiti, 40);
-  aggiornaBarra('txt-def-clean', 'bar-def-clean', sumCleanSheetGK, Math.max(10, calcPartite)); 
-  aggiornaBarra('txt-def-tackle', 'bar-def-tackle', sumTackleRubati, 250);
-  aggiornaBarra('txt-def-intercetti', 'bar-def-intercetti', sumIntercetti, 150);
-  aggiornaBarra('txt-def-falli', 'bar-def-falli', sumFalliCommessi, 200);
+  const sumRigoriParati = gkPlayers.reduce((s, p) => s + Number(p.rigoriParati || 0), 0);
+  const sumParateTotali = gkPlayers.reduce((s, p) => s + Number(p.parate || 0), 0);
+  impostaTesto('kpi-info-parate', `${sumRigoriParati} & ${sumParateTotali}`);
 
-  const duelliVintiTot  = teamPlayers.reduce((s, p) => s + (Number(p.duelliVinti) || 0), 0);
-  const duelliPersiTot  = teamPlayers.reduce((s, p) => s + (Number(p.duelliPersi) || 0), 0);
-  const duelliTot       = duelliVintiTot + duelliPersiTot;
-  const pctDuelliVinti  = duelliTot > 0 ? (duelliVintiTot / duelliTot) * 100 : (kpi.pctDuelliVinti ?? 50);
-  const pctDuelliPersi  = duelliTot > 0 ? (duelliPersiTot / duelliTot) * 100 : (kpi.pctDuelliPersi ?? 50);
+  // --- 2. BARRE RENDIMENTO OFFENSIVO / DIFENSIVO (Tab Squadra) ---const sumGolFatti       = movPlayers.reduce((s, p) => s + Number(p.golTotali || p.gol || 0), 0);
+  const sumTiriInPorta    = movPlayers.reduce((s, p) => s + Number(p.tiriInPorta || 0), 0);
+  const sumTiriTotali     = movPlayers.reduce((s, p) => s + Number(p.tiriTotali || p.tiri || 0), 0);
+  const sumBigChanceCre   = movPlayers.reduce((s, p) => s + Number(p.bigChanceCreate || 0), 0);
+  const sumGolTestaRigore = movPlayers.reduce((s, p) => s + Number(p.goalTesta || p.golTesta || 0) + Number(p.goalRigore || p.golRigore || 0), 0);
+  const convRatioOff      = sumTiriTotali > 0 ? (sumGolFatti / sumTiriTotali) * 100 : 0;
 
-  aggiornaDonut('kpi-duelli-vinti', 'circle-duelli-vinti', pctDuelliVinti);
-  aggiornaDonut('kpi-duelli-persi', 'circle-duelli-persi', pctDuelliPersi);
+  aggiornaBarra('txt-off-gol', 'bar-off-gol', sumGolFatti, 80);          
+  aggiornaBarra('txt-off-tiri', 'bar-off-tiri', sumTiriInPorta, 150);       
+  aggiornaBarra('txt-off-conversione', 'bar-off-conversione', convRatioOff, 100, true); 
+  aggiornaBarra('txt-off-chance', 'bar-off-chance', sumBigChanceCre, 60);
+  aggiornaBarra('txt-off-speciali', 'bar-off-speciali', sumGolTestaRigore, 30);
 
-  const passVintiTot = teamPlayers.reduce((s, p) => s + (Number(p.passaggiRiusciti) || 0), 0);
-  const passTotali   = teamPlayers.reduce((s, p) => s + (Number(p.passaggiTentati) || 0), 0);
-  const pctPassaggi  = passTotali > 0 ? (passVintiTot / passTotali) * 100 : (kpi.precisionePassaggi ?? 50);
+  const sumCleanSheet   = gkPlayers.reduce((s, p) => s + Number(p.cleanSheet || 0), 0);
+  const sumTackleRubati = movPlayers.reduce((s, p) => s + Number(p.tackle || 0) + Number(p.palloniRubati || 0), 0);
+  const sumIntercetti   = teamPlayers.reduce((s, p) => s + Number(p.palloniIntercettati || 0), 0);
+  const sumRigSubitiGK  = gkPlayers.reduce((s, p) => s + Number(p.rigoriSubiti || 0), 0);
+  const sumRigParatiGK  = gkPlayers.reduce((s, p) => s + Number(p.rigoriParati || 0), 0);
 
-  aggiornaDonut('kpi-precisione', 'circle-precisione', pctPassaggi);
+  aggiornaBarra('txt-def-gol', 'bar-def-gol', sumGolSubiti, 60);
+  aggiornaBarra('txt-def-clean', 'bar-def-clean', sumCleanSheet, 20); 
+  aggiornaBarra('txt-def-tackle', 'bar-def-tackle', sumTackleRubati, 300);
+  aggiornaBarra('txt-def-intercetti', 'bar-def-intercetti', sumIntercetti, 250);
+  aggiornaBarra('txt-def-rigori', 'bar-def-rigori', sumRigParatiGK, Math.max(1, sumRigSubitiGK));
 
-  const dribVintiTot  = teamPlayers.reduce((s, p) => s + (Number(p.dribblingRiusciti) || 0), 0);
-  const dribTentati   = teamPlayers.reduce((s, p) => s + (Number(p.dribblingTentati) || 0), 0);
-  const dribFalliti   = Math.max(0, dribTentati - dribVintiTot);
-  const pctDribVinti  = dribTentati > 0 ? (dribVintiTot / dribTentati) * 100 : 50;
-  const pctDribFalliti= dribTentati > 0 ? (dribFalliti / dribTentati) * 100 : 50;
+  // --- 3. DONUT APPROFONDIMENTO (Spaccati di rendimento) ---
+  const sumGolTotali     = movPlayers.reduce((s, p) => s + Number(p.golTotali || p.gol || 0), 0);
+  const sumGolTesta      = movPlayers.reduce((s, p) => s + Number(p.goalTesta || p.golTesta || 0), 0);
+  const sumGolRigore     = movPlayers.reduce((s, p) => s + Number(p.goalRigore || p.golRigore || 0), 0);
+  
+  aggiornaDonut('val-share-testa', 'circle-share-testa', sumGolTotali > 0 ? (sumGolTesta / sumGolTotali) * 100 : 0);
+  aggiornaDonut('val-share-rigore', 'circle-share-rigore', sumGolTotali > 0 ? (sumGolRigore / sumGolTotali) * 100 : 0);
 
-  aggiornaDonut('kpi-drib-vinti', 'circle-drib-vinti', pctDribVinti);
-  aggiornaDonut('kpi-drib-persi', 'circle-drib-persi', pctDribFalliti);
+  const totAerei = teamPlayers.reduce((s, p) => s + Number(p.duelliAereiVinti || 0) + Number(p.duelliAereiPersi || 0), 0);
+  const winAerei = teamPlayers.reduce((s, p) => s + Number(p.duelliAereiVinti || 0), 0);
+  aggiornaDonut('val-duelli-aerei', 'circle-duelli-aerei', totAerei > 0 ? (winAerei / totAerei) * 100 : 0);
 
-  const pctPossesso = kpi.possessoMedio ?? 50;
-  aggiornaDonut('kpi-possesso', 'circle-possesso', pctPossesso);
+  const totTerra = teamPlayers.reduce((s, p) => s + Number(p.duelliVinti || 0) + Number(p.duelliPersi || 0), 0);
+  const winTerra = teamPlayers.reduce((s, p) => s + Number(p.duelliVinti || 0), 0);
+  aggiornaDonut('val-duelli-terra', 'circle-duelli-terra', totTerra > 0 ? (winTerra / totTerra) * 100 : 0);
+
+  const maxPresenze = teamPlayers.reduce((max, p) => Math.max(max, Number(p.presenze || 0)), 1);
+  aggiornaDonut('val-cleansheet-pct', 'circle-cleansheet-pct', maxPresenze > 0 ? Math.min((sumCleanSheet / maxPresenze) * 100, 100) : 0);
+
+  const sumTiriTot   = movPlayers.reduce((s, p) => s + Number(p.tiriTotali || p.tiri || 0), 0);
+  const sumTiriInPor = movPlayers.reduce((s, p) => s + Number(p.tiriInPorta || 0), 0);
+  aggiornaDonut('val-tiri-specchio', 'circle-tiri-specchio', sumTiriTot > 0 ? (sumTiriInPor / sumTiriTot) * 100 : 0);
+
+  renderTop5Squadra();
 }
 
 /* ==========================================================================
@@ -633,29 +648,51 @@ async function salvaStatistiche(playerId) {
   }
 }
 
-function renderTopScorers(){
-  const container = document.getElementById('top-scorers');
-  if (!container) return;
 
-  const sorted = [...PLAYERS].filter(p => !p.portiere).sort((a,b) => (b.golTotali || 0) - (a.golTotali || 0)).slice(0,12);
-  if(sorted.length === 0) {
-    container.innerHTML = "<p>Nessun marcatore.</p>";
-    return;
+function renderTop5Squadra() {
+  const cols = ['#facc15','#94a3b8','#b45309','#4caf50','#4caf50'];
+
+  // Top 5 Marcatori
+  const cGol = document.getElementById('top5-gol-list');
+  if (cGol) {
+    const sorted = [...PLAYERS].filter(p => !p.portiere).sort((a,b) => (b.golTotali || 0) - (a.golTotali || 0)).slice(0,5);
+    if (sorted.length === 0) {
+      cGol.innerHTML = "<p>Nessun marcatore.</p>";
+    } else {
+      const max = sorted[0].golTotali || 1;
+      cGol.innerHTML = sorted.map((p,i)=>`
+        <div class="hbar-row">
+          <div class="hbar-name">${i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':''}${p.nome}</div>
+          <div class="hbar-track">
+            <div class="hbar-fill" style="width:${Math.max((p.golTotali/max*100), 12).toFixed(0)}%;background:#60a5fa20;">
+              <span style="color:${cols[i] || '#60a5fa'}">${p.golTotali} gol</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
   }
 
-  const max = sorted[0].golTotali || 1;
-  const cols = ['#facc15','#94a3b8','#b45309','#4caf50'];
-
-  container.innerHTML = sorted.map((p,i)=>`
-    <div class="hbar-row">
-      <div class="hbar-name">${i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':''}${p.nome}</div>
-      <div class="hbar-track">
-        <div class="hbar-fill" style="width:${Math.max((p.golTotali/max*100), 12).toFixed(0)}%;background:${cols[i] || '#60a5fa'}20;border:1px solid ${cols[i] || '#60a5fa'}40">
-          <span style="color:${cols[i] || '#60a5fa'}">${p.golTotali} gol</span>
+  // Top 5 Assist Man
+  const cAss = document.getElementById('top5-assist-list');
+  if (cAss) {
+    const sorted = [...PLAYERS].sort((a,b) => (b.assist || 0) - (a.assist || 0)).slice(0,5);
+    if (sorted.length === 0) {
+      cAss.innerHTML = "<p>Nessun assist man.</p>";
+    } else {
+      const max = sorted[0].assist || 1;
+      cAss.innerHTML = sorted.map((p,i)=>`
+        <div class="hbar-row">
+          <div class="hbar-name">${i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':''}${p.nome}</div>
+          <div class="hbar-track">
+            <div class="hbar-fill" style="width:${Math.max((p.assist/max*100), 12).toFixed(0)}%;background:#60a5fa20;">
+              <span style="color:${cols[i] || '#60a5fa'}"">${p.assist} assist</span>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  `).join('');
+      `).join('');
+    }
+  }
 }
 
 /* ==========================================================================
