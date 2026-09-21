@@ -29,6 +29,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderAvatar(sbAvatar, (nome[0] || '').toUpperCase() + (cognome[0] || nome[1] || '').toUpperCase());
   }
 
+  if (ruolo === 'GIOCATORE' || ruolo === 'DIRIGENTE') {
+    document.querySelectorAll('.topbar-right .btn-primary').forEach(b => b.style.display = 'none');
+    const btnMod = document.getElementById('btn-apri-modifica');
+    if (btnMod) btnMod.style.display = 'none';
+
+    // Nascondi voce messaggi dalla sidebar
+    document.querySelectorAll('.sidebar a, .sidebar-menu a, nav a, .nav-item').forEach(el => {
+        const text = (el.textContent || '').toLowerCase();
+        const href = el.getAttribute('href') || '';
+        if (text.includes('rosa') || href.includes('rosa.html')) {
+            const containerToHide = el.closest('li') || el.closest('.nav-item') || el;
+            containerToHide.style.display = 'none';
+        }
+    });
+  }
+
+  if (ruolo === 'ALLENATORE' || ruolo === 'DIRIGENTE' || ruolo === 'STAFF') {
+    document.querySelectorAll('.topbar-right .btn-primary').forEach(b => b.style.display = 'none');
+    const btnMod = document.getElementById('btn-apri-modifica');
+    if (btnMod) btnMod.style.display = 'none';
+
+    // Nascondi voce messaggi dalla sidebar
+    document.querySelectorAll('.sidebar a, .sidebar-menu a, nav a, .nav-item').forEach(el => {
+        const text = (el.textContent || '').toLowerCase();
+        const href = el.getAttribute('href') || '';
+        if (text.includes('badge') || href.includes('badge.html')) {
+            const containerToHide = el.closest('li') || el.closest('.nav-item') || el;
+            containerToHide.style.display = 'none';
+        }
+    });
+  }
+
   // 3. Carica i dati
   await caricaPerformance();
 });

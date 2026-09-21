@@ -827,4 +827,3 @@ function renderConfronto(){
     </div>
   `;
 }
-
