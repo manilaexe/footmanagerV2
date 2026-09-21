@@ -442,47 +442,47 @@ function renderIndivBars(idx){
     buildItem('Presenze', p.presenze, 'presenze', 38, 'fill-green'),
     buildItem('Presenze Titolare', p.presenzeTitolare, 'presenzeTitolare', 38, 'fill-green'),
     buildItem('Minuti Giocati', p.minutiGiocati, 'minutiGiocati', 3420, 'fill-blue'),
-    buildItem('Ammonizioni', p.ammonizioni, 'ammonizioni', 10, 'fill-amber'),
-    buildItem('Espulsioni', p.espulsioni, 'espulsioni', 5, 'fill-amber'),
-    buildItem('Falli Commessi', p.falliCommessi, 'falliCommessi', 30, 'fill-amber'),
-    buildItem('Falli Subiti', p.falliSubiti, 'falliSubiti', 30, 'fill-blue'),
-    buildItem('Assist', p.assist, 'assist', 20, 'fill-blue'),
-    buildItem('Duelli Aerei Vinti', p.duelliAereiVinti, 'duelliAereiVinti', 30, 'fill-amber'),
-    buildItem('Duelli Aerei Persi', p.duelliAereiPersi, 'duelliAereiPersi', 30, 'fill-amber'),
-    buildItem('Duelli Vinti', p.duelliVinti, 'duelliVinti', 50, 'fill-amber'),
-    buildItem('Duelli Persi', p.duelliPersi, 'duelliPersi', 50, 'fill-amber'),
+    buildItem('Ammonizioni', p.ammonizioni, 'ammonizioni', 38, 'fill-amber'),
+    buildItem('Espulsioni', p.espulsioni, 'espulsioni', 38, 'fill-amber'),
+    buildItem('Falli Commessi', p.falliCommessi, 'falliCommessi', 115, 'fill-amber'),
+    buildItem('Falli Subiti', p.falliSubiti, 'falliSubiti', 150, 'fill-blue'),
+    buildItem('Assist', p.assist, 'assist', 40, 'fill-blue'),
+    buildItem('Duelli Aerei Vinti', p.duelliAereiVinti, 'duelliAereiVinti', 150, 'fill-amber'),
+    buildItem('Duelli Aerei Persi', p.duelliAereiPersi, 'duelliAereiPersi', 150, 'fill-amber'),
+    buildItem('Duelli Vinti', p.duelliVinti, 'duelliVinti', 180, 'fill-amber'),
+    buildItem('Duelli Persi', p.duelliPersi, 'duelliPersi', 180, 'fill-amber'),
     buildItem('Passaggi Tentati', p.passaggiTentati, 'passaggiTentati', 1500, 'fill-blue'),
     buildItem('Passaggi Riusciti', p.passaggiRiusciti, 'passaggiRiusciti', 1500, 'fill-blue', 'passaggiTentati'),
-    buildItem('Passaggi Chiave', p.passaggiChiave, 'passaggiChiave', 30, 'fill-blue'),
-    buildItem('Dribbling Tentati', p.dribblingTentati, 'dribblingTentati', 50, 'fill-green'),
-    buildItem('Dribbling Riusciti', p.dribblingRiusciti, 'dribblingRiusciti', 50, 'fill-green', 'dribblingTentati'),
-    buildItem('Palloni Intercettati', p.palloniIntercettati, 'palloniIntercettati', 50, 'fill-green')
+    buildItem('Passaggi Chiave', p.passaggiChiave, 'passaggiChiave', 40, 'fill-blue'),
+    buildItem('Dribbling Tentati', p.dribblingTentati, 'dribblingTentati', 150, 'fill-green'),
+    buildItem('Dribbling Riusciti', p.dribblingRiusciti, 'dribblingRiusciti', 150, 'fill-green', 'dribblingTentati'),
+    buildItem('Palloni Intercettati', p.palloniIntercettati, 'palloniIntercettati', 150, 'fill-green')
   ];
 
   if (isGK) {
     const gkSpecifics = [
-      buildItem('Parate', p.parate, 'parate', 150, 'fill-blue'),
-      buildItem('Clean Sheet', p.cleanSheet, 'cleanSheet', 25, 'fill-green'),
-      buildItem('Gol Subiti', p.goalSubiti, 'goalSubiti', 60, 'fill-amber'),
-      buildItem('Rigori Parati', p.rigoriParati, 'rigoriParati', 10, 'fill-green'),
-      buildItem('Rigori Subiti', p.rigoriSubiti, 'rigoriSubiti', 15, 'fill-amber')
+      buildItem('Parate', p.parate, 'parate', 250, 'fill-blue'),
+      buildItem('Clean Sheet', p.cleanSheet, 'cleanSheet', 38, 'fill-green'),
+      buildItem('Gol Subiti', p.goalSubiti, 'goalSubiti', 80, 'fill-amber'),
+      buildItem('Rigori Parati', p.rigoriParati, 'rigoriParati', 40, 'fill-green'),
+      buildItem('Rigori Subiti', p.rigoriSubiti, 'rigoriSubiti', 40, 'fill-amber')
     ];
     items = [...items, ...gkSpecifics];
   } else {
     const movSpecifics = [
-      buildItem('Gol su Rigore', p.goalRigore, 'goalRigore', 10, 'fill-green'),
-      buildItem('Gol di Testa', p.goalTesta, 'goalTesta', 10, 'fill-green'),
-      buildItem('Gol su Punizione', p.goalPunizione, 'goalPunizione', 10, 'fill-green'),
-      buildItem('Gol Totali', p.golTotali ?? p.gol, 'golTotali', 20, 'fill-green'),
+      buildItem('Gol su Rigore', p.goalRigore, 'goalRigore', 40, 'fill-green'),
+      buildItem('Gol di Testa', p.goalTesta, 'goalTesta', 40, 'fill-green'),
+      buildItem('Gol su Punizione', p.goalPunizione, 'goalPunizione', 40, 'fill-green'),
+      buildItem('Gol Totali', p.golTotali ?? p.gol, 'golTotali', 45, 'fill-green'),
       buildItem('Tiri Totali', p.tiriTotali, 'tiriTotali', 100, 'fill-amber'),
-      buildItem('Tiri in Porta', p.tiriInPorta, 'tiriInPorta', 50, 'fill-amber'),
-      buildItem('Pali / Traverse', p.paliTraverse, 'paliTraverse', 10, 'fill-amber'),
-      buildItem('Big Chance Mancate', p.bigChanceMancate, 'bigChanceMancate', 20, 'fill-amber'),
-      buildItem('Big Chance Create', p.bigChanceCreate, 'bigChanceCreate', 25, 'fill-blue'),
+      buildItem('Tiri in Porta', p.tiriInPorta, 'tiriInPorta', 100, 'fill-amber'),
+      buildItem('Pali / Traverse', p.paliTraverse, 'paliTraverse', 50, 'fill-amber'),
+      buildItem('Big Chance Mancate', p.bigChanceMancate, 'bigChanceMancate', 50, 'fill-amber'),
+      buildItem('Big Chance Create', p.bigChanceCreate, 'bigChanceCreate', 50, 'fill-blue'),
       buildItem('Cross Tentati', p.crossTentati, 'crossTentati', 100, 'fill-blue'),
       buildItem('Cross Riusciti', p.crossRiusciti, 'crossRiusciti', 100, 'fill-blue', 'crossTentati'),
-      buildItem('Tackle', p.tackle, 'tackle', 50, 'fill-green'),
-      buildItem('Palloni Rubati', p.palloniRubati, 'palloniRubati', 50, 'fill-green')
+      buildItem('Tackle', p.tackle, 'tackle', 100, 'fill-green'),
+      buildItem('Palloni Rubati', p.palloniRubati, 'palloniRubati', 100, 'fill-green')
     ];
     items = [...items, ...movSpecifics];
   }
