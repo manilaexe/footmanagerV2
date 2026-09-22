@@ -101,9 +101,17 @@ html, body { height: 100%; font-family: 'Barlow', sans-serif; background: var(--
 
 /* ── STATS CARDS ── */
 .stats-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    text-align: center;
 }
 .stat-card {
+    /* 4 colonne meno i 3 spazi di gap (3 * 1rem) diviso 4 */
+    flex: 0 0 calc((100% - 3rem) / 4);
+    box-sizing: border-box;
     background: var(--dark2); border: 1px solid var(--border); border-radius: var(--radius);
     padding: 1.25rem; position: relative; overflow: hidden;
 }

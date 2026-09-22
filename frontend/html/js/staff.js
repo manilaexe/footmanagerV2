@@ -170,14 +170,6 @@ function renderizzaKPI() {
 
     const kpiG = document.getElementById('kpi-giocatori');
     if (kpiG) kpiG.textContent = tuttiGiocatoriDashboard.length;
-
-    const kpiGol = document.getElementById('kpi-media-gol');
-    if (kpiGol && tuttiGiocatoriDashboard.length > 0) {
-        const tot = tuttiGiocatoriDashboard.reduce((s, g) => s + (g.gol || 0), 0);
-        kpiGol.textContent = (tot / tuttiGiocatoriDashboard.length).toFixed(1);
-    } else if (kpiGol) {
-        kpiGol.textContent = '0.0';
-    }
 }
 
 function renderizzaTabellaRosa() {
