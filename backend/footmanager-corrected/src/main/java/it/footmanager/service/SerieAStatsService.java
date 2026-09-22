@@ -311,7 +311,7 @@ public class SerieAStatsService {
                 .bigMatch(List.of(
                         aggrega("Top 6", controTop6),
                         aggrega("Resto", controResto)))
-                .formGuide(formGuide(s, 10))
+                .formGuide(formGuide(s, 38))
                 .verticeClassifica(classifica.stream().limit(6).toList())
                 .splitCasaTrasferta(List.of(
                         aggrega("Casa", inCasa),

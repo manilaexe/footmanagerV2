@@ -60,14 +60,54 @@
 .delta-neg { color: #f87171; }
 
 /* ── Form guide ── */
-.form-strip { display: flex; gap: .5rem; flex-wrap: wrap; }
-.form-box {
-  position: relative; width: 46px; height: 46px; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1.25rem;
-  cursor: default; transition: transform .12s;
+/* ── Form guide / Cammino stagionale ── */
+.form-guide-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
-.form-box:hover { transform: translateY(-3px); }
+.form-row-group {
+  display: flex;
+  align-items: center;
+  gap: 0.90rem;
+}
+.row-tag {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--muted);
+  width: 70px;
+  flex-shrink: 0;
+  text-align: center;
+  background: var(--dark3);
+  padding: 6px 0;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.form-strip { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.form-box {
+  position: relative; width: 40px; height: 40px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1.1rem;
+  cursor: default; transition: transform .12s;
+  flex-shrink: 0;
+}
+.form-box:hover { transform: translateY(-3px); z-index: 40; }
+.form-box.V { background: rgba(76,175,80,.25);  color: #4caf50; border: 1px solid #4caf50; }
+.form-box.N { background: rgba(234,179,8,.20);  color: #eab308; border: 1px solid #eab308; }
+.form-box.P { background: rgba(239,68,68,.20);  color: #f87171; border: 1px solid #ef4444; }
+
+/* tooltip costruito in CSS puro: nessuna libreria esterna */
+.form-box .tip {
+  visibility: hidden; opacity: 0; transition: opacity .15s;
+  position: absolute; bottom: 118%; left: 50%; transform: translateX(-50%);
+  background: var(--dark3); border: 1px solid var(--border);
+  color: var(--text); font-family: 'Barlow', sans-serif; font-weight: 400;
+  font-size: .72rem; line-height: 1.35; white-space: nowrap;
+  padding: .45rem .6rem; border-radius: 6px; z-index: 50;
+  box-shadow: 0 6px 18px rgba(0,0,0,.45);
+}
+.form-box:hover .tip { visibility: visible; opacity: 1; }
 .form-box.V { background: rgba(76,175,80,.25);  color: #4caf50; border: 1px solid #4caf50; }
 .form-box.N { background: rgba(234,179,8,.20);  color: #eab308; border: 1px solid #eab308; }
 .form-box.P { background: rgba(239,68,68,.20);  color: #f87171; border: 1px solid #ef4444; }

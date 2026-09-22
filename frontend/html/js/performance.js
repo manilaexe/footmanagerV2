@@ -223,19 +223,27 @@ function renderAggregati(idTabella, blocchi) {
 
 /* ── 4. Form guide con tooltip ────────────────────────────────────────── */
 function renderFormGuide(partite) {
-  const strip = document.getElementById('form-strip');
-  if (!strip) return;
+  const containerAndata  = document.getElementById('form-strip-andata');
+  const containerRitorno = document.getElementById('form-strip-ritorno');
+  if (!containerAndata || !containerRitorno) return;
 
-  if (!partite.length) {
-    strip.innerHTML = '<div class="loading">Nessuna partita giocata</div>';
-    return;
-  }
-
-  strip.innerHTML = partite.map(p => {
+  const buildBox = (p) => {
     const dove = p.inCasa ? 'Casa' : 'Trasferta';
     const tip  = `${formattaData(p.data)} · ${dove}<br>vs ${esc(p.avversario)}<br><strong>${p.golNostri} - ${p.golAvversari}</strong>`;
     return `<div class="form-box ${p.esito}">${p.esito}<span class="tip">${tip}</span></div>`;
-  }).join('');
+  };
+
+  if (!partite || !partite.length) {
+    containerAndata.innerHTML  = '<div class="loading">Nessuna partita</div>';
+    containerRitorno.innerHTML = '<div class="loading">Nessuna partita</div>';
+    return;
+  }
+
+  const andata  = partite.slice(0, 19);
+  const ritorno = partite.slice(19, 38);
+
+  containerAndata.innerHTML  = andata.length ? andata.map(buildBox).join('') : '<div class="loading">—</div>';
+  containerRitorno.innerHTML = ritorno.length ? ritorno.map(buildBox).join('') : '<div class="loading">—</div>';
 }
 
 function formattaData(iso) {
