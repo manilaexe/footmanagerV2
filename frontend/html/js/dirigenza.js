@@ -153,7 +153,7 @@ function renderKPIDirigenza() {
     const kpiQuiz = document.getElementById('kpi-quiz-partecipazione');
     if (kpiQuiz) {
         const totalRosa = PLAYERS.length || 1;
-        const attivi = Array.isArray(QUIZ_DATA) ? QUIZ_DATA.filter(i => Number(i.puntiSettimanali || i.puntiTotali || 0) > 0).length : 0;
+        const attivi = Array.isArray(QUIZ_DATA) ? QUIZ_DATA.filter(i => Number(i.puntiSettimanali || 0) > 0).length : 0;
         const pct = Math.min(Math.round((attivi / totalRosa) * 100), 100);
         kpiQuiz.textContent = `${pct}%`;
     }
