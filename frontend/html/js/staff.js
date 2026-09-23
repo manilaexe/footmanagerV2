@@ -9,7 +9,7 @@ let tuttiMessaggiDashboard  = [];
 let currentSortColumn = 'ruolo';
 let currentSortDirection = 'asc'; // 'asc' o 'desc'
 
-// ─── 1. INIZIALIZZAZIONE ───────────────────────────────────────────────────
+// ─── 1. INIZIALIZZAZIONE E ROUTING SIDEBAR ──────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof verificaAutenticazione === 'function') verificaAutenticazione();
 
@@ -24,6 +24,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sbName) sbName.textContent = cognome ? `${nome} ${cognome}` : nome;
     if (sbRole) sbRole.textContent = ruolo;
     if (sbAv)   renderAvatar(sbAv, (nome[0] || '').toUpperCase() + (cognome[0] || nome[1] || '').toUpperCase());
+
+    // --- NUOVO CODICE ROUTING DINAMICO E VISIBILITÀ BADGE ---
+    const linkDashboard = document.getElementById('nav-dashboard');
+    if (linkDashboard) {
+        if (ruolo.toUpperCase() === 'GIOCATORE') {
+            linkDashboard.href = 'dashboard-giocatore.html';
+        } else if (ruolo.toUpperCase() === 'ALLENATORE') {
+            linkDashboard.href = 'dashboard-allenatore.html';
+        } else {
+            linkDashboard.href = 'dashboard-staff.html';
+        }
+    }
+
+    const navBadge = document.getElementById('nav-badge');
+    if (navBadge) {
+        if (ruolo.toUpperCase() === 'GIOCATORE') {
+            navBadge.style.display = 'flex';
+        } else {
+            navBadge.style.display = 'none';
+        }
+    }
 
     setupFormListeners();
     caricaDatiDashboard();

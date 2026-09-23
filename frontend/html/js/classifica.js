@@ -30,15 +30,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderAvatar(sbAv, (nome[0] || '').toUpperCase() + (cognome[0] || nome[1] || '').toUpperCase());
     }
 
-    // Mostra "I miei badge" SOLO se il ruolo è GIOCATORE
-    const navBadge = document.getElementById('nav-badge');
-    if (navBadge) {
+    // --- NUOVO CODICE ROUTING DINAMICO ---
+    const linkDashboard = document.getElementById('nav-dashboard');
+    const navBadge = document.getElementById('nav-badge'); 
+    const navRosa = document.getElementById('nav-rosa');
+    if (linkDashboard) {
         if (ruolo.toUpperCase() === 'GIOCATORE') {
-            navBadge.style.display = 'flex';
-        } else {
-            navBadge.style.display = 'none';
+            linkDashboard.href = '/html/pages/dashboard-giocatore.html';
+            if (navBadge) navBadge.style.display = 'flex';
+            if (navRosa) navRosa.style.display = 'none';
+        }if(ruolo.toUpperCase() === 'ALLENATORE') {
+            linkDashboard.href = '/html/pages/dashboard-allenatore.html';
+            if (navBadge) navBadge.style.display = 'none';
+            if (navRosa) navRosa.style.display = 'flex';
+        }if(ruolo.toUpperCase() === 'STAFF'){
+            linkDashboard.href = '/html/pages/dashboard-staff.html';
+            if (navBadge) navBadge.style.display = 'none';
+            if (navRosa) navRosa.style.display = 'flex';
         }
     }
+    // -------------------------------------
+
+    // Mostra "I miei badge" SOLO se il ruolo è GIOCATORE
+
+
 
     // Chi non è un giocatore (allenatore/staff/dirigenza) non ha la card "Il tuo posizionamento"
     if (!idGiocatore || ruolo.toUpperCase() !== 'GIOCATORE') {
