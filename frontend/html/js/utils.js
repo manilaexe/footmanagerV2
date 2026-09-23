@@ -15,16 +15,13 @@ function verificaAutenticazione() {
     }
 }
 
-// Rimuove i dati di sessione e rimanda l'utente al login
+// Rimuove i dati di sessione e rimanda l'utente al login[cite: 36]
 function logout() {
     localStorage.clear();
     window.location.href = '/html/login.html';
 }
 
-// Renderizza l'avatar in un contenitore circolare (.avatar / .profile-pic / sb-avatar):
-// se l'utente ha una foto profilo salvata al login (solo i giocatori, per ora)
-// la mostra, altrimenti mostra le iniziali come prima. Se il file immagine non
-// si carica, torna automaticamente alle iniziali.
+// Renderizza l'avatar in un contenitore circolare[cite: 36]
 function renderAvatar(container, iniziali) {
     if (!container) return;
     const img = localStorage.getItem('imgProfilo');
@@ -38,15 +35,13 @@ function renderAvatar(container, iniziali) {
     }
 }
 
-// Corregge il link "Dashboard" della sidebar in base al ruolo salvato al login,
-// così da pagine come calendario/rosa/statistiche/messaggi si torna sempre alla
-// dashboard giusta (giocatore, allenatore, staff, dirigenza) e non sempre a quella allenatore.
+// Corregge il link "Dashboard" della sidebar in base al ruolo[cite: 36]
 function impostaLinkDashboard() {
     const link = document.getElementById('nav-dashboard');
-    if (!link) return; // pagina senza voce "Dashboard" in sidebar
+    if (!link) return;
 
     const ruolo = localStorage.getItem('ruolo');
-    switch (ruolo) {
+    switch (ruolo ? ruolo.toUpperCase() : '') {
         case 'ALLENATORE':
             link.href = '/html/pages/dashboard-allenatore.html';
             break;
@@ -57,6 +52,9 @@ function impostaLinkDashboard() {
             link.href = '/html/pages/dashboard-staff.html';
             break;
         case 'DIRIGENZA':
+            link.href='/html/pages/dashboard-dirigenza.html';
+            break;
+        case 'PRESIDENTE':
             link.href = '/html/pages/dashboard-dirigenza.html';
             break;
         default:
@@ -65,12 +63,7 @@ function impostaLinkDashboard() {
     }
 }
 
-// Adatta le voci della sidebar in base al ruolo, così la sidebar non "salta" più
-// da una pagina all'altra: i giocatori non devono vedere "Rosa", ma devono
-// ritrovare sempre "I miei badge" e "Classifica" anche quando sono su
-// calendario/statistiche/messaggi.
-// Adatta le voci della sidebar in base al ruolo, così la sidebar non "salta" più
-// da una pagina all'altra. Modificato per uniformare la sidebar della Dirigenza.
+// Adatta le voci della sidebar in base al ruolo in modo centralizzato[cite: 36]
 function adattaSidebarPerRuolo() {
     const ruolo = localStorage.getItem('ruolo');
     const nav = document.querySelector('.sidebar .nav-section');
@@ -79,89 +72,66 @@ function adattaSidebarPerRuolo() {
     const ruoloMaiuscolo = ruolo.toUpperCase();
     const currentPage = window.location.pathname.toLowerCase();
 
-    // 1. VISTA DIRIGENZA: Riscrive la sidebar per essere identica in tutte le pagine
+// 1. VISTA DIRIGENZA / PRESIDENTE
     if (ruoloMaiuscolo === 'DIRIGENZA' || ruoloMaiuscolo === 'PRESIDENTE') {
         nav.innerHTML = `
             <div class="nav-label">Panoramica</div>
-            <a class="nav-item ${currentPage.includes('dirigenza.html') ? 'active' : ''}" id="nav-dashboard" href="/html/pages/dashboard-dirigenza.html"><span class="ico">🏠</span>Dashboard</a>
+            <a class="nav-item ${currentPage.includes('dashboard-dirigenza.html') ? 'active' : ''}" id="nav-dashboard" href="/html/pages/dashboard-dirigenza.html"><span class="ico">🏠</span>Dashboard</a>
             <a class="nav-item ${currentPage.includes('rosa.html') ? 'active' : ''}" href="/html/rosa.html"><span class="ico">👥</span>Rosa</a>
             <a class="nav-item ${currentPage.includes('calendario.html') ? 'active' : ''}" href="/html/calendario.html"><span class="ico">📅</span>Calendario</a>
             <a class="nav-item ${currentPage.includes('statistiche.html') ? 'active' : ''}" href="/html/statistiche.html"><span class="ico">📊</span>Statistiche</a>
             <a class="nav-item ${currentPage.includes('classifica.html') ? 'active' : ''}" href="/html/classifica.html"><span class="ico">🏆</span>Classifica</a>
-            <a class="nav-item ${currentPage.includes('performance') ? 'active' : ''}" href="/html/dirigenza-performance.html"><span class="ico">⚽</span>Performance squadra</a>
+            <a class="nav-item ${currentPage.includes('dirigenza-performance.html') ? 'active' : ''}" href="/html/dirigenza-performance.html"><span class="ico">⚽</span>Performance squadra</a>
         `;
-        return; // Ferma l'esecuzione della funzione qui per la Dirigenza
+        return; 
     }
 
-    // 2. VISTA GIOCATORE: Mantiene le regole precedenti
+    const testiPresenti = [...nav.querySelectorAll('a')].map(a => a.textContent);
+
+    // 2. GESTIONE "ROSA": I giocatori non devono vederla[cite: 36]
+    const linkRosa = nav.querySelector('a[href$="rosa.html"]');
+    if (ruoloMaiuscolo === 'GIOCATORE' && linkRosa) {
+        linkRosa.remove();
+    }
+
+    // 3. GESTIONE "I MIEI BADGE": Visibile SOLO ai GIOCATORI[cite: 36]
+    const linkBadge = nav.querySelector('a[href$="badge.html"]');
     if (ruoloMaiuscolo === 'GIOCATORE') {
-        // Nasconde "Rosa": i giocatori non devono poterla vedere
-        const linkRosa = nav.querySelector('a[href$="rosa.html"]');
-        if (linkRosa) linkRosa.remove();
-
-        const testiPresenti = [...nav.querySelectorAll('a')].map(a => a.textContent);
-
         if (!testiPresenti.some(t => t.includes('I miei badge'))) {
             nav.insertAdjacentHTML('beforeend',
-                `<a class="nav-item" href="/html/badge.html"><span class="ico">🎖️</span> I miei badge</a>`);
+                `<a class="nav-item ${currentPage.includes('badge.html') ? 'active' : ''}" href="/html/badge.html"><span class="ico">🎖️</span>I miei badge</a>`);
         }
-        if (!testiPresenti.some(t => t.includes('Classifica'))) {
-            nav.insertAdjacentHTML('beforeend',
-                `<a class="nav-item" href="/html/classifica.html"><span class="ico">🏆</span> Classifica</a>`);
-        }
+    } else {
+        // Se non è un giocatore, rimuovi la voce badge se presente per errore
+        if (linkBadge) linkBadge.remove();
     }
-}
 
-// Esegue entrambe le correzioni automaticamente appena la pagina è pronta
-document.addEventListener('DOMContentLoaded', impostaLinkDashboard);
-document.addEventListener('DOMContentLoaded', adattaSidebarPerRuolo);
-
-// Aggiunge automaticamente la voce "Classifica" alla sidebar se manca nella pagina corrente
-function assicuratiVoceClassifica() {
-    const nav = document.querySelector('.sidebar .nav-section');
-    if (!nav) return;
-
-    const testiPresenti = [...nav.querySelectorAll('a')].map(a => a.textContent);
+    // 4. GESTIONE "CLASSIFICA": Visibile a tutti[cite: 36]
     if (!testiPresenti.some(t => t.includes('Classifica'))) {
         nav.insertAdjacentHTML('beforeend',
-            `<a class="nav-item" href="/html/classifica.html"><span class="ico">🏆</span>Classifica</a>`);
+            `<a class="nav-item ${currentPage.includes('classifica.html') ? 'active' : ''}" href="/html/classifica.html"><span class="ico">🏆</span>Classifica</a>`);
+    }
+
+    // 5. GESTIONE "PERFORMANCE SQUADRA": Visibile SOLO a Allenatore e Staff (e Dirigenza gestita sopra)[cite: 36]
+    const linkPerformance = nav.querySelector('a[href$="dirigenza-performance.html"]');
+    if (ruoloMaiuscolo === 'ALLENATORE' || ruoloMaiuscolo === 'STAFF') {
+        if (!testiPresenti.some(t => t.includes('Performance'))) {
+            nav.insertAdjacentHTML('beforeend',
+                `<a class="nav-item ${currentPage.includes('performance') ? 'active' : ''}" href="/html/dirigenza-performance.html"><span class="ico">⚽</span>Performance squadra</a>`);
+        }
+    } else if (ruoloMaiuscolo === 'GIOCATORE') {
+        // I giocatori non devono vedere le performance
+        if (linkPerformance) linkPerformance.remove();
     }
 }
 
-document.addEventListener('DOMContentLoaded', assicuratiVoceClassifica);
-// Aggiunge la voce "Performance squadra" alla sidebar se manca.
-// Vale per GIOCATORE, STAFF e ALLENATORE: per la DIRIGENZA la voce è già
-// scritta dentro adattaSidebarPerRuolo(), quindi lì usciamo subito.
-function assicuratiVocePerformance() {
-    const ruolo = (localStorage.getItem('ruolo') || '').toUpperCase();
-    if (ruolo === 'DIRIGENZA' || ruolo === 'PRESIDENTE') return;
-
-    const nav = document.querySelector('.sidebar .nav-section');
-    if (!nav) return;
-
-    const testiPresenti = [...nav.querySelectorAll('a')].map(a => a.textContent);
-    if (!testiPresenti.some(t => t.includes('Performance'))) {
-        nav.insertAdjacentHTML('beforeend',
-            `<a class="nav-item" href="/html/dirigenza-performance.html"><span class="ico">⚽</span>Performance squadra</a>`);
-    }
-}
-
-document.addEventListener('DOMContentLoaded', assicuratiVocePerformance);
-
-// Funzione per attivare la modalità sola lettura per la dirigenza
-// Funzione per attivare la modalità sola lettura per la dirigenza
+// Funzione per attivare la modalità sola lettura per la dirigenza[cite: 36]
 function impostaVistaDirigenza(ruoloUtente) {
     if (!ruoloUtente) return;
-
-    // Convertiamo in maiuscolo per evitare problemi di scrittura (es. 'Dirigenza' vs 'DIRIGENZA')
     const ruoloMaiuscolo = ruoloUtente.toUpperCase();
 
     if (ruoloMaiuscolo === 'DIRIGENZA' || ruoloMaiuscolo === 'PRESIDENTE') { 
-        
-        // Aggiunge la classe al body (attiva tutto il CSS giallo e nasconde i bottoni)
         document.body.classList.add('view-dirigenza');
-        
-        // Cerca tutti i campi di input, select e textarea e li blocca
         const campiModulo = document.querySelectorAll('input, select, textarea');
         campiModulo.forEach(campo => {
             campo.disabled = true;
@@ -171,10 +141,11 @@ function impostaVistaDirigenza(ruoloUtente) {
     }
 }
 
-// Assicurati di chiamare la funzione quando la pagina ha finito di caricare.
+// Esecuzione automatica al caricamento della pagina[cite: 36]
 document.addEventListener('DOMContentLoaded', () => {
-    // Ora legge dinamicamente il VERO ruolo salvato nel browser durante il login
-    const ruoloAttuale = localStorage.getItem('ruolo'); 
+    impostaLinkDashboard();
+    adattaSidebarPerRuolo();
     
+    const ruoloAttuale = localStorage.getItem('ruolo'); 
     impostaVistaDirigenza(ruoloAttuale);
 });

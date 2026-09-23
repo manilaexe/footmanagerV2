@@ -19,6 +19,11 @@ document.addEventListener('DOMContentLoaded', async() => { //asincorna perché a
             return;
         }
     }
+    // Nascondi la voce "Performance squadra" ai giocatori
+    const navPerformance = document.getElementById('nav-performance');
+    if (navPerformance) {
+        navPerformance.style.display = 'none';
+    }
 
     popolaSidebar();
     popolaTopbar();

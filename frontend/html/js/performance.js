@@ -7,6 +7,7 @@
 const API_PERF = 'http://localhost:8080/api';
 
 /* ── Avvio ────────────────────────────────────────────────────────────── */
+/* ── Avvio ────────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
 
   // 1. Senza token si torna al login
@@ -15,10 +16,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // 2. Sidebar: nome, ruolo, avatar (stesse funzioni usate dalle altre pagine)
+  // 2. Controllo ruolo: solo Allenatore, Dirigente e Staff possono accedere
+  const ruolo = (localStorage.getItem('ruolo') || '').toUpperCase();
+  if (ruolo !== 'ALLENATORE' && ruolo !== 'DIRIGENZA' && ruolo !== 'STAFF') {
+    window.location.href = 'dashboard-giocatore.html';
+    return;
+  }
+  const navBadge = document.getElementById('nav-badge');
+  if (navBadge) {
+      if (ruolo === 'GIOCATORE') {
+          navBadge.style.display = 'flex';
+      } else {
+          navBadge.style.display = 'none';
+      }
+  }
+
+  // 3. Sidebar: nome, ruolo, avatar (stesse funzioni usate dalle altre pagine)
   const nome    = localStorage.getItem('nomeReale')    || localStorage.getItem('username') || 'Utente';
   const cognome = localStorage.getItem('cognomeReale') || '';
-  const ruolo   = localStorage.getItem('ruolo')        || '';
 
   const sbNome = document.getElementById('sb-nome');
   const sbRuolo = document.getElementById('sb-ruolo');
@@ -29,39 +44,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderAvatar(sbAvatar, (nome[0] || '').toUpperCase() + (cognome[0] || nome[1] || '').toUpperCase());
   }
 
-  if (ruolo === 'GIOCATORE' || ruolo === 'DIRIGENTE') {
-    document.querySelectorAll('.topbar-right .btn-primary').forEach(b => b.style.display = 'none');
-    const btnMod = document.getElementById('btn-apri-modifica');
-    if (btnMod) btnMod.style.display = 'none';
+  // Rimuoviamo i vecchi filtri di nascondimento manuale nella sidebar, 
+  // perché ora la pagina è blindata a monte per chi non ha i permessi.
 
-    // Nascondi voce messaggi dalla sidebar
-    document.querySelectorAll('.sidebar a, .sidebar-menu a, nav a, .nav-item').forEach(el => {
-        const text = (el.textContent || '').toLowerCase();
-        const href = el.getAttribute('href') || '';
-        if (text.includes('rosa') || href.includes('rosa.html')) {
-            const containerToHide = el.closest('li') || el.closest('.nav-item') || el;
-            containerToHide.style.display = 'none';
-        }
-    });
-  }
-
-  if (ruolo === 'ALLENATORE' || ruolo === 'DIRIGENTE' || ruolo === 'STAFF') {
-    document.querySelectorAll('.topbar-right .btn-primary').forEach(b => b.style.display = 'none');
-    const btnMod = document.getElementById('btn-apri-modifica');
-    if (btnMod) btnMod.style.display = 'none';
-
-    // Nascondi voce messaggi dalla sidebar
-    document.querySelectorAll('.sidebar a, .sidebar-menu a, nav a, .nav-item').forEach(el => {
-        const text = (el.textContent || '').toLowerCase();
-        const href = el.getAttribute('href') || '';
-        if (text.includes('badge') || href.includes('badge.html')) {
-            const containerToHide = el.closest('li') || el.closest('.nav-item') || el;
-            containerToHide.style.display = 'none';
-        }
-    });
-  }
-
-  // 3. Carica i dati
+  // 4. Carica i dati
   await caricaPerformance();
 });
 
