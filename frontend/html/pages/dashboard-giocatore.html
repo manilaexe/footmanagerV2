@@ -93,29 +93,26 @@
       <div class="grid-2">
         <!-- STATISTICHE -->
         <!-- TODO: FAR FUNZIONARE-->
-        <div class="card">
-          <div class="card-header"><h2>Le mie statistiche</h2><span style="font-size:0.8rem;color:var(--muted)">Stagione 2024/25</span></div>
-          <div class="card-body">
-            <div class="stat-row" style="margin-bottom:1.25rem">
-              <div class="stat-cell"><div class="val">—</div><div class="lbl">Presenze</div></div>
-              <div class="stat-cell"><div class="val">—</div><div class="lbl">Gol</div></div>
-              <div class="stat-cell"><div class="val">—</div><div class="lbl">Assist</div></div>
-              <div class="stat-cell"><div class="val">—</div><div class="lbl">Tiri tot.</div></div>
-              <div class="stat-cell"><div class="val">—</div><div class="lbl">In porta</div></div>
-              <div class="stat-cell"><div class="val">—</div><div class="lbl">Rigori</div></div>
-            </div>
-            <div class="stat-bar-row">
-              <div class="stat-bar-label"><span class="name">Passaggi riusciti</span><span class="pct">—%</span></div>
-              <div class="bar-track"><div class="bar-fill" style="width:0%"></div></div>
-            </div>
-            <div class="stat-bar-row">
-              <div class="stat-bar-label"><span class="name">Dribbling riusciti</span><span class="pct">—%</span></div>
-              <div class="bar-track"><div class="bar-fill blue" style="width:0%"></div></div>
-            </div>
-            <div class="stat-bar-row">
-              <div class="stat-bar-label"><span class="name">Duelli vinti</span><span class="pct">—%</span></div>
-              <div class="bar-track"><div class="bar-fill amber" style="width:0%"></div></div>
-            </div>
+        <div class="card-body">
+          <div class="stat-row" style="margin-bottom:1.25rem">
+            <div class="stat-cell"><div class="val" id="stat-presenze">—</div><div class="lbl">Presenze</div></div>
+            <div class="stat-cell"><div class="val" id="stat-gol">—</div><div class="lbl">Gol</div></div>
+            <div class="stat-cell"><div class="val" id="stat-assist">—</div><div class="lbl">Assist</div></div>
+            <div class="stat-cell"><div class="val" id="stat-tiri">—</div><div class="lbl">Tiri tot.</div></div>
+            <div class="stat-cell"><div class="val" id="stat-tiri-porta">—</div><div class="lbl">In porta</div></div>
+            <div class="stat-cell"><div class="val" id="stat-rigori">—</div><div class="lbl">Rigori</div></div>
+          </div>
+          <div class="stat-bar-row">
+            <div class="stat-bar-label"><span class="name">Passaggi riusciti</span><span class="pct" id="stat-passaggi-pct">—%</span></div>
+            <div class="bar-track"><div class="bar-fill" id="stat-passaggi-bar" style="width:0%"></div></div>
+          </div>
+          <div class="stat-bar-row">
+            <div class="stat-bar-label"><span class="name">Dribbling riusciti</span><span class="pct" id="stat-dribbling-pct">—%</span></div>
+            <div class="bar-track"><div class="bar-fill blue" id="stat-dribbling-bar" style="width:0%"></div></div>
+          </div>
+          <div class="stat-bar-row">
+            <div class="stat-bar-label"><span class="name">Duelli vinti</span><span class="pct" id="stat-duelli-pct">—%</span></div>
+            <div class="bar-track"><div class="bar-fill amber" id="stat-duelli-bar" style="width:0%"></div></div>
           </div>
         </div>
 

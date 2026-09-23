@@ -9,7 +9,7 @@
 const API = 'http://localhost:8080';
 
 // ─── 1. INIT ──────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async() => { //asincorna perché aspetta che l'id sia salvato in memoria prima di dare le statistiche (insieme ad await)
     // Controllo autenticazione
     if (typeof verificaAutenticazione === 'function') {
         verificaAutenticazione();
@@ -22,11 +22,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     popolaSidebar();
     popolaTopbar();
-    caricaProfiloGiocatore(); // ← dati reali del profilo (posizione, numero, punti...) in alto
+    await caricaProfiloGiocatore(); // ← dati reali del profilo (posizione, numero, punti...) in alto
     caricaMessaggi();          // ← carica dal DB
     caricaEventi();            // ← carica dal DB
     caricaQuizGiornaliero();   // ← gamification: quiz del primo accesso del giorno
-    caricaClassificaSettimanale();
+    caricaClassificaSettimanale(); //anteprima della classifica settimanale del gioco
+    caricaStatistiche(); //carica il riquadro delle classifiche personali sulla dashboard
 });
 
 // ─── 2. SIDEBAR ───────────────────────────────────────────────────────────
@@ -729,4 +730,82 @@ async function caricaClassificaSettimanale() {
         console.error('Errore caricamento classifica:', err);
         listEl.innerHTML = '<div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.85rem">Impossibile caricare la classifica.</div>';
     }
+}
+
+// ─── 12. CARICA STATISTICHE ───────────────────────────────────────────────
+async function caricaStatistiche() {
+    // Recupera l'ID salvato durante il caricamento del profilo
+    const id = localStorage.getItem('idGiocatore');
+    if (!id) {
+        console.error('ID giocatore non trovato in memoria.');
+        return;
+    }
+
+    const headers = typeof getAuthHeaders === 'function'
+        ? getAuthHeaders()
+        : { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') };
+
+    try {
+        // Chiamata all'indirizzo corretto del tuo controller
+        const res = await fetch(`${API}/api/statistiche/giocatore/${id}`, { headers });
+        
+        if (res.status === 401) { logout(); return; }
+        if (!res.ok) {
+            console.warn('Statistiche non trovate o errore:', res.status);
+            return;
+        }
+
+        const stats = await res.json();
+        renderizzaStatistiche(stats);
+
+    } catch (err) {
+        console.error('Errore caricamento statistiche:', err);
+    }
+}
+
+function renderizzaStatistiche(s) {
+    if (!s) return;
+
+    // Utility per settare il testo nei riquadri superiori
+    const setVal = (id, val) => { 
+        const el = document.getElementById(id); 
+        if (el) el.textContent = val !== undefined && val !== null ? val : '0'; 
+    };
+
+    // Mappatura con i nomi esatti delle variabili di GiocatoreService.java
+    setVal('stat-presenze', s.presenze);
+    setVal('stat-gol', s.golTotali); 
+    setVal('stat-assist', s.assist);
+    setVal('stat-tiri', s.tiriTotali);
+    setVal('stat-tiri-porta', s.tiriInPorta);
+    setVal('stat-rigori', s.goalRigore); 
+
+    // Utility per settare le percentuali testuali e la larghezza della barra CSS
+    const setBar = (idPct, idBar, val) => {
+        const elPct = document.getElementById(idPct);
+        const elBar = document.getElementById(idBar);
+        const safeVal = val !== undefined && val !== null ? val : 0;
+        
+        if (elPct) elPct.textContent = `${safeVal}%`;
+        if (elBar) elBar.style.width = `${safeVal}%`;
+    };
+
+    // Funzione per calcolare la percentuale evitando la divisione per zero
+    const calcolaPct = (parte, totale) => {
+        if (!totale || totale === 0) return 0;
+        return Math.round((parte / totale) * 100);
+    };
+
+    // Calcolo in tempo reale delle percentuali
+    const passaggiPct = calcolaPct(s.passaggiRiusciti, s.passaggiTentati);
+    const dribblingPct = calcolaPct(s.dribblingRiusciti, s.dribblingTentati);
+    
+    // Per i duelli, il totale è la somma di quelli vinti e persi
+    const duelliTotali = (s.duelliVinti || 0) + (s.duelliPersi || 0);
+    const duelliPct = calcolaPct(s.duelliVinti, duelliTotali);
+
+    // Aggiornamento grafico delle barre
+    setBar('stat-passaggi-pct', 'stat-passaggi-bar', passaggiPct);
+    setBar('stat-dribbling-pct', 'stat-dribbling-bar', dribblingPct);
+    setBar('stat-duelli-pct', 'stat-duelli-bar', duelliPct);
 }
