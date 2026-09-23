@@ -15,13 +15,13 @@ function verificaAutenticazione() {
     }
 }
 
-// Rimuove i dati di sessione e rimanda l'utente al login[cite: 36]
+// Rimuove i dati di sessione e rimanda l'utente al login
 function logout() {
     localStorage.clear();
     window.location.href = '/html/login.html';
 }
 
-// Renderizza l'avatar in un contenitore circolare[cite: 36]
+// Renderizza l'avatar in un contenitore circolare
 function renderAvatar(container, iniziali) {
     if (!container) return;
     const img = localStorage.getItem('imgProfilo');
@@ -35,7 +35,7 @@ function renderAvatar(container, iniziali) {
     }
 }
 
-// Corregge il link "Dashboard" della sidebar in base al ruolo[cite: 36]
+// Corregge il link "Dashboard" della sidebar in base al ruolo
 function impostaLinkDashboard() {
     const link = document.getElementById('nav-dashboard');
     if (!link) return;
@@ -63,7 +63,7 @@ function impostaLinkDashboard() {
     }
 }
 
-// Adatta le voci della sidebar in base al ruolo in modo centralizzato[cite: 36]
+// Adatta le voci della sidebar in base al ruolo in modo centralizzato
 function adattaSidebarPerRuolo() {
     const ruolo = localStorage.getItem('ruolo');
     const nav = document.querySelector('.sidebar .nav-section');
@@ -88,13 +88,13 @@ function adattaSidebarPerRuolo() {
 
     const testiPresenti = [...nav.querySelectorAll('a')].map(a => a.textContent);
 
-    // 2. GESTIONE "ROSA": I giocatori non devono vederla[cite: 36]
+    // 2. GESTIONE "ROSA": I giocatori non devono vederla
     const linkRosa = nav.querySelector('a[href$="rosa.html"]');
     if (ruoloMaiuscolo === 'GIOCATORE' && linkRosa) {
         linkRosa.remove();
     }
 
-    // 3. GESTIONE "I MIEI BADGE": Visibile SOLO ai GIOCATORI[cite: 36]
+    // 3. GESTIONE "I MIEI BADGE": Visibile SOLO ai GIOCATORI
     const linkBadge = nav.querySelector('a[href$="badge.html"]');
     if (ruoloMaiuscolo === 'GIOCATORE') {
         if (!testiPresenti.some(t => t.includes('I miei badge'))) {
@@ -106,13 +106,13 @@ function adattaSidebarPerRuolo() {
         if (linkBadge) linkBadge.remove();
     }
 
-    // 4. GESTIONE "CLASSIFICA": Visibile a tutti[cite: 36]
+    // 4. GESTIONE "CLASSIFICA": Visibile a tutti
     if (!testiPresenti.some(t => t.includes('Classifica'))) {
         nav.insertAdjacentHTML('beforeend',
             `<a class="nav-item ${currentPage.includes('classifica.html') ? 'active' : ''}" href="/html/classifica.html"><span class="ico">🏆</span>Classifica</a>`);
     }
 
-    // 5. GESTIONE "PERFORMANCE SQUADRA": Visibile SOLO a Allenatore e Staff (e Dirigenza gestita sopra)[cite: 36]
+    // 5. GESTIONE "PERFORMANCE SQUADRA": Visibile SOLO a Allenatore e Staff (e Dirigenza gestita sopra)
     const linkPerformance = nav.querySelector('a[href$="dirigenza-performance.html"]');
     if (ruoloMaiuscolo === 'ALLENATORE' || ruoloMaiuscolo === 'STAFF') {
         if (!testiPresenti.some(t => t.includes('Performance'))) {
@@ -125,7 +125,7 @@ function adattaSidebarPerRuolo() {
     }
 }
 
-// Funzione per attivare la modalità sola lettura per la dirigenza[cite: 36]
+// Funzione per attivare la modalità sola lettura per la dirigenza
 function impostaVistaDirigenza(ruoloUtente) {
     if (!ruoloUtente) return;
     const ruoloMaiuscolo = ruoloUtente.toUpperCase();
@@ -141,7 +141,7 @@ function impostaVistaDirigenza(ruoloUtente) {
     }
 }
 
-// Esecuzione automatica al caricamento della pagina[cite: 36]
+// Esecuzione automatica al caricamento della pagina
 document.addEventListener('DOMContentLoaded', () => {
     impostaLinkDashboard();
     adattaSidebarPerRuolo();
