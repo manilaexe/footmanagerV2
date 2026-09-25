@@ -4,8 +4,7 @@
 const API_BASE_URL = 'http://localhost:8080/api';
 const token = localStorage.getItem('token');      
 
-let PLAYERS = [];         
-let MATCHES = [];         
+let PLAYERS = [];                
 let CURRENT_KPI = {};     
 let ruoloUtente = '';     
 let mioNomeStat = '';     
